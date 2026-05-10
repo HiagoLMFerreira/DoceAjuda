@@ -30,31 +30,39 @@ Aplicativo mobile para gestão de pequenos negócios de confeitaria. Controle de
 ---
 
 ## 📁 Estrutura de pastas
+```bash
 DoceAjuda/
-├── assets/ # Imagens e fontes
+├── assets/                     # Imagens, ícones e fontes
 ├── src/
-│ ├── config/
-│ │ └── firebase.ts # Configuração do Firebase
-│ ├── contexts/
-│ │ ├── AuthContext.tsx # Provedor de autenticação
-│ │ └── useAuth.ts # Hook de autenticação
-│ ├── database/
-│ │ └── database.ts # Inicialização e queries do SQLite
-│ ├── navigation/
-│ │ └── AppNavigator.tsx # Navegação do app
-│ ├── screens/
-│ │ ├── LoginScreen.tsx
-│ │ ├── MenuScreen.tsx
-│ │ ├── EstoqueScreen.tsx
-│ │ ├── ReceitasScreen.tsx
-│ │ ├── OrcamentosScreen.tsx
-│ │ ├── VendasScreen.tsx
-│ │ └── ClientesScreen.tsx
-│ ├── components/
-│ │ └── EmConstrucaoScreen.tsx
-│ └── types/
-│ └── index.ts # Tipagens globais
-├── App.tsx # Ponto de entrada do app
-├── app.json # Configuração do Expo
-├── tsconfig.json # Configuração do TypeScript
-└── package.json
+│   ├── config/
+│   │   └── firebase.ts         # Configuração do Firebase
+│   │
+│   ├── contexts/
+│   │   ├── AuthContext.tsx     # Contexto de autenticação
+│   │   └── useAuth.ts          # Hook personalizado de autenticação
+│   │
+│   ├── database/
+│   │   └── database.ts         # Inicialização e operações SQLite
+│   │
+│   ├── navigation/
+│   │   └── AppNavigator.tsx    # Configuração das rotas e navegação
+│   │
+│   ├── screens/
+│   │   ├── LoginScreen.tsx
+│   │   ├── MenuScreen.tsx
+│   │   ├── EstoqueScreen.tsx
+│   │   ├── ReceitasScreen.tsx
+│   │   ├── OrcamentosScreen.tsx
+│   │   ├── VendasScreen.tsx
+│   │   └── ClientesScreen.tsx
+│   │
+│   ├── components/
+│   │   └── EmConstrucaoScreen.tsx  # Tela reutilizável de "Em construção"
+│   │
+│   └── types/
+│       └── index.ts            # Tipagens globais do projeto
+│
+├── App.tsx                     # Ponto de entrada da aplicação
+├── app.json                    # Configurações do Expo
+├── tsconfig.json               # Configuração do TypeScript
+└── package.json                # Dependências e scripts do projeto
