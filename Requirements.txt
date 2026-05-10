@@ -1,0 +1,5 @@
+Para que o codigo consiga rodar temos que utilizar as seguintes instalações:
+
+npx expo install expo-sqlite firebase @react-navigation/native @react-navigation/stack @react-navigation/drawer react-native-screens react-native-safe-area-context react-native-gesture-handler
+
+npm install react-native-vector-icons --save
