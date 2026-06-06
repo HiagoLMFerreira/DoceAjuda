@@ -2,6 +2,9 @@ export interface Produto {
   id: number;
   descricao: string;
   quantidade: number;
+  ativo: number;
+  preco: number;
+  preco_medio: number;
 }
 
 export interface Cliente {

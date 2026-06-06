@@ -9,34 +9,132 @@ import {
   StyleSheet,
   Alert,
 } from 'react-native';
-import { getDatabase, inserirMovimentacao } from '../database/database';
+import {
+  listarProdutos,
+  cadastrarProduto,
+  atualizarProduto,
+  inativarProduto,
+  inserirMovimentacao,
+} from '../database/database';
 import { Produto } from '../types';
 import { useFocusEffect } from '@react-navigation/native';
 
 export default function EstoqueScreen() {
   const [produtos, setProdutos] = useState<Produto[]>([]);
+  const [filtro, setFiltro] = useState('');
+
+  // Estados para modais
+  const [modalAdd, setModalAdd] = useState(false);
+  const [modalEdit, setModalEdit] = useState(false);
   const [modalMov, setModalMov] = useState(false);
-  const [modalAddProduto, setModalAddProduto] = useState(false);
   const [tipoMov, setTipoMov] = useState<'entrada' | 'saida'>('entrada');
   const [produtoSelecionado, setProdutoSelecionado] = useState<Produto | null>(null);
   const [quantidade, setQuantidade] = useState('');
-  const [descricaoNovo, setDescricaoNovo] = useState('');
+  const [precoUnitario, setPrecoUnitario] = useState('');
 
-  const carregarProdutos = async () => {
-    const db = await getDatabase();
-    const resultado = await db.getAllAsync('SELECT * FROM produtos ORDER BY id');
-    setProdutos(resultado as Produto[]);
-  };
+  // Estados para cadastro/edição
+  const [descricaoProduto, setDescricaoProduto] = useState('');
+  const [precoProduto, setPrecoProduto] = useState('');
+
+  // Produto em edição
+  const [editandoProduto, setEditandoProduto] = useState<Produto | null>(null);
+
+  // Filtro de pesquisa dentro do modal de movimentação
+  const [filtroProdutoMov, setFiltroProdutoMov] = useState('');
+
+  const carregarProdutos = useCallback(async () => {
+    try {
+      const resultado = await listarProdutos(filtro, true);
+      setProdutos(resultado as Produto[]);
+    } catch (error) {
+      console.error('Erro ao carregar produtos:', error);
+    }
+  }, [filtro]);
 
   useFocusEffect(
     useCallback(() => {
       carregarProdutos();
-    }, [])
+    }, [carregarProdutos])
   );
 
+  // --- Ações CRUD ---
+  const handleCadastrar = async () => {
+    if (!descricaoProduto.trim()) {
+      Alert.alert('Atenção', 'Informe a descrição do produto.');
+      return;
+    }
+    try {
+      await cadastrarProduto(
+        descricaoProduto.trim(),
+        parseFloat(precoProduto) || 0
+      );
+      setDescricaoProduto('');
+      setPrecoProduto('');
+      setModalAdd(false);
+      carregarProdutos();
+    } catch (erro: any) {
+      Alert.alert('Erro', erro.message || 'Não foi possível cadastrar o produto.');
+    }
+  };
+
+  const abrirEdicao = (produto: Produto) => {
+    setEditandoProduto(produto);
+    setDescricaoProduto(produto.descricao);
+    setPrecoProduto(produto.preco?.toString() || '');
+    setModalEdit(true);
+  };
+
+  const handleEditar = async () => {
+    if (!editandoProduto) return;
+    if (!descricaoProduto.trim()) {
+      Alert.alert('Atenção', 'Informe a descrição.');
+      return;
+    }
+    try {
+      await atualizarProduto(
+        editandoProduto.id,
+        descricaoProduto.trim(),
+        parseFloat(precoProduto) || undefined
+      );
+      setModalEdit(false);
+      setEditandoProduto(null);
+      carregarProdutos();
+    } catch (erro: any) {
+      Alert.alert('Erro', erro.message || 'Não foi possível editar o produto.');
+    }
+  };
+
+  const handleInativar = (produto: Produto) => {
+    Alert.alert(
+      'Inativar Produto',
+      `Deseja realmente inativar "${produto.descricao}"?`,
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Inativar',
+          style: 'destructive',
+          onPress: async () => {
+            await inativarProduto(produto.id);
+            carregarProdutos();
+          },
+        },
+      ]
+    );
+  };
+
+  // --- Movimentação ---
+  const abrirModalMov = (tipo: 'entrada' | 'saida') => {
+    setTipoMov(tipo);
+    setProdutoSelecionado(null);
+    setQuantidade('');
+    setPrecoUnitario('');
+    setFiltroProdutoMov('');  // limpa pesquisa ao abrir
+    setModalMov(true);
+  };
+
   const confirmarMovimentacao = async () => {
-    if (!produtoSelecionado || !quantidade.trim()) {
-      Alert.alert('Erro', 'Selecione um produto e informe a quantidade.');
+    if (!produtoSelecionado) {
+      Alert.alert('Erro', 'Selecione um produto.');
       return;
     }
     const qtdNum = parseFloat(quantidade);
@@ -44,76 +142,83 @@ export default function EstoqueScreen() {
       Alert.alert('Erro', 'Quantidade inválida.');
       return;
     }
-    await inserirMovimentacao(produtoSelecionado.id, tipoMov, qtdNum);
-    setModalMov(false);
-    setQuantidade('');
-    setProdutoSelecionado(null);
-    carregarProdutos();
-  };
-
-  const adicionarProduto = async () => {
-    if (!descricaoNovo.trim()) {
-      Alert.alert('Erro', 'Informe a descrição do produto.');
+    if (tipoMov === 'saida' && qtdNum > produtoSelecionado.quantidade) {
+      Alert.alert('Erro', 'Quantidade insuficiente em estoque.');
       return;
     }
-    const db = await getDatabase();
-    await db.runAsync('INSERT INTO produtos (descricao, quantidade) VALUES (?, 0)', [descricaoNovo.trim()]);
-    setDescricaoNovo('');
-    setModalAddProduto(false);
-    carregarProdutos();
+
+    const preco = tipoMov === 'entrada' ? parseFloat(precoUnitario) : undefined;
+    if (tipoMov === 'entrada' && precoUnitario && (isNaN(preco!) || preco! < 0)) {
+      Alert.alert('Erro', 'Preço unitário inválido.');
+      return;
+    }
+
+    try {
+      await inserirMovimentacao(produtoSelecionado.id, tipoMov, qtdNum, preco);
+      setModalMov(false);
+      carregarProdutos();
+    } catch (erro: any) {
+      Alert.alert('Erro', erro.message || 'Não foi possível registrar a movimentação.');
+    }
   };
 
-  const abrirModalMov = (tipo: 'entrada' | 'saida') => {
-    setTipoMov(tipo);
-    setProdutoSelecionado(null);
-    setQuantidade('');
-    setModalMov(true);
-  };
-
+  // --- Renderização da tabela ---
   const renderItem = ({ item }: { item: Produto }) => (
     <View style={styles.row}>
-      <Text style={[styles.cell, { flex: 1 }]}>{item.id}</Text>
-      <Text style={[styles.cell, { flex: 3 }]}>{item.descricao}</Text>
+      <Text style={[styles.cell, { flex: 0.5 }]}>{item.id}</Text>
+      <Text style={[styles.cell, { flex: 2.5 }]} numberOfLines={1}>{item.descricao}</Text>
       <Text style={[styles.cell, { flex: 1 }]}>{item.quantidade}</Text>
+      <Text style={[styles.cell, { flex: 1.5 }]}>
+        {item.preco_medio > 0 ? `R$ ${item.preco_medio.toFixed(2)}` : '-'}
+      </Text>
+      <View style={styles.cellActions}>
+        <TouchableOpacity onPress={() => abrirEdicao(item)} style={styles.actionIcon}>
+          <Text style={{ fontSize: 16 }}>✏️</Text>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={() => handleInativar(item)} style={styles.actionIcon}>
+          <Text style={{ fontSize: 16 }}>🗑️</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 
   return (
     <View style={styles.container}>
-      {/* Header padronizado */}
+      {/* Header */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>ESTOQUE</Text>
       </View>
 
-      {/* Botão Cadastrar Produto */}
-      <TouchableOpacity
-        style={styles.cadastrarButton}
-        onPress={() => setModalAddProduto(true)}
-      >
+      {/* Campo de pesquisa (tela principal) */}
+      <TextInput
+        style={styles.searchInput}
+        placeholder="Pesquisar produto..."
+        placeholderTextColor="#888"
+        value={filtro}
+        onChangeText={setFiltro}
+      />
+
+      {/* Botões principais */}
+      <TouchableOpacity style={styles.cadastrarButton} onPress={() => setModalAdd(true)}>
         <Text style={styles.cadastrarButtonText}>Cadastrar Produto</Text>
       </TouchableOpacity>
 
-      {/* Botões Entrada e Saída lado a lado */}
       <View style={styles.movButtonsRow}>
-        <TouchableOpacity
-          style={[styles.movButton, styles.entradaButton]}
-          onPress={() => abrirModalMov('entrada')}
-        >
+        <TouchableOpacity style={[styles.movButton, styles.entradaButton]} onPress={() => abrirModalMov('entrada')}>
           <Text style={styles.movButtonText}>+ Entrada</Text>
         </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.movButton, styles.saidaButton]}
-          onPress={() => abrirModalMov('saida')}
-        >
+        <TouchableOpacity style={[styles.movButton, styles.saidaButton]} onPress={() => abrirModalMov('saida')}>
           <Text style={styles.movButtonText}>- Saída</Text>
         </TouchableOpacity>
       </View>
 
-      {/* Tabela de produtos */}
+      {/* Tabela */}
       <View style={styles.tableHeader}>
-        <Text style={[styles.headerCell, { flex: 1 }]}>ID</Text>
-        <Text style={[styles.headerCell, { flex: 3 }]}>DESCRIÇÃO</Text>
-        <Text style={[styles.headerCell, { flex: 1 }]}>QUANTIDADE</Text>
+        <Text style={[styles.headerCell, { flex: 0.5 }]}>ID</Text>
+        <Text style={[styles.headerCell, { flex: 2.5 }]}>DESCRIÇÃO</Text>
+        <Text style={[styles.headerCell, { flex: 1 }]}>QTD</Text>
+        <Text style={[styles.headerCell, { flex: 1.5 }]}>PREÇO MÉDIO</Text>
+        <Text style={[styles.headerCell, { flex: 1.5 }]}>AÇÕES</Text>
       </View>
       <FlatList
         data={produtos}
@@ -122,18 +227,92 @@ export default function EstoqueScreen() {
         style={styles.list}
       />
 
-      {/* Modal de movimentação */}
+      {/* Modal de Cadastro */}
+      <Modal visible={modalAdd} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Novo Produto</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Descrição"
+              placeholderTextColor="#888"
+              value={descricaoProduto}
+              onChangeText={setDescricaoProduto}
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="Preço de custo (opcional)"
+              placeholderTextColor="#888"
+              keyboardType="numeric"
+              value={precoProduto}
+              onChangeText={setPrecoProduto}
+            />
+            <View style={styles.modalButtons}>
+              <TouchableOpacity style={[styles.modalButton, styles.cancelButton]} onPress={() => setModalAdd(false)}>
+                <Text style={styles.modalButtonText}>Cancelar</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[styles.modalButton, styles.saveButton]} onPress={handleCadastrar}>
+                <Text style={styles.modalButtonText}>Salvar</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Modal de Edição */}
+      <Modal visible={modalEdit} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Editar Produto</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Descrição"
+              placeholderTextColor="#888"
+              value={descricaoProduto}
+              onChangeText={setDescricaoProduto}
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="Preço"
+              placeholderTextColor="#888"
+              keyboardType="numeric"
+              value={precoProduto}
+              onChangeText={setPrecoProduto}
+            />
+            <View style={styles.modalButtons}>
+              <TouchableOpacity style={[styles.modalButton, styles.cancelButton]} onPress={() => setModalEdit(false)}>
+                <Text style={styles.modalButtonText}>Cancelar</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[styles.modalButton, styles.saveButton]} onPress={handleEditar}>
+                <Text style={styles.modalButtonText}>Salvar</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Modal de Movimentação (Entrada/Saída) COM PESQUISA */}
       <Modal visible={modalMov} transparent animationType="fade">
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>
               {tipoMov === 'entrada' ? 'Entrada de Estoque' : 'Saída de Estoque'}
             </Text>
-
-            {/* Lista para selecionar produto */}
             <Text style={styles.modalLabel}>Produto:</Text>
+
+            {/* Campo de pesquisa dentro do modal */}
+            <TextInput
+              style={styles.input}
+              placeholder="Pesquisar produto..."
+              placeholderTextColor="#888"
+              value={filtroProdutoMov}
+              onChangeText={setFiltroProdutoMov}
+            />
+
             <FlatList
-              data={produtos}
+              data={produtos.filter(p =>
+                p.descricao.toLowerCase().includes(filtroProdutoMov.toLowerCase())
+              )}
               style={styles.produtoLista}
               keyExtractor={(item) => item.id.toString()}
               renderItem={({ item }) => (
@@ -159,52 +338,22 @@ export default function EstoqueScreen() {
               value={quantidade}
               onChangeText={setQuantidade}
             />
-
+            {tipoMov === 'entrada' && (
+              <TextInput
+                style={styles.input}
+                placeholder="Preço unitário (opcional)"
+                placeholderTextColor="#888"
+                keyboardType="numeric"
+                value={precoUnitario}
+                onChangeText={setPrecoUnitario}
+              />
+            )}
             <View style={styles.modalButtons}>
-              <TouchableOpacity
-                style={[styles.modalButton, styles.cancelButton]}
-                onPress={() => setModalMov(false)}
-              >
+              <TouchableOpacity style={[styles.modalButton, styles.cancelButton]} onPress={() => setModalMov(false)}>
                 <Text style={styles.modalButtonText}>Cancelar</Text>
               </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.modalButton, styles.saveButton]}
-                onPress={confirmarMovimentacao}
-              >
+              <TouchableOpacity style={[styles.modalButton, styles.saveButton]} onPress={confirmarMovimentacao}>
                 <Text style={styles.modalButtonText}>Confirmar</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
-
-      {/* Modal de cadastro de produto */}
-      <Modal visible={modalAddProduto} transparent animationType="fade">
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Novo Produto</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Descrição do produto"
-              placeholderTextColor="#888"
-              value={descricaoNovo}
-              onChangeText={setDescricaoNovo}
-            />
-            <View style={styles.modalButtons}>
-              <TouchableOpacity
-                style={[styles.modalButton, styles.cancelButton]}
-                onPress={() => {
-                  setDescricaoNovo('');
-                  setModalAddProduto(false);
-                }}
-              >
-                <Text style={styles.modalButtonText}>Cancelar</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.modalButton, styles.saveButton]}
-                onPress={adicionarProduto}
-              >
-                <Text style={styles.modalButtonText}>Salvar</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -226,7 +375,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 16,
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: 12,
   },
   headerTitle: {
     fontSize: 22,
@@ -234,6 +383,16 @@ const styles = StyleSheet.create({
     color: '#1a1a1a',
     letterSpacing: 2,
     textAlign: 'center',
+  },
+  searchInput: {
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 15,
+    color: '#1a1a1a',
+    borderWidth: 1,
+    borderColor: '#ccc',
+    marginBottom: 12,
   },
   cadastrarButton: {
     backgroundColor: '#000',
@@ -253,7 +412,7 @@ const styles = StyleSheet.create({
   movButtonsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 20,
+    marginBottom: 12,
   },
   movButton: {
     flex: 1,
@@ -266,7 +425,7 @@ const styles = StyleSheet.create({
     marginRight: 10,
   },
   saidaButton: {
-    backgroundColor: '#e00000',   // tom acastanhado para diferenciar saída
+    backgroundColor: '#e00000',
   },
   movButtonText: {
     color: '#fff',
@@ -286,13 +445,13 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: '#1a1a1a',
     textAlign: 'center',
-    fontSize: 13,
+    fontSize: 12,
     letterSpacing: 1,
   },
   row: {
     flexDirection: 'row',
     backgroundColor: '#fff',
-    paddingVertical: 12,
+    paddingVertical: 10,
     paddingHorizontal: 10,
     marginVertical: 2,
     borderRadius: 6,
@@ -304,12 +463,21 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#1a1a1a',
     textAlign: 'center',
-    fontSize: 13,
+    fontSize: 12,
+  },
+  cellActions: {
+    flex: 1.5,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  actionIcon: {
+    paddingHorizontal: 5,
+    paddingVertical: 2,
   },
   list: {
     flex: 1,
   },
-  // Modais
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.6)',
@@ -329,7 +497,6 @@ const styles = StyleSheet.create({
     color: '#1a1a1a',
     textAlign: 'center',
     marginBottom: 15,
-    letterSpacing: 1,
   },
   modalLabel: {
     fontSize: 14,
