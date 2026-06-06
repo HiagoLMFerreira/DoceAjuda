@@ -7,6 +7,8 @@ export interface Produto {
 export interface Cliente {
   id: number;
   nome: string;
+  telefone: string;
+  endereco: string;
   total_compras: number;
 }
 
