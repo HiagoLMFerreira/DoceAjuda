@@ -20,8 +20,11 @@ import {
   OrdenarProdutoPor,
   DirecaoOrdenacao,
 } from '../database/database';
+import BarcodeScannerModal from '../components/BarcodeScannerModal';
+import { Ionicons } from '@expo/vector-icons';
 
 type ModoFormulario = 'cadastro' | 'edicao';
+type CampoScanner = 'busca' | 'formulario' | 'movimentacao';
 
 export default function EstoqueScreen() {
   const navigation = useNavigation<any>();
@@ -55,6 +58,30 @@ export default function EstoqueScreen() {
 
   const [quantidadeMov, setQuantidadeMov] = useState('');
   const [precoEntradaMov, setPrecoEntradaMov] = useState('');
+
+  const [scannerVisivel, setScannerVisivel] = useState(false);
+  const [campoScanner, setCampoScanner] = useState<CampoScanner>('busca');
+
+  const abrirScanner = (campo: CampoScanner) => {
+    setCampoScanner(campo);
+    setScannerVisivel(true);
+  };
+
+  const aoReceberCodigo = (codigo: string) => {
+    if (campoScanner === 'busca') {
+      setBusca(codigo);
+    }
+
+    if (campoScanner === 'formulario') {
+      setCodigoBarras(codigo);
+    }
+
+    if (campoScanner === 'movimentacao') {
+    setBuscaMovimentacao(codigo);
+  }
+
+    setScannerVisivel(false);
+  };
 
   const obterNomeProduto = (produto: ProdutoEstoque) => {
     return produto.nome || produto.descricao || 'Produto sem nome';
@@ -394,19 +421,26 @@ export default function EstoqueScreen() {
 
         <View style={styles.headerTextArea}>
           <Text style={styles.headerTitle}>ESTOQUE</Text>
-          <Text style={styles.headerSubtitle}>
-            Controle de produtos, entradas e saídas
-          </Text>
         </View>
       </View>
 
-      <TextInput
-        style={styles.searchInput}
-        placeholder="Buscar por nome, código de barras ou ID"
-        placeholderTextColor="#777"
-        value={busca}
-        onChangeText={setBusca}
-      />
+      <View style={styles.searchInputContainer}>
+        <TextInput
+          style={styles.searchInputComIcone}
+          placeholder="Buscar por nome, código de barras ou ID"
+          placeholderTextColor="#888"
+          value={busca}
+          onChangeText={setBusca}
+        />
+
+        <TouchableOpacity
+          style={styles.botaoScannerInput}
+          onPress={() => abrirScanner('busca')}
+          activeOpacity={0.7}
+        >
+          <Ionicons name="barcode-outline" size={24} color="#000" />
+        </TouchableOpacity>
+      </View>
 
       <View style={styles.topButtons}>
         <TouchableOpacity style={styles.primaryButton} onPress={abrirCadastro}>
@@ -585,14 +619,24 @@ export default function EstoqueScreen() {
             />
 
             <Text style={styles.inputLabel}>Código de barras:</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Digite o código de barras"
-              placeholderTextColor="#888"
-              value={codigoBarras}
-              onChangeText={setCodigoBarras}
-              keyboardType="numeric"
-            />
+            <View style={styles.inputComIconeContainer}>
+              <TextInput
+                style={styles.inputComIcone}
+                placeholder="Digite o código de barras"
+                placeholderTextColor="#888"
+                value={codigoBarras}
+                onChangeText={setCodigoBarras}
+                keyboardType="numeric"
+              />
+
+              <TouchableOpacity
+                style={styles.botaoScannerInput}
+                onPress={() => abrirScanner('formulario')}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="barcode-outline" size={24} color="#000" />
+              </TouchableOpacity>
+            </View>
 
             <Text style={styles.inputLabel}>Preço da última entrada:</Text>
             <TextInput
@@ -658,13 +702,23 @@ export default function EstoqueScreen() {
 
             <Text style={styles.modalLabel}>Produto:</Text>
 
-            <TextInput
-              style={styles.searchInputMovimentacao}
-              placeholder="Buscar produto por nome, código ou ID"
-              placeholderTextColor="#777"
-              value={buscaMovimentacao}
-              onChangeText={setBuscaMovimentacao}
-            />
+            <View style={styles.inputComIconeContainer}>
+              <TextInput
+                style={styles.inputComIcone}
+                placeholder="Buscar produto por nome, ID ou código de barras"
+                placeholderTextColor="#888"
+                value={buscaMovimentacao}
+                onChangeText={setBuscaMovimentacao}
+              />
+
+              <TouchableOpacity
+                style={styles.botaoScannerInput}
+                onPress={() => abrirScanner('movimentacao')}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="barcode-outline" size={24} color="#000" />
+              </TouchableOpacity>
+            </View>
 
             <FlatList
               data={produtosFiltradosMovimentacao}
@@ -753,6 +807,13 @@ export default function EstoqueScreen() {
           </View>
         </View>
       </Modal>
+
+      <BarcodeScannerModal
+        visible={scannerVisivel}
+        onClose={() => setScannerVisivel(false)}
+        onCodeScanned={aoReceberCodigo}
+      />
+
     </View>
   );
 }
@@ -1177,5 +1238,45 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     fontSize: 14,
     letterSpacing: 0.5,
+  },
+  searchInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    marginBottom: 12,
+  },
+
+  searchInputComIcone: {
+    flex: 1,
+    height: 45,
+    color: '#000',
+  },
+
+  inputComIconeContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    borderWidth: 1.5,
+    borderColor: '#ccc',
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    marginBottom: 10,
+    height: 45,
+  },
+
+  inputComIcone: {
+    flex: 1,
+    height: '100%',
+    color: '#000',
+    fontSize: 15,
+  },
+
+  botaoScannerInput: {
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });
