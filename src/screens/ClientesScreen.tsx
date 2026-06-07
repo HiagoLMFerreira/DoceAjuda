@@ -10,16 +10,19 @@ import {
   Alert,
 } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
-import { getDatabase } from '../database/database';
 import { Cliente } from '../types';
+import {
+  listarClientes,
+  adicionarCliente,
+  atualizarCliente,
+  excluirCliente,
+} from '../database/database';
 
 export default function ClientesScreen() {
   const navigation = useNavigation();
+
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [modalAdd, setModalAdd] = useState(false);
-<<<<<<< Updated upstream
-  const [modalBusca, setModalBusca] = useState(false);
-=======
   const [modalDetalhes, setModalDetalhes] = useState(false);
 
   const [campoOrdenacao, setCampoOrdenacao] = useState<
@@ -28,25 +31,12 @@ export default function ClientesScreen() {
 
   const [ordemCrescente, setOrdemCrescente] = useState(true);
 
->>>>>>> Stashed changes
   const [novoNome, setNovoNome] = useState('');
+  const [novoTelefone, setNovoTelefone] = useState('');
+  const [novoEndereco, setNovoEndereco] = useState('');
+
   const [termoBusca, setTermoBusca] = useState('');
 
-<<<<<<< Updated upstream
-  const carregarClientes = async (filtro: string = '') => {
-    try {
-      const db = await getDatabase();
-      if (filtro.trim()) {
-        const resultado = await db.getAllAsync(
-          'SELECT * FROM clientes WHERE nome LIKE ?',
-          [`%${filtro}%`]
-        );
-        setClientes(resultado as Cliente[]);
-      } else {
-        const resultado = await db.getAllAsync('SELECT * FROM clientes');
-        setClientes(resultado as Cliente[]);
-      }
-=======
   const [clienteEditando, setClienteEditando] = useState<Cliente | null>(null);
   const [clienteSelecionado, setClienteSelecionado] = useState<Cliente | null>(
     null
@@ -56,9 +46,9 @@ export default function ClientesScreen() {
     try {
       const resultado = await listarClientes('');
       setClientes(resultado);
->>>>>>> Stashed changes
     } catch (error) {
       console.error('Erro ao carregar clientes:', error);
+      Alert.alert('Erro', 'Não foi possível carregar os clientes.');
     }
   };
 
@@ -68,9 +58,6 @@ export default function ClientesScreen() {
     }, [])
   );
 
-<<<<<<< Updated upstream
-  const adicionarCliente = async () => {
-=======
   const clientesFiltradosEOrdenados = useMemo(() => {
     const busca = termoBusca.trim().toLowerCase();
 
@@ -142,48 +129,12 @@ export default function ClientesScreen() {
   };
 
   const salvarCliente = async () => {
->>>>>>> Stashed changes
     if (!novoNome.trim()) {
       Alert.alert('Atenção', 'Informe o nome do cliente.');
       return;
     }
+
     try {
-<<<<<<< Updated upstream
-      const db = await getDatabase();
-      await db.runAsync(
-        'INSERT INTO clientes (nome, total_compras) VALUES (?, 0)',
-        [novoNome.trim()]
-      );
-      setNovoNome('');
-      setModalAdd(false);
-      carregarClientes(filtroAtivo);
-    } catch (error) {
-      console.error('Erro ao adicionar cliente:', error);
-      Alert.alert('Erro', 'Não foi possível adicionar o cliente.');
-    }
-  };
-
-  const aplicarBusca = () => {
-    setFiltroAtivo(termoBusca);
-    setModalBusca(false);
-  };
-
-  const limparBusca = () => {
-    setTermoBusca('');
-    setFiltroAtivo('');
-    setModalBusca(false);
-  };
-
-  const renderItem = ({ item }: { item: Cliente }) => (
-    <View style={styles.row}>
-      <Text style={[styles.cell, { textAlign: 'center', flex: 1 }]}>
-        {item.id}
-      </Text>
-      <Text style={[styles.cell, { flex: 2, textAlign: 'center' }]}>
-        {item.nome}
-      </Text>
-      <Text style={[styles.cell, { flex: 1.5, textAlign: 'center' }]}>
-=======
       if (clienteEditando) {
         await atualizarCliente(
           clienteEditando.id,
@@ -269,51 +220,14 @@ export default function ClientesScreen() {
       </Text>
 
       <Text style={[styles.cell, { flex: 1.3, textAlign: 'right' }]}>
->>>>>>> Stashed changes
         R$ {item.total_compras.toFixed(2)}
       </Text>
-    </View>
+    </TouchableOpacity>
   );
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-<<<<<<< Updated upstream
-        <TouchableOpacity
-          style={styles.backBtn}
-          onPress={() => navigation.goBack()}
-        >
-          <Text style={{ fontSize: 24, color: '#1a1a1a' }}>←</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>CLIENTES</Text>
-        <View style={styles.backBtn} />
-      </View>
-
-      {/* Botões de ação */}
-      <View style={styles.actions}>
-        <TouchableOpacity
-          style={styles.actionBtn}
-          onPress={() => setModalAdd(true)}
-        >
-          <Text style={styles.actionLabel}>Novo</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.actionBtn}
-          onPress={() => {
-            setTermoBusca(filtroAtivo); // preenche com o filtro atual
-            setModalBusca(true);
-          }}
-        >
-          <Text style={styles.actionLabel}>Buscar</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Tabela */}
-      <View style={styles.tableHeader}>
-        <Text style={[styles.tableHeaderText, { flex: 1 }]}>ID</Text>
-        <Text style={[styles.tableHeaderText, { flex: 2 }]}>CLIENTE</Text>
-        <Text style={[styles.tableHeaderText, { flex: 1.5 }]}>COMPRAS</Text>
-=======
               <TouchableOpacity
                 style={styles.backButton}
                 onPress={() => navigation.goBack()}
@@ -364,21 +278,18 @@ export default function ClientesScreen() {
             COMPRAS{indicadorOrdenacao('total_compras')}
           </Text>
         </TouchableOpacity>
->>>>>>> Stashed changes
       </View>
+
       <FlatList
         data={clientesFiltradosEOrdenados}
         renderItem={renderItem}
         keyExtractor={(item) => item.id.toString()}
+        contentContainerStyle={styles.listContent}
+        ListEmptyComponent={
+          <Text style={styles.emptyText}>Nenhum cliente encontrado.</Text>
+        }
       />
 
-<<<<<<< Updated upstream
-      {/* Modal de novo cliente */}
-      <Modal visible={modalAdd} transparent animationType="fade">
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Novo Cliente</Text>
-=======
       <Modal visible={modalAdd} transparent animationType="fade">
         <View style={styles.modalOverlay}>
           <View style={styles.formModalContent}>
@@ -398,7 +309,6 @@ export default function ClientesScreen() {
             )}
 
             <Text style={styles.inputLabel}>Nome:</Text>
->>>>>>> Stashed changes
             <TextInput
               style={styles.formInput}
               placeholder="Digite o nome do cliente"
@@ -407,8 +317,6 @@ export default function ClientesScreen() {
               onChangeText={setNovoNome}
               autoFocus
             />
-<<<<<<< Updated upstream
-=======
 
             <Text style={styles.inputLabel}>Telefone:</Text>
             <TextInput
@@ -430,20 +338,17 @@ export default function ClientesScreen() {
               multiline
             />
 
->>>>>>> Stashed changes
             <View style={styles.modalButtons}>
               <TouchableOpacity
                 style={[styles.modalButton, styles.cancelButton]}
-                onPress={() => {
-                  setModalAdd(false);
-                  setNovoNome('');
-                }}
+                onPress={fecharModalCliente}
               >
                 <Text style={styles.buttonText}>Cancelar</Text>
               </TouchableOpacity>
+
               <TouchableOpacity
                 style={[styles.modalButton, styles.saveButton]}
-                onPress={adicionarCliente}
+                onPress={salvarCliente}
               >
                 <Text style={styles.buttonText}>Salvar</Text>
               </TouchableOpacity>
@@ -452,34 +357,6 @@ export default function ClientesScreen() {
         </View>
       </Modal>
 
-<<<<<<< Updated upstream
-      {/* Modal de busca */}
-      <Modal visible={modalBusca} transparent animationType="fade">
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Buscar Cliente</Text>
-            <TextInput
-              style={styles.modalInput}
-              placeholder="Digite o nome"
-              value={termoBusca}
-              onChangeText={setTermoBusca}
-              autoFocus
-            />
-            <View style={styles.modalButtons}>
-              <TouchableOpacity
-                style={[styles.modalButton, styles.cancelButton]}
-                onPress={limparBusca}
-              >
-                <Text style={styles.buttonText}>Limpar</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.modalButton, styles.saveButton]}
-                onPress={aplicarBusca}
-              >
-                <Text style={styles.buttonText}>Buscar</Text>
-              </TouchableOpacity>
-            </View>
-=======
       <Modal visible={modalDetalhes} transparent animationType="fade">
         <View style={styles.modalOverlay}>
           <View style={styles.detailsModalContent}>
@@ -562,7 +439,6 @@ export default function ClientesScreen() {
                 </TouchableOpacity>
               </>
             )}
->>>>>>> Stashed changes
           </View>
         </View>
       </Modal>
@@ -570,11 +446,6 @@ export default function ClientesScreen() {
   );
 }
 
-<<<<<<< Updated upstream
-// Estilos seguindo exatamente o bloco enviado, acrescidos dos novos elementos
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
-=======
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -582,20 +453,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 50,
   },
->>>>>>> Stashed changes
   header: {
     backgroundColor: '#e0e0e0',
     borderRadius: 14,
     paddingVertical: 16,
     alignItems: 'center',
-<<<<<<< Updated upstream
-    padding: 16,
-    gap: 12,
-    margin: 14,
-    borderRadius: 12,
-  },
-  backBtn: { marginRight: 4 },
-=======
     justifyContent: 'center',
     marginBottom: 14,
     position: 'relative',
@@ -623,7 +485,6 @@ const styles = StyleSheet.create({
   headerTextArea: {
     alignItems: 'center',
   },
->>>>>>> Stashed changes
   headerTitle: {
     fontSize: 22,
     fontWeight: '900',
@@ -631,17 +492,6 @@ const styles = StyleSheet.create({
     letterSpacing: 2,
     textAlign: 'center',
   },
-<<<<<<< Updated upstream
-  actions: {
-    flexDirection: 'row',
-    paddingHorizontal: 14,
-    gap: 10,
-    marginBottom: 16,
-  },
-  actionBtn: {
-    flex: 1,
-    backgroundColor: '#e0e0e0',
-=======
 
   searchInput: {
     backgroundColor: '#fff',
@@ -657,15 +507,11 @@ const styles = StyleSheet.create({
 
   addButton: {
     backgroundColor: '#000',
->>>>>>> Stashed changes
     borderRadius: 12,
     alignItems: 'center',
     paddingVertical: 14,
     marginBottom: 16,
   },
-<<<<<<< Updated upstream
-  actionLabel: { fontSize: 13, fontWeight: '700', color: '#1a1a1a' },
-=======
 
   addButtonText: {
     fontSize: 13,
@@ -673,36 +519,22 @@ const styles = StyleSheet.create({
     color: '#fff',
   },
 
->>>>>>> Stashed changes
   tableHeader: {
     flexDirection: 'row',
     backgroundColor: '#c8c8c8',
     borderRadius: 6,
-<<<<<<< Updated upstream
-    marginBottom: 4,
-=======
     marginBottom: 8,
     overflow: 'hidden',
->>>>>>> Stashed changes
   },
+
   tableHeaderText: {
-<<<<<<< Updated upstream
-    fontSize: 12,
-    fontWeight: '800',
-=======
     fontSize: 11,
     fontWeight: '900',
->>>>>>> Stashed changes
     color: '#1a1a1a',
     letterSpacing: 1,
     textAlign: 'center',
   },
-<<<<<<< Updated upstream
-  row: {
-    flexDirection: 'row',
-=======
   headerColumn: {
->>>>>>> Stashed changes
     paddingVertical: 12,
     alignItems: 'center',
     justifyContent: 'center',
@@ -719,11 +551,7 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     alignItems: 'center',
   },
-  cell: { fontSize: 12, fontWeight: '700', color: '#1a1a1a' },
 
-<<<<<<< Updated upstream
-  // Estilos para modais (adicionais, seguindo a mesma paleta)
-=======
   cell: {
     fontSize: 12,
     fontWeight: '800',
@@ -742,16 +570,12 @@ const styles = StyleSheet.create({
     color: '#777',
   },
 
->>>>>>> Stashed changes
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.5)',
     justifyContent: 'center',
     alignItems: 'center',
   },
-<<<<<<< Updated upstream
-  modalContent: {
-=======
 
   formModalContent: {
     width: '85%',
@@ -764,7 +588,6 @@ const styles = StyleSheet.create({
   },
 
   detailsModalContent: {
->>>>>>> Stashed changes
     width: '85%',
     backgroundColor: '#fff',
     borderRadius: 12,
@@ -772,6 +595,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#e0e0e0',
   },
+
   modalTitle: {
     fontSize: 18,
     fontWeight: '800',
@@ -780,9 +604,6 @@ const styles = StyleSheet.create({
     marginBottom: 15,
     letterSpacing: 2,
   },
-<<<<<<< Updated upstream
-  modalInput: {
-=======
 
   inputLabel: {
     fontSize: 14,
@@ -792,7 +613,6 @@ const styles = StyleSheet.create({
   },
 
   formInput: {
->>>>>>> Stashed changes
     backgroundColor: '#f5f5f5',
     borderRadius: 8,
     padding: 12,
@@ -812,11 +632,13 @@ const styles = StyleSheet.create({
     minHeight: 80,
     textAlignVertical: 'top',
   },
+
   modalButtons: {
     flexDirection: 'row',
     justifyContent: 'space-around',
     gap: 10,
   },
+
   modalButton: {
     flex: 1,
     paddingVertical: 10,
@@ -824,19 +646,20 @@ const styles = StyleSheet.create({
     minWidth: 100,
     alignItems: 'center',
   },
+
   cancelButton: {
     backgroundColor: '#aaa',
   },
+
   saveButton: {
     backgroundColor: '#000',
   },
+
   buttonText: {
     color: '#fff',
     fontWeight: 'bold',
     fontSize: 14,
   },
-<<<<<<< Updated upstream
-=======
 
   detailsBox: {
     backgroundColor: '#f5f5f5',
@@ -910,5 +733,4 @@ const styles = StyleSheet.create({
   closeButton: {
     backgroundColor: '#aaa',
   },
->>>>>>> Stashed changes
 });

@@ -2,6 +2,16 @@ import * as SQLite from 'expo-sqlite';
 
 let db: SQLite.SQLiteDatabase;
 
+// ===============================
+// TYPES GERAIS
+// ===============================
+
+export type DirecaoOrdenacao = 'ASC' | 'DESC';
+
+// ===============================
+// TYPES DE PRODUTOS / ESTOQUE
+// ===============================
+
 export type ProdutoEstoque = {
   id: number;
   descricao: string;
@@ -10,6 +20,8 @@ export type ProdutoEstoque = {
   preco_ultima_entrada: number;
   preco_medio: number;
   quantidade: number;
+  ativo?: number;
+  preco?: number;
 };
 
 export type NovoProdutoEstoque = {
@@ -37,164 +49,191 @@ export type OrdenarProdutoPor =
   | 'preco_medio'
   | 'quantidade';
 
-export type DirecaoOrdenacao = 'ASC' | 'DESC';
+// ===============================
+// TYPES DE CLIENTES
+// ===============================
+
+export type ClienteDatabase = {
+  id: number;
+  nome: string;
+  telefone: string;
+  endereco: string;
+  total_compras: number;
+};
+
+export type NovoCliente = {
+  nome: string;
+  telefone?: string;
+  endereco?: string;
+};
+
+export type EditarCliente = {
+  id: number;
+  nome: string;
+  telefone?: string;
+  endereco?: string;
+};
+
+export type OrdenarClientePor = 'id' | 'nome' | 'total_compras';
+
+// ===============================
+// DATABASE
+// ===============================
 
 export async function getDatabase(): Promise<SQLite.SQLiteDatabase> {
   if (!db) {
     db = await SQLite.openDatabaseAsync('doceajuda.db');
+
     await db.execAsync(`
       PRAGMA journal_mode = WAL;
+
       CREATE TABLE IF NOT EXISTS produtos (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         descricao TEXT NOT NULL,
-<<<<<<< Updated upstream
-        quantidade REAL DEFAULT 0,
-        ativo INTEGER DEFAULT 1,
-        preco REAL DEFAULT 0,
-        preco_medio REAL DEFAULT 0
-=======
         nome TEXT DEFAULT '',
         codigo_barras TEXT DEFAULT '',
         preco_ultima_entrada REAL DEFAULT 0,
         preco_medio REAL DEFAULT 0,
-        quantidade REAL DEFAULT 0
->>>>>>> Stashed changes
+        quantidade REAL DEFAULT 0,
+        ativo INTEGER DEFAULT 1,
+        preco REAL DEFAULT 0
       );
+
       CREATE TABLE IF NOT EXISTS movimentacoes (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         produto_id INTEGER,
         tipo TEXT CHECK(tipo IN ('entrada','saida')),
         quantidade REAL,
-<<<<<<< Updated upstream
-        preco_unitario REAL,
-=======
         preco_unitario REAL DEFAULT 0,
->>>>>>> Stashed changes
         data TEXT DEFAULT (datetime('now','localtime')),
         FOREIGN KEY(produto_id) REFERENCES produtos(id)
       );
+
       CREATE TABLE IF NOT EXISTS clientes (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         nome TEXT NOT NULL,
+        telefone TEXT DEFAULT '',
+        endereco TEXT DEFAULT '',
         total_compras REAL DEFAULT 0
       );
     `);
 
-<<<<<<< Updated upstream
-    // Atualiza tabelas existentes
-    try { await db.execAsync('ALTER TABLE produtos ADD COLUMN ativo INTEGER DEFAULT 1'); } catch {}
-    try { await db.execAsync('ALTER TABLE produtos ADD COLUMN preco REAL DEFAULT 0'); } catch {}
-    try { await db.execAsync('ALTER TABLE produtos ADD COLUMN preco_medio REAL DEFAULT 0'); } catch {}
-    try { await db.execAsync('ALTER TABLE movimentacoes ADD COLUMN preco_unitario REAL'); } catch {}
-=======
-    // Migração da tabela produtos para quem já tinha o app instalado
-    const colunasProdutos = await db.getAllAsync<{ name: string }>(
-      'PRAGMA table_info(produtos)'
-    );
-
-    const existeColunaProduto = (nomeColuna: string) =>
-      colunasProdutos.some((coluna) => coluna.name === nomeColuna);
-
-    if (!existeColunaProduto('nome')) {
-      await db.execAsync(`
-        ALTER TABLE produtos ADD COLUMN nome TEXT DEFAULT '';
-      `);
-    }
-
-    if (!existeColunaProduto('codigo_barras')) {
-      await db.execAsync(`
-        ALTER TABLE produtos ADD COLUMN codigo_barras TEXT DEFAULT '';
-      `);
-    }
-
-    if (!existeColunaProduto('preco_ultima_entrada')) {
-      await db.execAsync(`
-        ALTER TABLE produtos ADD COLUMN preco_ultima_entrada REAL DEFAULT 0;
-      `);
-    }
-
-    if (!existeColunaProduto('preco_medio')) {
-      await db.execAsync(`
-        ALTER TABLE produtos ADD COLUMN preco_medio REAL DEFAULT 0;
-      `);
-    }
-
-    // Mantém compatibilidade com os produtos antigos que usavam "descricao"
-    await db.execAsync(`
-      UPDATE produtos
-      SET nome = descricao
-      WHERE nome IS NULL OR nome = '';
-    `);
-
-    // Migração da tabela movimentacoes para salvar preço da entrada
-    const colunasMovimentacoes = await db.getAllAsync<{ name: string }>(
-      'PRAGMA table_info(movimentacoes)'
-    );
-
-    const existeColunaMovimentacao = (nomeColuna: string) =>
-      colunasMovimentacoes.some((coluna) => coluna.name === nomeColuna);
-
-    if (!existeColunaMovimentacao('preco_unitario')) {
-      await db.execAsync(`
-        ALTER TABLE movimentacoes ADD COLUMN preco_unitario REAL DEFAULT 0;
-      `);
-    }
-
-    // Migração da tabela clientes
-    const colunasClientes = await db.getAllAsync<{ name: string }>(
-      'PRAGMA table_info(clientes)'
-    );
-
-    const existeColunaCliente = (nomeColuna: string) =>
-      colunasClientes.some((coluna) => coluna.name === nomeColuna);
-
-    if (!existeColunaCliente('telefone')) {
-      await db.execAsync(`
-        ALTER TABLE clientes ADD COLUMN telefone TEXT DEFAULT '';
-      `);
-    }
-
-    if (!existeColunaCliente('endereco')) {
-      await db.execAsync(`
-        ALTER TABLE clientes ADD COLUMN endereco TEXT DEFAULT '';
-      `);
-    }
->>>>>>> Stashed changes
+    await aplicarMigracoesProdutos();
+    await aplicarMigracoesMovimentacoes();
+    await aplicarMigracoesClientes();
   }
+
   return db;
 }
 
-<<<<<<< Updated upstream
-// ---------- PREÇO MÉDIO ----------
-export async function atualizarPrecoMedio(produtoId: number) {
-  const database = await getDatabase();
-  const entradas = await database.getAllAsync(
-    `SELECT preco_unitario FROM movimentacoes 
-     WHERE produto_id = ? AND tipo = 'entrada' AND preco_unitario IS NOT NULL 
-     ORDER BY id DESC LIMIT 3`,
-    [produtoId]
-  ) as { preco_unitario: number }[];
+// ===============================
+// MIGRAÇÕES
+// ===============================
 
-  let media = 0;
-  if (entradas.length > 0) {
-    const precos = entradas.map(e => e.preco_unitario);
-    media = precos.reduce((a, b) => a + b, 0) / precos.length;
+async function colunaExiste(
+  database: SQLite.SQLiteDatabase,
+  tabela: string,
+  coluna: string
+): Promise<boolean> {
+  const colunas = await database.getAllAsync<{ name: string }>(
+    `PRAGMA table_info(${tabela})`
+  );
+
+  return colunas.some((item) => item.name === coluna);
+}
+
+async function adicionarColunaSeNaoExistir(
+  tabela: string,
+  coluna: string,
+  definicao: string
+): Promise<void> {
+  const database = db;
+
+  const existe = await colunaExiste(database, tabela, coluna);
+
+  if (!existe) {
+    await database.execAsync(`
+      ALTER TABLE ${tabela} ADD COLUMN ${coluna} ${definicao};
+    `);
   }
+}
 
-  await database.runAsync(
-    'UPDATE produtos SET preco_medio = ? WHERE id = ?',
-    [media, produtoId]
+async function aplicarMigracoesProdutos(): Promise<void> {
+  await adicionarColunaSeNaoExistir('produtos', 'nome', "TEXT DEFAULT ''");
+  await adicionarColunaSeNaoExistir('produtos', 'codigo_barras', "TEXT DEFAULT ''");
+  await adicionarColunaSeNaoExistir(
+    'produtos',
+    'preco_ultima_entrada',
+    'REAL DEFAULT 0'
+  );
+  await adicionarColunaSeNaoExistir('produtos', 'preco_medio', 'REAL DEFAULT 0');
+  await adicionarColunaSeNaoExistir('produtos', 'quantidade', 'REAL DEFAULT 0');
+  await adicionarColunaSeNaoExistir('produtos', 'ativo', 'INTEGER DEFAULT 1');
+  await adicionarColunaSeNaoExistir('produtos', 'preco', 'REAL DEFAULT 0');
+
+  await db.execAsync(`
+    UPDATE produtos
+    SET nome = descricao
+    WHERE nome IS NULL OR nome = '';
+  `);
+
+  await db.execAsync(`
+    UPDATE produtos
+    SET preco_ultima_entrada = preco
+    WHERE (preco_ultima_entrada IS NULL OR preco_ultima_entrada = 0)
+      AND preco IS NOT NULL
+      AND preco > 0;
+  `);
+
+  await db.execAsync(`
+    UPDATE produtos
+    SET preco_medio = preco
+    WHERE (preco_medio IS NULL OR preco_medio = 0)
+      AND preco IS NOT NULL
+      AND preco > 0;
+  `);
+}
+
+async function aplicarMigracoesMovimentacoes(): Promise<void> {
+  await adicionarColunaSeNaoExistir(
+    'movimentacoes',
+    'preco_unitario',
+    'REAL DEFAULT 0'
   );
 }
 
-// ---------- MOVIMENTAÇÃO (ATUALIZADA) ----------
-=======
+async function aplicarMigracoesClientes(): Promise<void> {
+  await adicionarColunaSeNaoExistir('clientes', 'telefone', "TEXT DEFAULT ''");
+  await adicionarColunaSeNaoExistir('clientes', 'endereco', "TEXT DEFAULT ''");
+  await adicionarColunaSeNaoExistir(
+    'clientes',
+    'total_compras',
+    'REAL DEFAULT 0'
+  );
+}
+
 // ===============================
-// FUNÇÕES DO ESTOQUE
+// FUNÇÕES AUXILIARES
+// ===============================
+
+function tratarNumero(valor: number | undefined | null): number {
+  if (valor === undefined || valor === null || Number.isNaN(valor)) {
+    return 0;
+  }
+
+  return valor;
+}
+
+function validarDirecaoOrdenacao(direcao: DirecaoOrdenacao): DirecaoOrdenacao {
+  return direcao === 'DESC' ? 'DESC' : 'ASC';
+}
+
+// ===============================
+// CRUD DE PRODUTOS / ESTOQUE
 // ===============================
 
 export async function listarProdutos(
-  ordenarPor: OrdenarProdutoPor = 'id',
+  ordenarPor: OrdenarProdutoPor = 'nome',
   direcao: DirecaoOrdenacao = 'ASC'
 ): Promise<ProdutoEstoque[]> {
   const database = await getDatabase();
@@ -210,9 +249,9 @@ export async function listarProdutos(
 
   const colunaOrdenacao = colunasPermitidas.includes(ordenarPor)
     ? ordenarPor
-    : 'id';
+    : 'nome';
 
-  const direcaoOrdenacao = direcao === 'DESC' ? 'DESC' : 'ASC';
+  const direcaoOrdenacao = validarDirecaoOrdenacao(direcao);
 
   const resultado = await database.getAllAsync<ProdutoEstoque>(`
     SELECT
@@ -222,22 +261,112 @@ export async function listarProdutos(
       codigo_barras,
       preco_ultima_entrada,
       preco_medio,
-      quantidade
+      quantidade,
+      ativo,
+      preco
     FROM produtos
+    WHERE ativo = 1
     ORDER BY ${colunaOrdenacao} ${direcaoOrdenacao}
   `);
 
   return resultado;
 }
 
-export async function cadastrarProduto(produto: NovoProdutoEstoque): Promise<void> {
+export async function buscarProdutos(
+  filtro: string = '',
+  ordenarPor: OrdenarProdutoPor = 'nome',
+  direcao: DirecaoOrdenacao = 'ASC'
+): Promise<ProdutoEstoque[]> {
+  const database = await getDatabase();
+
+  const colunasPermitidas: OrdenarProdutoPor[] = [
+    'id',
+    'nome',
+    'codigo_barras',
+    'preco_ultima_entrada',
+    'preco_medio',
+    'quantidade',
+  ];
+
+  const colunaOrdenacao = colunasPermitidas.includes(ordenarPor)
+    ? ordenarPor
+    : 'nome';
+
+  const direcaoOrdenacao = validarDirecaoOrdenacao(direcao);
+  const busca = filtro.trim();
+
+  if (!busca) {
+    return listarProdutos(ordenarPor, direcao);
+  }
+
+  const buscaNumerica = Number(busca);
+
+  if (!Number.isNaN(buscaNumerica)) {
+    const resultado = await database.getAllAsync<ProdutoEstoque>(
+      `
+      SELECT
+        id,
+        descricao,
+        nome,
+        codigo_barras,
+        preco_ultima_entrada,
+        preco_medio,
+        quantidade,
+        ativo,
+        preco
+      FROM produtos
+      WHERE ativo = 1
+        AND (
+          id = ?
+          OR nome LIKE ?
+          OR descricao LIKE ?
+          OR codigo_barras LIKE ?
+        )
+      ORDER BY ${colunaOrdenacao} ${direcaoOrdenacao}
+      `,
+      [buscaNumerica, `%${busca}%`, `%${busca}%`, `%${busca}%`]
+    );
+
+    return resultado;
+  }
+
+  const resultado = await database.getAllAsync<ProdutoEstoque>(
+    `
+    SELECT
+      id,
+      descricao,
+      nome,
+      codigo_barras,
+      preco_ultima_entrada,
+      preco_medio,
+      quantidade,
+      ativo,
+      preco
+    FROM produtos
+    WHERE ativo = 1
+      AND (
+        nome LIKE ?
+        OR descricao LIKE ?
+        OR codigo_barras LIKE ?
+      )
+    ORDER BY ${colunaOrdenacao} ${direcaoOrdenacao}
+    `,
+    [`%${busca}%`, `%${busca}%`, `%${busca}%`]
+  );
+
+  return resultado;
+}
+
+export async function cadastrarProduto(
+  produto: NovoProdutoEstoque
+): Promise<void> {
   const database = await getDatabase();
 
   const nome = produto.nome.trim();
   const codigoBarras = produto.codigo_barras?.trim() || '';
-  const precoUltimaEntrada = produto.preco_ultima_entrada ?? 0;
+  const precoUltimaEntrada = tratarNumero(produto.preco_ultima_entrada);
   const precoMedio = produto.preco_medio ?? precoUltimaEntrada;
-  const quantidade = produto.quantidade ?? 0;
+  const quantidade = tratarNumero(produto.quantidade);
 
   if (!nome) {
     throw new Error('Informe o nome do produto.');
@@ -263,8 +392,10 @@ export async function cadastrarProduto(produto: NovoProdutoEstoque): Promise<voi
       codigo_barras,
       preco_ultima_entrada,
       preco_medio,
-      quantidade
-    ) VALUES (?, ?, ?, ?, ?, ?)
+      quantidade,
+      ativo,
+      preco
+    ) VALUES (?, ?, ?, ?, ?, ?, 1, ?)
     `,
     [
       nome,
@@ -273,18 +404,21 @@ export async function cadastrarProduto(produto: NovoProdutoEstoque): Promise<voi
       precoUltimaEntrada,
       precoMedio,
       quantidade,
+      precoUltimaEntrada,
     ]
   );
 }
 
-export async function editarProduto(produto: EditarProdutoEstoque): Promise<void> {
+export async function editarProduto(
+  produto: EditarProdutoEstoque
+): Promise<void> {
   const database = await getDatabase();
 
   const nome = produto.nome.trim();
   const codigoBarras = produto.codigo_barras?.trim() || '';
-  const precoUltimaEntrada = produto.preco_ultima_entrada ?? 0;
-  const precoMedio = produto.preco_medio ?? 0;
-  const quantidade = produto.quantidade ?? 0;
+  const precoUltimaEntrada = tratarNumero(produto.preco_ultima_entrada);
+  const precoMedio = tratarNumero(produto.preco_medio);
+  const quantidade = tratarNumero(produto.quantidade);
 
   if (!produto.id) {
     throw new Error('Produto inválido.');
@@ -315,7 +449,8 @@ export async function editarProduto(produto: EditarProdutoEstoque): Promise<void
       codigo_barras = ?,
       preco_ultima_entrada = ?,
       preco_medio = ?,
-      quantidade = ?
+      quantidade = ?,
+      preco = ?
     WHERE id = ?
     `,
     [
@@ -325,6 +460,7 @@ export async function editarProduto(produto: EditarProdutoEstoque): Promise<void
       precoUltimaEntrada,
       precoMedio,
       quantidade,
+      precoUltimaEntrada,
       produto.id,
     ]
   );
@@ -348,10 +484,27 @@ export async function excluirProduto(produtoId: number): Promise<void> {
   );
 }
 
+export async function inativarProduto(produtoId: number): Promise<void> {
+  const database = await getDatabase();
+
+  if (!produtoId) {
+    throw new Error('Produto inválido.');
+  }
+
+  await database.runAsync(
+    'UPDATE produtos SET ativo = 0 WHERE id = ?',
+    [produtoId]
+  );
+}
+
 export async function buscarProdutoPorId(
   produtoId: number
 ): Promise<ProdutoEstoque | null> {
   const database = await getDatabase();
+
+  if (!produtoId) {
+    throw new Error('Produto inválido.');
+  }
 
   const produto = await database.getFirstAsync<ProdutoEstoque>(
     `
@@ -362,7 +515,9 @@ export async function buscarProdutoPorId(
       codigo_barras,
       preco_ultima_entrada,
       preco_medio,
-      quantidade
+      quantidade,
+      ativo,
+      preco
     FROM produtos
     WHERE id = ?
     `,
@@ -372,32 +527,14 @@ export async function buscarProdutoPorId(
   return produto ?? null;
 }
 
->>>>>>> Stashed changes
+// ===============================
+// MOVIMENTAÇÕES DE ESTOQUE
+// ===============================
+
 export async function inserirMovimentacao(
   produtoId: number,
   tipo: 'entrada' | 'saida',
   qtd: number,
-<<<<<<< Updated upstream
-  precoUnitario?: number
-) {
-  const database = await getDatabase();
-
-  // Se for saída, verifica o estoque
-  if (tipo === 'saida') {
-    const produto = await database.getFirstAsync(
-      'SELECT quantidade FROM produtos WHERE id = ?',
-      [produtoId]
-    );
-    if (!produto || (produto as any).quantidade < qtd) {
-      throw new Error('Quantidade insuficiente em estoque.');
-    }
-  }
-
-  // Registra a movimentação
-  await database.runAsync(
-    'INSERT INTO movimentacoes (produto_id, tipo, quantidade, preco_unitario) VALUES (?, ?, ?, ?)',
-    [produtoId, tipo, qtd, precoUnitario ?? null]
-=======
   precoUnitario: number = 0
 ): Promise<void> {
   const database = await getDatabase();
@@ -434,7 +571,6 @@ export async function inserirMovimentacao(
     ) VALUES (?, ?, ?, ?)
     `,
     [produtoId, tipo, qtd, precoUnitario]
->>>>>>> Stashed changes
   );
 
   if (tipo === 'entrada') {
@@ -444,9 +580,9 @@ export async function inserirMovimentacao(
 
     let novoPrecoMedio = precoMedioAtual;
 
-    if (precoUnitario > 0) {
+    if (precoUnitario > 0 && novaQuantidade > 0) {
       novoPrecoMedio =
-        ((quantidadeAtual * precoMedioAtual) + (qtd * precoUnitario)) /
+        (quantidadeAtual * precoMedioAtual + qtd * precoUnitario) /
         novaQuantidade;
     }
 
@@ -456,23 +592,18 @@ export async function inserirMovimentacao(
       SET
         quantidade = ?,
         preco_ultima_entrada = ?,
-        preco_medio = ?
+        preco_medio = ?,
+        preco = ?
       WHERE id = ?
       `,
       [
         novaQuantidade,
         precoUnitario > 0 ? precoUnitario : produto.preco_ultima_entrada,
         novoPrecoMedio,
+        precoUnitario > 0 ? precoUnitario : produto.preco ?? 0,
         produtoId,
       ]
     );
-    if (precoUnitario && precoUnitario > 0) {
-      await database.runAsync(
-        'UPDATE produtos SET preco = ? WHERE id = ?',
-        [precoUnitario, produtoId]
-      );
-    }
-    await atualizarPrecoMedio(produtoId);  // ✅ recalcula a média
   } else {
     const novaQuantidade = produto.quantidade - qtd;
 
@@ -490,54 +621,231 @@ export async function inserirMovimentacao(
     );
   }
 }
-<<<<<<< Updated upstream
 
-// ---------- CRUD PRODUTOS ----------
-export async function listarProdutos(filtro: string = '', somenteAtivos: boolean = true) {
-  const db = await getDatabase();
-  let query = 'SELECT * FROM produtos WHERE 1=1';
-  const params: any[] = [];
-=======
+export async function listarMovimentacoesProduto(produtoId: number) {
+  const database = await getDatabase();
+
+  if (!produtoId) {
+    throw new Error('Produto inválido.');
+  }
+
+  const movimentacoes = await database.getAllAsync(
+    `
+    SELECT
+      id,
+      produto_id,
+      tipo,
+      quantidade,
+      preco_unitario,
+      data
+    FROM movimentacoes
+    WHERE produto_id = ?
+    ORDER BY id DESC
+    `,
+    [produtoId]
+  );
+
+  return movimentacoes;
+}
+
 // ===============================
 // CRUD DE CLIENTES
 // ===============================
->>>>>>> Stashed changes
 
-  if (somenteAtivos) {
-    query += ' AND ativo = 1';
+export async function listarClientes(
+  filtro: string = '',
+  ordenarPor: OrdenarClientePor = 'nome',
+  direcao: DirecaoOrdenacao = 'ASC'
+): Promise<ClienteDatabase[]> {
+  const database = await getDatabase();
+
+  const colunasPermitidas: OrdenarClientePor[] = [
+    'id',
+    'nome',
+    'total_compras',
+  ];
+
+  const colunaOrdenacao = colunasPermitidas.includes(ordenarPor)
+    ? ordenarPor
+    : 'nome';
+
+  const direcaoOrdenacao = validarDirecaoOrdenacao(direcao);
+  const busca = filtro.trim();
+
+  if (busca) {
+    const buscaNumerica = Number(busca);
+
+    if (!Number.isNaN(buscaNumerica)) {
+      const resultado = await database.getAllAsync<ClienteDatabase>(
+        `
+        SELECT
+          id,
+          nome,
+          telefone,
+          endereco,
+          total_compras
+        FROM clientes
+        WHERE id = ? OR nome LIKE ?
+        ORDER BY ${colunaOrdenacao} ${direcaoOrdenacao}
+        `,
+        [buscaNumerica, `%${busca}%`]
+      );
+
+      return resultado;
+    }
+
+    const resultado = await database.getAllAsync<ClienteDatabase>(
+      `
+      SELECT
+        id,
+        nome,
+        telefone,
+        endereco,
+        total_compras
+      FROM clientes
+      WHERE nome LIKE ?
+      ORDER BY ${colunaOrdenacao} ${direcaoOrdenacao}
+      `,
+      [`%${busca}%`]
+    );
+
+    return resultado;
   }
-  if (filtro.trim()) {
-    query += ' AND descricao LIKE ?';
-    params.push(`%${filtro.trim()}%`);
-  }
-  query += ' ORDER BY id';
-  return await db.getAllAsync(query, params);
+
+  const resultado = await database.getAllAsync<ClienteDatabase>(`
+    SELECT
+      id,
+      nome,
+      telefone,
+      endereco,
+      total_compras
+    FROM clientes
+    ORDER BY ${colunaOrdenacao} ${direcaoOrdenacao}
+  `);
+
+  return resultado;
 }
 
-export async function cadastrarProduto(descricao: string, preco: number = 0) {
-  const db = await getDatabase();
-  await db.runAsync(
-    'INSERT INTO produtos (descricao, quantidade, ativo, preco) VALUES (?, 0, 1, ?)',
-    [descricao, preco]
+export async function adicionarCliente(
+  nome: string,
+  telefone: string = '',
+  endereco: string = ''
+): Promise<void> {
+  const database = await getDatabase();
+
+  const nomeTratado = nome.trim();
+  const telefoneTratado = telefone.trim();
+  const enderecoTratado = endereco.trim();
+
+  if (!nomeTratado) {
+    throw new Error('Informe o nome do cliente.');
+  }
+
+  await database.runAsync(
+    `
+    INSERT INTO clientes (
+      nome,
+      telefone,
+      endereco,
+      total_compras
+    ) VALUES (?, ?, ?, 0)
+    `,
+    [nomeTratado, telefoneTratado, enderecoTratado]
   );
 }
 
-export async function atualizarProduto(id: number, descricao: string, preco?: number) {
-  const db = await getDatabase();
-  if (preco !== undefined) {
-    await db.runAsync(
-      'UPDATE produtos SET descricao = ?, preco = ? WHERE id = ?',
-      [descricao, preco, id]
-    );
-  } else {
-    await db.runAsync(
-      'UPDATE produtos SET descricao = ? WHERE id = ?',
-      [descricao, id]
-    );
+export async function atualizarCliente(
+  id: number,
+  nome: string,
+  telefone: string = '',
+  endereco: string = ''
+): Promise<void> {
+  const database = await getDatabase();
+
+  const nomeTratado = nome.trim();
+  const telefoneTratado = telefone.trim();
+  const enderecoTratado = endereco.trim();
+
+  if (!id) {
+    throw new Error('Cliente inválido.');
   }
+
+  if (!nomeTratado) {
+    throw new Error('Informe o nome do cliente.');
+  }
+
+  await database.runAsync(
+    `
+    UPDATE clientes
+    SET
+      nome = ?,
+      telefone = ?,
+      endereco = ?
+    WHERE id = ?
+    `,
+    [nomeTratado, telefoneTratado, enderecoTratado, id]
+  );
 }
 
-export async function inativarProduto(id: number) {
-  const db = await getDatabase();
-  await db.runAsync('UPDATE produtos SET ativo = 0 WHERE id = ?', [id]);
+export async function excluirCliente(id: number): Promise<void> {
+  const database = await getDatabase();
+
+  if (!id) {
+    throw new Error('Cliente inválido.');
+  }
+
+  await database.runAsync(
+    'DELETE FROM clientes WHERE id = ?',
+    [id]
+  );
+}
+
+export async function buscarClientePorId(
+  id: number
+): Promise<ClienteDatabase | null> {
+  const database = await getDatabase();
+
+  if (!id) {
+    throw new Error('Cliente inválido.');
+  }
+
+  const cliente = await database.getFirstAsync<ClienteDatabase>(
+    `
+    SELECT
+      id,
+      nome,
+      telefone,
+      endereco,
+      total_compras
+    FROM clientes
+    WHERE id = ?
+    `,
+    [id]
+  );
+
+  return cliente ?? null;
+}
+
+export async function atualizarTotalComprasCliente(
+  id: number,
+  valorTotal: number
+): Promise<void> {
+  const database = await getDatabase();
+
+  if (!id) {
+    throw new Error('Cliente inválido.');
+  }
+
+  if (valorTotal < 0) {
+    throw new Error('O valor total não pode ser negativo.');
+  }
+
+  await database.runAsync(
+    `
+    UPDATE clientes
+    SET total_compras = ?
+    WHERE id = ?
+    `,
+    [valorTotal, id]
+  );
 }

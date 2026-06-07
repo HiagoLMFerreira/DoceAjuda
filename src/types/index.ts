@@ -7,11 +7,13 @@ export interface Produto {
   preco_medio: number;
 }
 
-export interface Cliente {
+export type Cliente = {
   id: number;
   nome: string;
+  telefone: string;
+  endereco: string;
   total_compras: number;
-}
+};
 
 export type RootStackParamList = {
   Login: undefined;
