@@ -22,21 +22,24 @@ type Props = {
 export default function LoginScreen({ navigation }: Props) {
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
-  const { login, error } = useAuth();
+  const { login } = useAuth();
 
   const handleLogin = async () => {
     if (!email.trim() || !senha.trim()) {
-      Alert.alert('Atenção', 'Preencha todos os campos.');
+      Alert.alert('Atenção', 'Informe o login e a senha para continuar.');
       return;
     }
+
     try {
       await login(email.trim(), senha);
       navigation.replace('Menu');
     } catch (err: any) {
-      Alert.alert('Erro', error || 'Credenciais inválidas.');
+      Alert.alert(
+        'Erro no login',
+        'Login ou senha inválidos. Verifique os dados e tente novamente.'
+      );
     }
   };
-
   return (
     <KeyboardAvoidingView
       style={styles.container}
