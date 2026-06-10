@@ -77,6 +77,52 @@ export type EditarCliente = {
 export type OrdenarClientePor = 'id' | 'nome' | 'total_compras';
 
 // ===============================
+// TYPES DE RECEITAS
+// ===============================
+
+export type ReceitaDatabase = {
+  id: number;
+  nome: string;
+  rendimento: string;
+  modo_preparo: string;
+  created_at: string;
+};
+
+export type ReceitaItemDatabase = {
+  id: number;
+  receita_id: number;
+  produto_id: number;
+  quantidade_usada: string;
+};
+
+export type ReceitaItemDetalhado = {
+  id: number;
+  receita_id: number;
+  produto_id: number;
+  produto_nome: string;
+  codigo_barras: string;
+  quantidade_usada: string;
+};
+
+export type ReceitaDetalhada = ReceitaDatabase & {
+  itens: ReceitaItemDetalhado[];
+};
+
+export type NovoItemReceita = {
+  produto_id: number;
+  quantidade_usada: string;
+};
+
+export type ProdutoParaReceita = {
+  id: number;
+  descricao: string;
+  nome: string;
+  codigo_barras: string;
+  preco_medio: number;
+  quantidade: number;
+};
+
+// ===============================
 // DATABASE
 // ===============================
 
@@ -116,11 +162,29 @@ export async function getDatabase(): Promise<SQLite.SQLiteDatabase> {
         endereco TEXT DEFAULT '',
         total_compras REAL DEFAULT 0
       );
+
+      CREATE TABLE IF NOT EXISTS receitas (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        nome TEXT NOT NULL,
+        rendimento TEXT DEFAULT '',
+        modo_preparo TEXT DEFAULT '',
+        created_at TEXT DEFAULT (datetime('now','localtime'))
+      );
+      
+      CREATE TABLE IF NOT EXISTS receita_itens (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        receita_id INTEGER NOT NULL,
+        produto_id INTEGER NOT NULL,
+        quantidade_usada TEXT DEFAULT '',
+        FOREIGN KEY(receita_id) REFERENCES receitas(id),
+        FOREIGN KEY(produto_id) REFERENCES produtos(id)
+      );
     `);
 
     await aplicarMigracoesProdutos();
     await aplicarMigracoesMovimentacoes();
     await aplicarMigracoesClientes();
+    await aplicarMigracoesReceitas();
   }
 
   return db;
@@ -209,6 +273,22 @@ async function aplicarMigracoesClientes(): Promise<void> {
     'clientes',
     'total_compras',
     'REAL DEFAULT 0'
+  );
+}
+
+async function aplicarMigracoesReceitas(): Promise<void> {
+  await adicionarColunaSeNaoExistir('receitas', 'rendimento', "TEXT DEFAULT ''");
+  await adicionarColunaSeNaoExistir('receitas', 'modo_preparo', "TEXT DEFAULT ''");
+  await adicionarColunaSeNaoExistir(
+    'receitas',
+    'created_at',
+    "TEXT DEFAULT (datetime('now','localtime'))"
+  );
+
+  await adicionarColunaSeNaoExistir(
+    'receita_itens',
+    'quantidade_usada',
+    "TEXT DEFAULT ''"
   );
 }
 
@@ -475,6 +555,11 @@ export async function excluirProduto(produtoId: number): Promise<void> {
 
   await database.runAsync(
     'DELETE FROM movimentacoes WHERE produto_id = ?',
+    [produtoId]
+  );
+
+  await database.runAsync(
+    'DELETE FROM receita_itens WHERE produto_id = ?',
     [produtoId]
   );
 
@@ -848,4 +933,427 @@ export async function atualizarTotalComprasCliente(
     `,
     [valorTotal, id]
   );
+}
+
+// ===============================
+// CRUD DE RECEITAS
+// ===============================
+
+export async function listarReceitas(
+  filtro: string = ''
+): Promise<ReceitaDatabase[]> {
+  const database = await getDatabase();
+  const busca = filtro.trim();
+
+  if (busca) {
+    const buscaNumerica = Number(busca);
+
+    if (!Number.isNaN(buscaNumerica)) {
+      const resultado = await database.getAllAsync<ReceitaDatabase>(
+        `
+        SELECT
+          id,
+          nome,
+          rendimento,
+          modo_preparo,
+          created_at
+        FROM receitas
+        WHERE id = ? OR nome LIKE ? OR rendimento LIKE ?
+        ORDER BY nome COLLATE NOCASE ASC
+        `,
+        [buscaNumerica, `%${busca}%`, `%${busca}%`]
+      );
+
+      return resultado;
+    }
+
+    const resultado = await database.getAllAsync<ReceitaDatabase>(
+      `
+      SELECT
+        id,
+        nome,
+        rendimento,
+        modo_preparo,
+        created_at
+      FROM receitas
+      WHERE nome LIKE ? OR rendimento LIKE ?
+      ORDER BY nome COLLATE NOCASE ASC
+      `,
+      [`%${busca}%`, `%${busca}%`]
+    );
+
+    return resultado;
+  }
+
+  const resultado = await database.getAllAsync<ReceitaDatabase>(`
+    SELECT
+      id,
+      nome,
+      rendimento,
+      modo_preparo,
+      created_at
+    FROM receitas
+    ORDER BY nome COLLATE NOCASE ASC
+  `);
+
+  return resultado;
+}
+
+export async function adicionarReceita(
+  nome: string,
+  rendimento: string = '',
+  modoPreparo: string = ''
+): Promise<number> {
+  const database = await getDatabase();
+
+  const nomeTratado = nome.trim();
+  const rendimentoTratado = rendimento.trim();
+  const modoPreparoTratado = modoPreparo.trim();
+
+  if (!nomeTratado) {
+    throw new Error('Informe o nome da receita.');
+  }
+
+  if (!rendimentoTratado) {
+    throw new Error('Informe o rendimento da receita.');
+  }
+
+  if (!modoPreparoTratado) {
+    throw new Error('Informe o modo de preparo da receita.');
+  }
+
+  const resultado = await database.runAsync(
+    `
+    INSERT INTO receitas (
+      nome,
+      rendimento,
+      modo_preparo
+    ) VALUES (?, ?, ?)
+    `,
+    [nomeTratado, rendimentoTratado, modoPreparoTratado]
+  );
+
+  return resultado.lastInsertRowId;
+}
+
+export async function atualizarReceita(
+  id: number,
+  nome: string,
+  rendimento: string = '',
+  modoPreparo: string = ''
+): Promise<void> {
+  const database = await getDatabase();
+
+  const nomeTratado = nome.trim();
+  const rendimentoTratado = rendimento.trim();
+  const modoPreparoTratado = modoPreparo.trim();
+
+  if (!id) {
+    throw new Error('Receita inválida.');
+  }
+
+  if (!nomeTratado) {
+    throw new Error('Informe o nome da receita.');
+  }
+
+  if (!rendimentoTratado) {
+    throw new Error('Informe o rendimento da receita.');
+  }
+
+  if (!modoPreparoTratado) {
+    throw new Error('Informe o modo de preparo da receita.');
+  }
+
+  await database.runAsync(
+    `
+    UPDATE receitas
+    SET
+      nome = ?,
+      rendimento = ?,
+      modo_preparo = ?
+    WHERE id = ?
+    `,
+    [nomeTratado, rendimentoTratado, modoPreparoTratado, id]
+  );
+}
+
+export async function excluirReceita(id: number): Promise<void> {
+  const database = await getDatabase();
+
+  if (!id) {
+    throw new Error('Receita inválida.');
+  }
+
+  await database.runAsync(
+    'DELETE FROM receita_itens WHERE receita_id = ?',
+    [id]
+  );
+
+  await database.runAsync(
+    'DELETE FROM receitas WHERE id = ?',
+    [id]
+  );
+}
+
+export async function buscarReceitaPorId(
+  id: number
+): Promise<ReceitaDatabase | null> {
+  const database = await getDatabase();
+
+  if (!id) {
+    throw new Error('Receita inválida.');
+  }
+
+  const receita = await database.getFirstAsync<ReceitaDatabase>(
+    `
+    SELECT
+      id,
+      nome,
+      rendimento,
+      modo_preparo,
+      created_at
+    FROM receitas
+    WHERE id = ?
+    `,
+    [id]
+  );
+
+  return receita ?? null;
+}
+
+export async function adicionarItemReceita(
+  receitaId: number,
+  produtoId: number,
+  quantidadeUsada: string
+): Promise<void> {
+  const database = await getDatabase();
+
+  const quantidadeTratada = quantidadeUsada.trim();
+
+  if (!receitaId) {
+    throw new Error('Receita inválida.');
+  }
+
+  if (!produtoId) {
+    throw new Error('Produto inválido.');
+  }
+
+  if (!quantidadeTratada) {
+    throw new Error('Informe a quantidade usada do produto.');
+  }
+
+  await database.runAsync(
+    `
+    INSERT INTO receita_itens (
+      receita_id,
+      produto_id,
+      quantidade_usada
+    ) VALUES (?, ?, ?)
+    `,
+    [receitaId, produtoId, quantidadeTratada]
+  );
+}
+
+export async function listarItensReceita(
+  receitaId: number
+): Promise<ReceitaItemDetalhado[]> {
+  const database = await getDatabase();
+
+  if (!receitaId) {
+    throw new Error('Receita inválida.');
+  }
+
+  const itens = await database.getAllAsync<ReceitaItemDetalhado>(
+    `
+    SELECT
+      ri.id,
+      ri.receita_id,
+      ri.produto_id,
+      p.nome AS produto_nome,
+      p.codigo_barras,
+      ri.quantidade_usada
+    FROM receita_itens ri
+    INNER JOIN produtos p ON p.id = ri.produto_id
+    WHERE ri.receita_id = ?
+    ORDER BY p.nome COLLATE NOCASE ASC
+    `,
+    [receitaId]
+  );
+
+  return itens;
+}
+
+export async function excluirItensReceita(receitaId: number): Promise<void> {
+  const database = await getDatabase();
+
+  if (!receitaId) {
+    throw new Error('Receita inválida.');
+  }
+
+  await database.runAsync(
+    'DELETE FROM receita_itens WHERE receita_id = ?',
+    [receitaId]
+  );
+}
+
+export async function buscarReceitaDetalhada(
+  id: number
+): Promise<ReceitaDetalhada | null> {
+  const receita = await buscarReceitaPorId(id);
+
+  if (!receita) {
+    return null;
+  }
+
+  const itens = await listarItensReceita(id);
+
+  return {
+    ...receita,
+    itens,
+  };
+}
+
+export async function salvarReceitaCompleta(
+  nome: string,
+  rendimento: string,
+  modoPreparo: string,
+  itens: NovoItemReceita[]
+): Promise<number> {
+  if (!itens.length) {
+    throw new Error('Adicione pelo menos um produto à receita.');
+  }
+
+  const receitaId = await adicionarReceita(nome, rendimento, modoPreparo);
+
+  for (const item of itens) {
+    await adicionarItemReceita(
+      receitaId,
+      item.produto_id,
+      item.quantidade_usada
+    );
+  }
+
+  return receitaId;
+}
+
+export async function editarReceitaCompleta(
+  receitaId: number,
+  nome: string,
+  rendimento: string,
+  modoPreparo: string,
+  itens: NovoItemReceita[]
+): Promise<void> {
+  if (!receitaId) {
+    throw new Error('Receita inválida.');
+  }
+
+  if (!itens.length) {
+    throw new Error('Adicione pelo menos um produto à receita.');
+  }
+
+  await atualizarReceita(receitaId, nome, rendimento, modoPreparo);
+
+  await excluirItensReceita(receitaId);
+
+  for (const item of itens) {
+    await adicionarItemReceita(
+      receitaId,
+      item.produto_id,
+      item.quantidade_usada
+    );
+  }
+}
+
+export async function buscarProdutosParaReceita(
+  filtro: string = ''
+): Promise<ProdutoParaReceita[]> {
+  const database = await getDatabase();
+  const busca = filtro.trim();
+
+  if (!busca) {
+    return [];
+  }
+
+  const buscaNumerica = Number(busca);
+
+  if (!Number.isNaN(buscaNumerica)) {
+    const resultado = await database.getAllAsync<ProdutoParaReceita>(
+      `
+      SELECT
+        id,
+        descricao,
+        nome,
+        codigo_barras,
+        preco_medio,
+        quantidade
+      FROM produtos
+      WHERE ativo = 1
+        AND (
+          id = ?
+          OR nome LIKE ?
+          OR descricao LIKE ?
+          OR codigo_barras LIKE ?
+        )
+      ORDER BY nome COLLATE NOCASE ASC
+      LIMIT 20
+      `,
+      [buscaNumerica, `%${busca}%`, `%${busca}%`, `%${busca}%`]
+    );
+
+    return resultado;
+  }
+
+  const resultado = await database.getAllAsync<ProdutoParaReceita>(
+    `
+    SELECT
+      id,
+      descricao,
+      nome,
+      codigo_barras,
+      preco_medio,
+      quantidade
+    FROM produtos
+    WHERE ativo = 1
+      AND (
+        nome LIKE ?
+        OR descricao LIKE ?
+        OR codigo_barras LIKE ?
+      )
+    ORDER BY nome COLLATE NOCASE ASC
+    LIMIT 20
+    `,
+    [`%${busca}%`, `%${busca}%`, `%${busca}%`]
+  );
+
+  return resultado;
+}
+
+export async function buscarProdutoPorCodigoBarras(
+  codigoBarras: string
+): Promise<ProdutoParaReceita | null> {
+  const database = await getDatabase();
+  const codigoTratado = codigoBarras.trim();
+
+  if (!codigoTratado) {
+    return null;
+  }
+
+  const produto = await database.getFirstAsync<ProdutoParaReceita>(
+    `
+    SELECT
+      id,
+      descricao,
+      nome,
+      codigo_barras,
+      preco_medio,
+      quantidade
+    FROM produtos
+    WHERE ativo = 1
+      AND codigo_barras = ?
+    LIMIT 1
+    `,
+    [codigoTratado]
+  );
+
+  return produto ?? null;
 }
