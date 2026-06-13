@@ -33,7 +33,11 @@ type ModoFormulario = 'cadastro' | 'edicao';
 
 type ItemReceitaLocal = NovoItemReceita & {
   produto_nome: string;
+  quantidade_numero: number;
+  unidade_medida: string;
 };
+
+const UNIDADES_MEDIDA = ['g', 'kg', 'ml', 'l', 'un'];
 
 export default function ReceitasScreen() {
   const navigation = useNavigation<any>();
@@ -66,11 +70,41 @@ export default function ReceitasScreen() {
   const [produtoSelecionado, setProdutoSelecionado] =
     useState<ProdutoParaReceita | null>(null);
   const [quantidadeUsada, setQuantidadeUsada] = useState('');
+  const [unidadeMedida, setUnidadeMedida] = useState('un');
 
   const [scannerVisivel, setScannerVisivel] = useState(false);
 
   const obterNomeProduto = (produto: ProdutoParaReceita) => {
     return produto.nome || produto.descricao || 'Produto sem nome';
+  };
+
+  const formatarQuantidade = (quantidade: number, unidade: string) => {
+    if (!quantidade) {
+      return '';
+    }
+
+    return `${quantidade} ${unidade}`;
+  };
+
+  const extrairQuantidadeAntiga = (quantidadeTexto: string) => {
+    const texto = quantidadeTexto.trim().replace(',', '.');
+    const quantidadeEncontrada = texto.match(/\d+(\.\d+)?/);
+    const unidadeEncontrada = texto.match(/[a-zA-Z]+/);
+
+    const unidadeTexto = unidadeEncontrada
+      ? unidadeEncontrada[0].toLowerCase()
+      : 'un';
+
+    const unidadeNormalizada = unidadeTexto.startsWith('un')
+      ? 'un'
+      : unidadeTexto;
+
+    return {
+      quantidade: quantidadeEncontrada ? Number(quantidadeEncontrada[0]) : 0,
+      unidade: UNIDADES_MEDIDA.includes(unidadeNormalizada)
+        ? unidadeNormalizada
+        : 'un',
+    };
   };
 
   const carregarReceitas = useCallback(async () => {
@@ -121,6 +155,7 @@ export default function ReceitasScreen() {
     setProdutosEncontrados([]);
     setProdutoSelecionado(null);
     setQuantidadeUsada('');
+    setUnidadeMedida('un');
   };
 
   const abrirCadastro = () => {
@@ -159,11 +194,26 @@ export default function ReceitasScreen() {
     setModoPreparo(receitaSelecionada.modo_preparo);
 
     const itensFormatados: ItemReceitaLocal[] = receitaSelecionada.itens.map(
-      (item) => ({
-        produto_id: item.produto_id,
-        produto_nome: item.produto_nome,
-        quantidade_usada: item.quantidade_usada,
-      })
+      (item) => {
+        const itemComPrecificacao = item as typeof item & {
+          quantidade_numero?: number;
+          unidade_medida?: string;
+        };
+
+        const quantidadeAntiga = extrairQuantidadeAntiga(item.quantidade_usada);
+        const quantidadeNumero =
+          itemComPrecificacao.quantidade_numero || quantidadeAntiga.quantidade;
+        const unidade =
+          itemComPrecificacao.unidade_medida || quantidadeAntiga.unidade;
+
+        return {
+          produto_id: item.produto_id,
+          produto_nome: item.produto_nome,
+          quantidade_usada: formatarQuantidade(quantidadeNumero, unidade),
+          quantidade_numero: quantidadeNumero,
+          unidade_medida: unidade,
+        };
+      }
     );
 
     setItensReceita(itensFormatados);
@@ -234,6 +284,13 @@ export default function ReceitasScreen() {
       return;
     }
 
+    const quantidadeNumero = Number(quantidadeUsada.replace(',', '.'));
+
+    if (Number.isNaN(quantidadeNumero) || quantidadeNumero <= 0) {
+      Alert.alert('Erro', 'Informe uma quantidade válida.');
+      return;
+    }
+
     const jaExiste = itensReceita.some(
       (item) => item.produto_id === produtoSelecionado.id
     );
@@ -246,7 +303,9 @@ export default function ReceitasScreen() {
     const novoItem: ItemReceitaLocal = {
       produto_id: produtoSelecionado.id,
       produto_nome: obterNomeProduto(produtoSelecionado),
-      quantidade_usada: quantidadeUsada.trim(),
+      quantidade_usada: formatarQuantidade(quantidadeNumero, unidadeMedida),
+      quantidade_numero: quantidadeNumero,
+      unidade_medida: unidadeMedida,
     };
 
     setItensReceita((itensAtuais) => [...itensAtuais, novoItem]);
@@ -285,6 +344,8 @@ export default function ReceitasScreen() {
       const itensParaSalvar: NovoItemReceita[] = itensReceita.map((item) => ({
         produto_id: item.produto_id,
         quantidade_usada: item.quantidade_usada,
+        quantidade_numero: item.quantidade_numero,
+        unidade_medida: item.unidade_medida,
       }));
 
       if (modoFormulario === 'cadastro') {
@@ -729,11 +790,36 @@ export default function ReceitasScreen() {
             <Text style={styles.inputLabel}>Quantidade usada:</Text>
             <TextInput
               style={styles.input}
-              placeholder="Ex: 500g, 2 unidades, 100ml..."
+              placeholder="Ex: 500, 2, 100..."
               placeholderTextColor="#888"
               value={quantidadeUsada}
               onChangeText={setQuantidadeUsada}
+              keyboardType="decimal-pad"
             />
+
+            <Text style={styles.inputLabel}>Unidade de medida:</Text>
+            <View style={styles.unidadeContainer}>
+              {UNIDADES_MEDIDA.map((unidade) => (
+                <TouchableOpacity
+                  key={unidade}
+                  style={[
+                    styles.unidadeButton,
+                    unidadeMedida === unidade && styles.unidadeButtonSelected,
+                  ]}
+                  onPress={() => setUnidadeMedida(unidade)}
+                >
+                  <Text
+                    style={[
+                      styles.unidadeButtonText,
+                      unidadeMedida === unidade &&
+                        styles.unidadeButtonTextSelected,
+                    ]}
+                  >
+                    {unidade}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
 
             <View style={styles.modalButtons}>
               <TouchableOpacity
@@ -1236,6 +1322,32 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '900',
     color: '#1a1a1a',
+  },
+  unidadeContainer: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 12,
+  },
+  unidadeButton: {
+    flex: 1,
+    borderRadius: 9,
+    borderWidth: 1.5,
+    borderColor: '#ccc',
+    paddingVertical: 10,
+    alignItems: 'center',
+    backgroundColor: '#fff',
+  },
+  unidadeButtonSelected: {
+    backgroundColor: '#000',
+    borderColor: '#000',
+  },
+  unidadeButtonText: {
+    fontSize: 13,
+    fontWeight: '900',
+    color: '#1a1a1a',
+  },
+  unidadeButtonTextSelected: {
+    color: '#fff',
   },
   modalButtons: {
     flexDirection: 'row',

@@ -8,6 +8,7 @@ import {
   TextInput,
   StyleSheet,
   Alert,
+  ScrollView,
 } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import {
@@ -25,9 +26,12 @@ import { Ionicons } from '@expo/vector-icons';
 
 type ModoFormulario = 'cadastro' | 'edicao';
 type CampoScanner = 'busca' | 'formulario' | 'movimentacao';
+type UnidadeMedidaProduto = 'g' | 'kg' | 'ml' | 'l' | 'un';
 
 export default function EstoqueScreen() {
   const navigation = useNavigation<any>();
+
+  const unidadesMedida: UnidadeMedidaProduto[] = ['g', 'kg', 'ml', 'l', 'un'];
 
   const [produtos, setProdutos] = useState<ProdutoEstoque[]>([]);
 
@@ -55,6 +59,8 @@ export default function EstoqueScreen() {
   const [precoUltimaEntrada, setPrecoUltimaEntrada] = useState('');
   const [precoMedio, setPrecoMedio] = useState('');
   const [quantidade, setQuantidade] = useState('');
+  const [quantidadeEmbalagem, setQuantidadeEmbalagem] = useState('1');
+  const [unidadeMedida, setUnidadeMedida] = useState<UnidadeMedidaProduto>('un');
 
   const [quantidadeMov, setQuantidadeMov] = useState('');
   const [precoEntradaMov, setPrecoEntradaMov] = useState('');
@@ -77,8 +83,8 @@ export default function EstoqueScreen() {
     }
 
     if (campoScanner === 'movimentacao') {
-    setBuscaMovimentacao(codigo);
-  }
+      setBuscaMovimentacao(codigo);
+    }
 
     setScannerVisivel(false);
   };
@@ -167,6 +173,8 @@ export default function EstoqueScreen() {
     setPrecoUltimaEntrada('');
     setPrecoMedio('');
     setQuantidade('');
+    setQuantidadeEmbalagem('1');
+    setUnidadeMedida('un');
   };
 
   const preencherFormulario = (produto: ProdutoEstoque) => {
@@ -175,6 +183,8 @@ export default function EstoqueScreen() {
     setPrecoUltimaEntrada(String(produto.preco_ultima_entrada || 0));
     setPrecoMedio(String(produto.preco_medio || 0));
     setQuantidade(String(produto.quantidade || 0));
+    setQuantidadeEmbalagem(String(produto.quantidade_embalagem || 1));
+    setUnidadeMedida((produto.unidade_medida as UnidadeMedidaProduto) || 'un');
   };
 
   const abrirCadastro = () => {
@@ -214,6 +224,7 @@ export default function EstoqueScreen() {
       const precoUltimaEntradaNum = parseNumero(precoUltimaEntrada);
       const precoMedioNum = parseNumero(precoMedio);
       const quantidadeNum = parseNumero(quantidade);
+      const quantidadeEmbalagemNum = parseNumero(quantidadeEmbalagem);
 
       if (!nome.trim()) {
         Alert.alert('Erro', 'Informe o nome do produto.');
@@ -223,17 +234,28 @@ export default function EstoqueScreen() {
       if (
         Number.isNaN(precoUltimaEntradaNum) ||
         Number.isNaN(precoMedioNum) ||
-        Number.isNaN(quantidadeNum)
+        Number.isNaN(quantidadeNum) ||
+        Number.isNaN(quantidadeEmbalagemNum)
       ) {
         Alert.alert(
           'Erro',
-          'Informe apenas números válidos nos campos de preço e quantidade.'
+          'Informe apenas números válidos nos campos de preço, quantidade e embalagem.'
         );
         return;
       }
 
-      if (precoUltimaEntradaNum < 0 || precoMedioNum < 0 || quantidadeNum < 0) {
-        Alert.alert('Erro', 'Preço e quantidade não podem ser negativos.');
+      if (
+        precoUltimaEntradaNum < 0 ||
+        precoMedioNum < 0 ||
+        quantidadeNum < 0 ||
+        quantidadeEmbalagemNum < 0
+      ) {
+        Alert.alert('Erro', 'Preço, quantidade e embalagem não podem ser negativos.');
+        return;
+      }
+
+      if (quantidadeEmbalagemNum <= 0) {
+        Alert.alert('Erro', 'A quantidade da embalagem deve ser maior que zero.');
         return;
       }
 
@@ -244,6 +266,8 @@ export default function EstoqueScreen() {
           preco_ultima_entrada: precoUltimaEntradaNum,
           preco_medio: precoMedioNum,
           quantidade: quantidadeNum,
+          quantidade_embalagem: quantidadeEmbalagemNum,
+          unidade_medida: unidadeMedida,
         });
       } else {
         if (!produtoSelecionado) {
@@ -258,6 +282,8 @@ export default function EstoqueScreen() {
           preco_ultima_entrada: precoUltimaEntradaNum,
           preco_medio: precoMedioNum,
           quantidade: quantidadeNum,
+          quantidade_embalagem: quantidadeEmbalagemNum,
+          unidade_medida: unidadeMedida,
         });
       }
 
@@ -546,6 +572,14 @@ export default function EstoqueScreen() {
                   </View>
 
                   <View style={styles.detailRow}>
+                    <Text style={styles.detailLabel}>Embalagem:</Text>
+                    <Text style={styles.detailValue}>
+                      {produtoSelecionado.quantidade_embalagem || 1}{' '}
+                      {produtoSelecionado.unidade_medida || 'un'}
+                    </Text>
+                  </View>
+
+                  <View style={styles.detailRow}>
                     <Text style={styles.detailLabel}>Última entrada:</Text>
                     <Text style={styles.detailValue}>
                       {formatarMoeda(produtoSelecionado.preco_ultima_entrada)}
@@ -598,95 +632,137 @@ export default function EstoqueScreen() {
               {modoFormulario === 'cadastro' ? 'NOVO PRODUTO' : 'EDITAR PRODUTO'}
             </Text>
 
-            {modoFormulario === 'edicao' && produtoSelecionado && (
-              <>
-                <Text style={styles.inputLabel}>ID:</Text>
-                <TextInput
-                  style={[styles.input, styles.inputDisabled]}
-                  value={String(produtoSelecionado.id)}
-                  editable={false}
-                />
-              </>
-            )}
+            <ScrollView
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+            >
+              {modoFormulario === 'edicao' && produtoSelecionado && (
+                <>
+                  <Text style={styles.inputLabel}>ID:</Text>
+                  <TextInput
+                    style={[styles.input, styles.inputDisabled]}
+                    value={String(produtoSelecionado.id)}
+                    editable={false}
+                  />
+                </>
+              )}
 
-            <Text style={styles.inputLabel}>Nome:</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Digite o nome do produto"
-              placeholderTextColor="#888"
-              value={nome}
-              onChangeText={setNome}
-            />
-
-            <Text style={styles.inputLabel}>Código de barras:</Text>
-            <View style={styles.inputComIconeContainer}>
+              <Text style={styles.inputLabel}>Nome:</Text>
               <TextInput
-                style={styles.inputComIcone}
-                placeholder="Digite o código de barras"
+                style={styles.input}
+                placeholder="Digite o nome do produto"
                 placeholderTextColor="#888"
-                value={codigoBarras}
-                onChangeText={setCodigoBarras}
+                value={nome}
+                onChangeText={setNome}
+              />
+
+              <Text style={styles.inputLabel}>Código de barras:</Text>
+              <View style={styles.inputComIconeContainer}>
+                <TextInput
+                  style={styles.inputComIcone}
+                  placeholder="Digite o código de barras"
+                  placeholderTextColor="#888"
+                  value={codigoBarras}
+                  onChangeText={setCodigoBarras}
+                  keyboardType="numeric"
+                />
+
+                <TouchableOpacity
+                  style={styles.botaoScannerInput}
+                  onPress={() => abrirScanner('formulario')}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="barcode-outline" size={24} color="#000" />
+                </TouchableOpacity>
+              </View>
+
+              <Text style={styles.inputLabel}>Preço da última entrada:</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Digite o preço da última entrada"
+                placeholderTextColor="#888"
+                value={precoUltimaEntrada}
+                onChangeText={setPrecoUltimaEntrada}
                 keyboardType="numeric"
               />
 
-              <TouchableOpacity
-                style={styles.botaoScannerInput}
-                onPress={() => abrirScanner('formulario')}
-                activeOpacity={0.7}
-              >
-                <Ionicons name="barcode-outline" size={24} color="#000" />
-              </TouchableOpacity>
-            </View>
+              <Text style={styles.inputLabel}>Preço médio:</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Digite o preço médio"
+                placeholderTextColor="#888"
+                value={precoMedio}
+                onChangeText={setPrecoMedio}
+                keyboardType="numeric"
+              />
 
-            <Text style={styles.inputLabel}>Preço da última entrada:</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Digite o preço da última entrada"
-              placeholderTextColor="#888"
-              value={precoUltimaEntrada}
-              onChangeText={setPrecoUltimaEntrada}
-              keyboardType="numeric"
-            />
+              <Text style={styles.inputLabel}>Quantidade em estoque:</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Digite a quantidade em estoque"
+                placeholderTextColor="#888"
+                value={quantidade}
+                onChangeText={setQuantidade}
+                keyboardType="numeric"
+              />
 
-            <Text style={styles.inputLabel}>Preço médio:</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Digite o preço médio"
-              placeholderTextColor="#888"
-              value={precoMedio}
-              onChangeText={setPrecoMedio}
-              keyboardType="numeric"
-            />
+              <Text style={styles.inputLabel}>Quantidade da embalagem:</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Ex: 1000, 395, 1..."
+                placeholderTextColor="#888"
+                value={quantidadeEmbalagem}
+                onChangeText={setQuantidadeEmbalagem}
+                keyboardType="numeric"
+              />
 
-            <Text style={styles.inputLabel}>Quantidade:</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Digite a quantidade"
-              placeholderTextColor="#888"
-              value={quantidade}
-              onChangeText={setQuantidade}
-              keyboardType="numeric"
-            />
+              <Text style={styles.inputLabel}>Unidade de medida:</Text>
+              <View style={styles.unidadeContainer}>
+                {unidadesMedida.map((unidade) => {
+                  const selecionada = unidadeMedida === unidade;
 
-            <View style={styles.modalButtons}>
-              <TouchableOpacity
-                style={[styles.modalButton, styles.cancelButton]}
-                onPress={() => {
-                  limparFormulario();
-                  setModalFormulario(false);
-                  setProdutoSelecionado(null);
-                }}
-              >
-                <Text style={styles.modalButtonText}>Cancelar</Text>
-              </TouchableOpacity>
+                  return (
+                    <TouchableOpacity
+                      key={unidade}
+                      style={[
+                        styles.unidadeButton,
+                        selecionada && styles.unidadeButtonSelected,
+                      ]}
+                      onPress={() => setUnidadeMedida(unidade)}
+                    >
+                      <Text
+                        style={[
+                          styles.unidadeButtonText,
+                          selecionada && styles.unidadeButtonTextSelected,
+                        ]}
+                      >
+                        {unidade}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
 
-              <TouchableOpacity
-                style={[styles.modalButton, styles.saveButton]}
-                onPress={salvarProduto}
-              >
-                <Text style={styles.modalButtonText}>Salvar</Text>
-              </TouchableOpacity>
-            </View>
+              <View style={styles.modalButtons}>
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.cancelButton]}
+                  onPress={() => {
+                    limparFormulario();
+                    setModalFormulario(false);
+                    setProdutoSelecionado(null);
+                  }}
+                >
+                  <Text style={styles.modalButtonText}>Cancelar</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.saveButton]}
+                  onPress={salvarProduto}
+                >
+                  <Text style={styles.modalButtonText}>Salvar</Text>
+                </TouchableOpacity>
+              </View>
+            </ScrollView>
           </View>
         </View>
       </Modal>
@@ -1209,6 +1285,33 @@ const styles = StyleSheet.create({
     color: '#666',
     fontWeight: '700',
     marginTop: 2,
+  },
+  unidadeContainer: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 14,
+  },
+  unidadeButton: {
+    flex: 1,
+    borderWidth: 1.5,
+    borderColor: '#ccc',
+    borderRadius: 9,
+    paddingVertical: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#fff',
+  },
+  unidadeButtonSelected: {
+    backgroundColor: '#000',
+    borderColor: '#000',
+  },
+  unidadeButtonText: {
+    color: '#1a1a1a',
+    fontWeight: '900',
+    fontSize: 13,
+  },
+  unidadeButtonTextSelected: {
+    color: '#fff',
   },
   modalButtons: {
     flexDirection: 'row',

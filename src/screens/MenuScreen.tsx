@@ -28,7 +28,8 @@ export default function MenuScreen({ navigation }: Props) {
   const menuItems: MenuItem[] = [
     { titulo: 'ESTOQUE', rota: 'Estoque', icone: 'cube-outline' },
     { titulo: 'RECEITAS', rota: 'Receitas', icone: 'restaurant-outline' },
-    { titulo: 'ORÇAMENTOS', rota: 'Orcamentos', icone: 'calculator-outline' },
+    { titulo: 'PRODUTOS', rota: 'ProdutosVenda', icone: 'pricetags-outline' },
+    { titulo: 'ORÇAMENTOS', rota: 'Orcamentos', icone: 'document-text-outline' },
     { titulo: 'VENDAS', rota: 'Vendas', icone: 'cash-outline' },
     { titulo: 'CLIENTES', rota: 'Clientes', icone: 'people-outline' },
   ];
