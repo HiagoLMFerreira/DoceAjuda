@@ -279,6 +279,75 @@ export type ProdutoVendaDetalhado = ProdutoVendaDatabase & {
 };
 
 // ===============================
+// TYPES DE ORÇAMENTOS / VENDAS
+// ===============================
+
+export type TipoDocumentoComercial = 'ORCAMENTO' | 'VENDA';
+
+export type StatusDocumentoComercial =
+  | 'PENDENTE'
+  | 'CONVERTIDO'
+  | 'CONCLUIDA'
+  | 'CANCELADA';
+
+export type OrdenarDocumentoComercialPor =
+  | 'id'
+  | 'cliente_nome'
+  | 'valor_total'
+  | 'created_at';
+
+export type DocumentoComercialDatabase = {
+  id: number;
+  tipo: TipoDocumentoComercial;
+  cliente_id: number;
+  cliente_nome: string;
+  status: StatusDocumentoComercial;
+  valor_total: number;
+  observacoes: string;
+  forma_pagamento: string;
+  data_validade: string;
+  orcamento_origem_id: number | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type DocumentoComercialItemDatabase = {
+  id: number;
+  documento_id: number;
+  produto_venda_id: number;
+  produto_nome: string;
+  quantidade: number;
+  valor_unitario: number;
+  subtotal: number;
+};
+
+export type DocumentoComercialDetalhado = DocumentoComercialDatabase & {
+  itens: DocumentoComercialItemDatabase[];
+};
+
+export type DocumentoComercialItemInput = {
+  produto_venda_id: number;
+  quantidade: number;
+  valor_unitario?: number;
+};
+
+export type NovoDocumentoComercial = {
+  tipo: TipoDocumentoComercial;
+  cliente_id: number;
+  observacoes?: string;
+  forma_pagamento?: string;
+  data_validade?: string;
+  orcamento_origem_id?: number | null;
+  status?: StatusDocumentoComercial;
+  itens: DocumentoComercialItemInput[];
+};
+
+export type ProdutoVendaParaDocumento = Pick<
+  ProdutoVendaDatabase,
+  'id' | 'nome' | 'descricao' | 'preco_venda' | 'ativo'
+>;
+
+// ===============================
 // DATABASE
 // ===============================
 
@@ -404,6 +473,52 @@ async function initializeDatabase(): Promise<SQLite.SQLiteDatabase> {
         FOREIGN KEY(produto_venda_id) REFERENCES produtos_venda(id) ON DELETE CASCADE,
         FOREIGN KEY(produto_estoque_id) REFERENCES produtos(id)
       );
+
+      CREATE TABLE IF NOT EXISTS documentos_comerciais (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        tipo TEXT NOT NULL CHECK(tipo IN ('ORCAMENTO', 'VENDA')),
+        cliente_id INTEGER NOT NULL,
+        cliente_nome TEXT NOT NULL DEFAULT '',
+        status TEXT NOT NULL DEFAULT 'PENDENTE'
+          CHECK(status IN ('PENDENTE', 'CONVERTIDO', 'CONCLUIDA', 'CANCELADA')),
+        valor_total REAL NOT NULL DEFAULT 0,
+        observacoes TEXT DEFAULT '',
+        forma_pagamento TEXT DEFAULT '',
+        data_validade TEXT DEFAULT '',
+        orcamento_origem_id INTEGER,
+        created_at TEXT DEFAULT (datetime('now','localtime')),
+        updated_at TEXT DEFAULT (datetime('now','localtime')),
+        FOREIGN KEY(cliente_id) REFERENCES clientes(id),
+        FOREIGN KEY(orcamento_origem_id) REFERENCES documentos_comerciais(id)
+      );
+
+      CREATE TABLE IF NOT EXISTS documentos_comerciais_itens (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        documento_id INTEGER NOT NULL,
+        produto_venda_id INTEGER NOT NULL,
+        produto_nome TEXT NOT NULL,
+        quantidade REAL NOT NULL DEFAULT 0,
+        valor_unitario REAL NOT NULL DEFAULT 0,
+        subtotal REAL NOT NULL DEFAULT 0,
+        FOREIGN KEY(documento_id)
+          REFERENCES documentos_comerciais(id) ON DELETE CASCADE,
+        FOREIGN KEY(produto_venda_id) REFERENCES produtos_venda(id)
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_documentos_comerciais_tipo
+        ON documentos_comerciais(tipo);
+
+      CREATE INDEX IF NOT EXISTS idx_documentos_comerciais_cliente
+        ON documentos_comerciais(cliente_id);
+
+      CREATE INDEX IF NOT EXISTS idx_documentos_comerciais_criacao
+        ON documentos_comerciais(created_at);
+
+      CREATE INDEX IF NOT EXISTS idx_documentos_itens_documento
+        ON documentos_comerciais_itens(documento_id);
+
+      CREATE INDEX IF NOT EXISTS idx_documentos_itens_produto
+        ON documentos_comerciais_itens(produto_venda_id);
 
       CREATE INDEX IF NOT EXISTS idx_produto_venda_receitas_produto
         ON produto_venda_receitas(produto_venda_id);
@@ -1196,7 +1311,7 @@ export async function adicionarCliente(
   nome: string,
   telefone: string = '',
   endereco: string = ''
-): Promise<void> {
+): Promise<number> {
   const database = await getDatabase();
 
   const nomeTratado = nome.trim();
@@ -1207,7 +1322,7 @@ export async function adicionarCliente(
     throw new Error('Informe o nome do cliente.');
   }
 
-  await database.runAsync(
+  const resultado = await database.runAsync(
     `
     INSERT INTO clientes (
       nome,
@@ -1218,6 +1333,8 @@ export async function adicionarCliente(
     `,
     [nomeTratado, telefoneTratado, enderecoTratado]
   );
+
+  return resultado.lastInsertRowId;
 }
 
 export async function atualizarCliente(
@@ -1258,6 +1375,21 @@ export async function excluirCliente(id: number): Promise<void> {
 
   if (!id) {
     throw new Error('Cliente inválido.');
+  }
+
+  const usoEmDocumento = await database.getFirstAsync<{ total: number }>(
+    `
+    SELECT COUNT(*) AS total
+    FROM documentos_comerciais
+    WHERE cliente_id = ?
+    `,
+    [id]
+  );
+
+  if ((usoEmDocumento?.total ?? 0) > 0) {
+    throw new Error(
+      'Este cliente possui orçamentos ou vendas vinculados e não pode ser excluído.'
+    );
   }
 
   await database.runAsync(
@@ -2509,6 +2641,21 @@ export async function excluirProdutoVenda(id: number): Promise<void> {
     throw new Error('Produto para venda inválido.');
   }
 
+  const usoEmDocumento = await database.getFirstAsync<{ total: number }>(
+    `
+    SELECT COUNT(*) AS total
+    FROM documentos_comerciais_itens
+    WHERE produto_venda_id = ?
+    `,
+    [id]
+  );
+
+  if ((usoEmDocumento?.total ?? 0) > 0) {
+    throw new Error(
+      'Este produto está sendo utilizado em um orçamento ou venda e não pode ser excluído.'
+    );
+  }
+
   await database.runAsync('DELETE FROM produtos_venda WHERE id = ?', [id]);
 }
 
@@ -2529,6 +2676,723 @@ export async function alterarStatusProdutoVenda(
     WHERE id = ?
     `,
     [ativo ? 1 : 0, id]
+  );
+}
+
+// ===============================
+// CRUD COMPARTILHADO DE ORÇAMENTOS / VENDAS
+// ===============================
+
+type ItemDocumentoPreparado = {
+  produto_venda_id: number;
+  produto_nome: string;
+  quantidade: number;
+  valor_unitario: number;
+  subtotal: number;
+};
+
+function arredondarValorMonetario(valor: number): number {
+  return Math.round((valor + Number.EPSILON) * 100) / 100;
+}
+
+function obterStatusInicialDocumento(
+  tipo: TipoDocumentoComercial
+): StatusDocumentoComercial {
+  return tipo === 'ORCAMENTO' ? 'PENDENTE' : 'CONCLUIDA';
+}
+
+function validarStatusDocumento(
+  tipo: TipoDocumentoComercial,
+  status: StatusDocumentoComercial
+): void {
+  const statusOrcamento: StatusDocumentoComercial[] = [
+    'PENDENTE',
+    'CONVERTIDO',
+    'CANCELADA',
+  ];
+
+  const statusVenda: StatusDocumentoComercial[] = [
+    'CONCLUIDA',
+    'CANCELADA',
+  ];
+
+  const permitido =
+    tipo === 'ORCAMENTO'
+      ? statusOrcamento.includes(status)
+      : statusVenda.includes(status);
+
+  if (!permitido) {
+    throw new Error('O status informado não é válido para este documento.');
+  }
+}
+
+async function prepararDocumentoComercial(
+  database: SQLite.SQLiteDatabase,
+  documento: NovoDocumentoComercial
+): Promise<{
+  clienteNome: string;
+  status: StatusDocumentoComercial;
+  itens: ItemDocumentoPreparado[];
+  valorTotal: number;
+}> {
+  if (documento.tipo !== 'ORCAMENTO' && documento.tipo !== 'VENDA') {
+    throw new Error('Tipo de documento comercial inválido.');
+  }
+
+  if (!documento.cliente_id) {
+    throw new Error('Selecione um cliente.');
+  }
+
+  if (!documento.itens.length) {
+    throw new Error('Adicione pelo menos um produto.');
+  }
+
+  const cliente = await database.getFirstAsync<{ id: number; nome: string }>(
+    `SELECT id, nome FROM clientes WHERE id = ?`,
+    [documento.cliente_id]
+  );
+
+  if (!cliente) {
+    throw new Error('Cliente não encontrado.');
+  }
+
+  const status = documento.status ?? obterStatusInicialDocumento(documento.tipo);
+  validarStatusDocumento(documento.tipo, status);
+
+  const produtosAdicionados = new Set<number>();
+  const itens: ItemDocumentoPreparado[] = [];
+
+  for (const item of documento.itens) {
+    if (!item.produto_venda_id) {
+      throw new Error('Existe um produto inválido no documento.');
+    }
+
+    if (produtosAdicionados.has(item.produto_venda_id)) {
+      throw new Error(
+        'O mesmo produto foi adicionado mais de uma vez. Altere a quantidade do item existente.'
+      );
+    }
+
+    if (!Number.isFinite(item.quantidade) || item.quantidade <= 0) {
+      throw new Error('A quantidade dos produtos deve ser maior que zero.');
+    }
+
+    const produto = await database.getFirstAsync<ProdutoVendaParaDocumento>(
+      `
+      SELECT id, nome, descricao, preco_venda, ativo
+      FROM produtos_venda
+      WHERE id = ? AND ativo = 1
+      `,
+      [item.produto_venda_id]
+    );
+
+    if (!produto) {
+      throw new Error('Um dos produtos não foi encontrado ou está inativo.');
+    }
+
+    const valorUnitario = item.valor_unitario ?? produto.preco_venda;
+
+    if (!Number.isFinite(valorUnitario) || valorUnitario <= 0) {
+      throw new Error(
+        `Informe um valor unitário válido para o produto ${produto.nome}.`
+      );
+    }
+
+    const quantidade = item.quantidade;
+    const subtotal = arredondarValorMonetario(quantidade * valorUnitario);
+
+    itens.push({
+      produto_venda_id: produto.id,
+      produto_nome: produto.nome,
+      quantidade,
+      valor_unitario: arredondarValorMonetario(valorUnitario),
+      subtotal,
+    });
+
+    produtosAdicionados.add(produto.id);
+  }
+
+  const valorTotal = arredondarValorMonetario(
+    itens.reduce((total, item) => total + item.subtotal, 0)
+  );
+
+  return {
+    clienteNome: cliente.nome,
+    status,
+    itens,
+    valorTotal,
+  };
+}
+
+async function inserirItensDocumentoComercial(
+  database: SQLite.SQLiteDatabase,
+  documentoId: number,
+  itens: ItemDocumentoPreparado[]
+): Promise<void> {
+  for (const item of itens) {
+    await database.runAsync(
+      `
+      INSERT INTO documentos_comerciais_itens (
+        documento_id,
+        produto_venda_id,
+        produto_nome,
+        quantidade,
+        valor_unitario,
+        subtotal
+      ) VALUES (?, ?, ?, ?, ?, ?)
+      `,
+      [
+        documentoId,
+        item.produto_venda_id,
+        item.produto_nome,
+        item.quantidade,
+        item.valor_unitario,
+        item.subtotal,
+      ]
+    );
+  }
+}
+
+export async function buscarProdutosVendaParaDocumento(
+  filtro: string = ''
+): Promise<ProdutoVendaParaDocumento[]> {
+  const database = await getDatabase();
+  const busca = filtro.trim();
+  const parametros: (string | number)[] = [];
+  let condicaoBusca = '';
+
+  if (busca) {
+    const buscaNumerica = Number(busca);
+
+    if (!Number.isNaN(buscaNumerica)) {
+      condicaoBusca = `
+        AND (id = ? OR nome LIKE ? OR descricao LIKE ?)
+      `;
+      parametros.push(buscaNumerica, `%${busca}%`, `%${busca}%`);
+    } else {
+      condicaoBusca = `
+        AND (nome LIKE ? OR descricao LIKE ?)
+      `;
+      parametros.push(`%${busca}%`, `%${busca}%`);
+    }
+  }
+
+  return database.getAllAsync<ProdutoVendaParaDocumento>(
+    `
+    SELECT id, nome, descricao, preco_venda, ativo
+    FROM produtos_venda
+    WHERE ativo = 1
+    ${condicaoBusca}
+    ORDER BY nome COLLATE NOCASE ASC
+    LIMIT 30
+    `,
+    parametros
+  );
+}
+
+export async function listarDocumentosComerciais(
+  tipo: TipoDocumentoComercial | 'TODOS' = 'TODOS',
+  filtro: string = '',
+  ordenarPor: OrdenarDocumentoComercialPor = 'created_at',
+  direcao: DirecaoOrdenacao = 'DESC'
+): Promise<DocumentoComercialDatabase[]> {
+  const database = await getDatabase();
+
+  const colunasPermitidas: Record<OrdenarDocumentoComercialPor, string> = {
+    id: 'dc.id',
+    cliente_nome: 'dc.cliente_nome',
+    valor_total: 'dc.valor_total',
+    created_at: 'dc.created_at',
+  };
+
+  const colunaOrdenacao = colunasPermitidas[ordenarPor] ?? 'dc.created_at';
+  const direcaoOrdenacao = validarDirecaoOrdenacao(direcao);
+  const condicoes: string[] = [];
+  const parametros: (string | number)[] = [];
+  const busca = filtro.trim();
+
+  if (tipo !== 'TODOS') {
+    condicoes.push('dc.tipo = ?');
+    parametros.push(tipo);
+  }
+
+  if (busca) {
+    const buscaNumerica = Number(busca);
+
+    if (!Number.isNaN(buscaNumerica)) {
+      condicoes.push('(dc.id = ? OR dc.cliente_nome LIKE ?)');
+      parametros.push(buscaNumerica, `%${busca}%`);
+    } else {
+      condicoes.push('dc.cliente_nome LIKE ?');
+      parametros.push(`%${busca}%`);
+    }
+  }
+
+  const where = condicoes.length ? `WHERE ${condicoes.join(' AND ')}` : '';
+
+  return database.getAllAsync<DocumentoComercialDatabase>(
+    `
+    SELECT
+      dc.id,
+      dc.tipo,
+      dc.cliente_id,
+      dc.cliente_nome,
+      dc.status,
+      dc.valor_total,
+      dc.observacoes,
+      dc.forma_pagamento,
+      dc.data_validade,
+      dc.orcamento_origem_id,
+      dc.created_at,
+      dc.updated_at
+    FROM documentos_comerciais dc
+    ${where}
+    ORDER BY ${colunaOrdenacao} ${direcaoOrdenacao}, dc.id ${direcaoOrdenacao}
+    `,
+    parametros
+  );
+}
+
+export async function listarOrcamentos(
+  filtro: string = '',
+  ordenarPor: OrdenarDocumentoComercialPor = 'created_at',
+  direcao: DirecaoOrdenacao = 'DESC'
+): Promise<DocumentoComercialDatabase[]> {
+  return listarDocumentosComerciais(
+    'ORCAMENTO',
+    filtro,
+    ordenarPor,
+    direcao
+  );
+}
+
+export async function listarVendas(
+  filtro: string = '',
+  ordenarPor: OrdenarDocumentoComercialPor = 'created_at',
+  direcao: DirecaoOrdenacao = 'DESC'
+): Promise<DocumentoComercialDatabase[]> {
+  return listarDocumentosComerciais('VENDA', filtro, ordenarPor, direcao);
+}
+
+export async function listarItensDocumentoComercial(
+  documentoId: number
+): Promise<DocumentoComercialItemDatabase[]> {
+  const database = await getDatabase();
+
+  if (!documentoId) {
+    throw new Error('Documento comercial inválido.');
+  }
+
+  return database.getAllAsync<DocumentoComercialItemDatabase>(
+    `
+    SELECT
+      id,
+      documento_id,
+      produto_venda_id,
+      produto_nome,
+      quantidade,
+      valor_unitario,
+      subtotal
+    FROM documentos_comerciais_itens
+    WHERE documento_id = ?
+    ORDER BY id ASC
+    `,
+    [documentoId]
+  );
+}
+
+export async function buscarDocumentoComercialPorId(
+  id: number
+): Promise<DocumentoComercialDetalhado | null> {
+  const database = await getDatabase();
+
+  if (!id) {
+    throw new Error('Documento comercial inválido.');
+  }
+
+  const documento = await database.getFirstAsync<DocumentoComercialDatabase>(
+    `
+    SELECT
+      id,
+      tipo,
+      cliente_id,
+      cliente_nome,
+      status,
+      valor_total,
+      observacoes,
+      forma_pagamento,
+      data_validade,
+      orcamento_origem_id,
+      created_at,
+      updated_at
+    FROM documentos_comerciais
+    WHERE id = ?
+    `,
+    [id]
+  );
+
+  if (!documento) {
+    return null;
+  }
+
+  const itens = await listarItensDocumentoComercial(id);
+
+  return {
+    ...documento,
+    itens,
+  };
+}
+
+export async function salvarDocumentoComercialCompleto(
+  documento: NovoDocumentoComercial
+): Promise<number> {
+  const database = await getDatabase();
+  const preparado = await prepararDocumentoComercial(database, documento);
+  let documentoId = 0;
+
+  await database.withTransactionAsync(async () => {
+    const resultado = await database.runAsync(
+      `
+      INSERT INTO documentos_comerciais (
+        tipo,
+        cliente_id,
+        cliente_nome,
+        status,
+        valor_total,
+        observacoes,
+        forma_pagamento,
+        data_validade,
+        orcamento_origem_id
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `,
+      [
+        documento.tipo,
+        documento.cliente_id,
+        preparado.clienteNome,
+        preparado.status,
+        preparado.valorTotal,
+        documento.observacoes?.trim() ?? '',
+        documento.forma_pagamento?.trim() ?? '',
+        documento.data_validade?.trim() ?? '',
+        documento.orcamento_origem_id ?? null,
+      ]
+    );
+
+    documentoId = resultado.lastInsertRowId;
+    await inserirItensDocumentoComercial(
+      database,
+      documentoId,
+      preparado.itens
+    );
+
+    if (documento.tipo === 'VENDA') {
+      await database.runAsync(
+        `
+        UPDATE clientes
+        SET total_compras = (
+          SELECT COALESCE(SUM(valor_total), 0)
+          FROM documentos_comerciais
+          WHERE tipo = 'VENDA'
+            AND status = 'CONCLUIDA'
+            AND cliente_id = ?
+        )
+        WHERE id = ?
+        `,
+        [documento.cliente_id, documento.cliente_id]
+      );
+    }
+  });
+
+  return documentoId;
+}
+
+
+export async function converterOrcamentoEmVenda(
+  orcamentoId: number,
+  venda: NovoDocumentoComercial
+): Promise<number> {
+  const database = await getDatabase();
+
+  if (!orcamentoId) {
+    throw new Error('Orçamento inválido.');
+  }
+
+  const orcamento = await database.getFirstAsync<{
+    id: number;
+    tipo: TipoDocumentoComercial;
+    status: StatusDocumentoComercial;
+  }>(
+    `
+    SELECT id, tipo, status
+    FROM documentos_comerciais
+    WHERE id = ?
+    `,
+    [orcamentoId]
+  );
+
+  if (!orcamento || orcamento.tipo !== 'ORCAMENTO') {
+    throw new Error('Orçamento não encontrado.');
+  }
+
+  if (orcamento.status !== 'PENDENTE') {
+    throw new Error('Somente orçamentos pendentes podem ser transformados em venda.');
+  }
+
+  const vendaExistente = await database.getFirstAsync<{ id: number }>(
+    `
+    SELECT id
+    FROM documentos_comerciais
+    WHERE tipo = 'VENDA'
+      AND orcamento_origem_id = ?
+    LIMIT 1
+    `,
+    [orcamentoId]
+  );
+
+  if (vendaExistente) {
+    throw new Error('Este orçamento já foi transformado em venda.');
+  }
+
+  const formaPagamento = venda.forma_pagamento?.trim() ?? '';
+
+  if (!formaPagamento) {
+    throw new Error('Selecione a forma de pagamento.');
+  }
+
+  const documentoVenda: NovoDocumentoComercial = {
+    ...venda,
+    tipo: 'VENDA',
+    status: 'CONCLUIDA',
+    data_validade: '',
+    forma_pagamento: formaPagamento,
+    orcamento_origem_id: orcamentoId,
+  };
+
+  const preparado = await prepararDocumentoComercial(database, documentoVenda);
+  let vendaId = 0;
+
+  await database.withTransactionAsync(async () => {
+    const resultado = await database.runAsync(
+      `
+      INSERT INTO documentos_comerciais (
+        tipo,
+        cliente_id,
+        cliente_nome,
+        status,
+        valor_total,
+        observacoes,
+        forma_pagamento,
+        data_validade,
+        orcamento_origem_id
+      ) VALUES ('VENDA', ?, ?, 'CONCLUIDA', ?, ?, ?, '', ?)
+      `,
+      [
+        documentoVenda.cliente_id,
+        preparado.clienteNome,
+        preparado.valorTotal,
+        documentoVenda.observacoes?.trim() ?? '',
+        formaPagamento,
+        orcamentoId,
+      ]
+    );
+
+    vendaId = resultado.lastInsertRowId;
+
+    await inserirItensDocumentoComercial(
+      database,
+      vendaId,
+      preparado.itens
+    );
+
+    await database.runAsync(
+      `
+      UPDATE documentos_comerciais
+      SET
+        status = 'CONVERTIDO',
+        updated_at = datetime('now','localtime')
+      WHERE id = ?
+        AND tipo = 'ORCAMENTO'
+        AND status = 'PENDENTE'
+      `,
+      [orcamentoId]
+    );
+
+    await database.runAsync(
+      `
+      UPDATE clientes
+      SET total_compras = (
+        SELECT COALESCE(SUM(valor_total), 0)
+        FROM documentos_comerciais
+        WHERE tipo = 'VENDA'
+          AND status = 'CONCLUIDA'
+          AND cliente_id = ?
+      )
+      WHERE id = ?
+      `,
+      [documentoVenda.cliente_id, documentoVenda.cliente_id]
+    );
+  });
+
+  return vendaId;
+}
+
+export async function atualizarDocumentoComercialCompleto(
+  id: number,
+  documento: NovoDocumentoComercial
+): Promise<void> {
+  const database = await getDatabase();
+
+  if (!id) {
+    throw new Error('Documento comercial inválido.');
+  }
+
+  const atual = await database.getFirstAsync<{
+    id: number;
+    tipo: TipoDocumentoComercial;
+    status: StatusDocumentoComercial;
+    orcamento_origem_id: number | null;
+  }>(
+    `
+    SELECT id, tipo, status, orcamento_origem_id
+    FROM documentos_comerciais
+    WHERE id = ?
+    `,
+    [id]
+  );
+
+  if (!atual) {
+    throw new Error('Documento comercial não encontrado.');
+  }
+
+  if (atual.tipo !== documento.tipo) {
+    throw new Error(
+      'Não é permitido alterar o tipo do documento. A conversão de orçamento em venda será feita em uma operação própria.'
+    );
+  }
+
+  const documentoAtualizado: NovoDocumentoComercial = {
+    ...documento,
+    status: documento.status ?? atual.status,
+    orcamento_origem_id:
+      documento.orcamento_origem_id === undefined
+        ? atual.orcamento_origem_id
+        : documento.orcamento_origem_id,
+  };
+
+  const preparado = await prepararDocumentoComercial(
+    database,
+    documentoAtualizado
+  );
+
+  await database.withTransactionAsync(async () => {
+    await database.runAsync(
+      `
+      UPDATE documentos_comerciais
+      SET
+        cliente_id = ?,
+        cliente_nome = ?,
+        status = ?,
+        valor_total = ?,
+        observacoes = ?,
+        forma_pagamento = ?,
+        data_validade = ?,
+        orcamento_origem_id = ?,
+        updated_at = datetime('now','localtime')
+      WHERE id = ?
+      `,
+      [
+        documento.cliente_id,
+        preparado.clienteNome,
+        preparado.status,
+        preparado.valorTotal,
+        documento.observacoes?.trim() ?? '',
+        documento.forma_pagamento?.trim() ?? '',
+        documento.data_validade?.trim() ?? '',
+        documentoAtualizado.orcamento_origem_id ?? null,
+        id,
+      ]
+    );
+
+    await database.runAsync(
+      'DELETE FROM documentos_comerciais_itens WHERE documento_id = ?',
+      [id]
+    );
+
+    await inserirItensDocumentoComercial(database, id, preparado.itens);
+  });
+}
+
+export async function excluirDocumentoComercial(id: number): Promise<void> {
+  const database = await getDatabase();
+
+  if (!id) {
+    throw new Error('Documento comercial inválido.');
+  }
+
+  const documento = await database.getFirstAsync<{
+    id: number;
+    tipo: TipoDocumentoComercial;
+    status: StatusDocumentoComercial;
+  }>(
+    `SELECT id, tipo, status FROM documentos_comerciais WHERE id = ?`,
+    [id]
+  );
+
+  if (!documento) {
+    throw new Error('Documento comercial não encontrado.');
+  }
+
+  const documentosRelacionados = await database.getFirstAsync<{ total: number }>(
+    `
+    SELECT COUNT(*) AS total
+    FROM documentos_comerciais
+    WHERE orcamento_origem_id = ?
+    `,
+    [id]
+  );
+
+  if ((documentosRelacionados?.total ?? 0) > 0) {
+    throw new Error(
+      'Este orçamento já possui uma venda vinculada e não pode ser excluído.'
+    );
+  }
+
+  await database.runAsync(
+    'DELETE FROM documentos_comerciais WHERE id = ?',
+    [id]
+  );
+}
+
+export async function atualizarStatusDocumentoComercial(
+  id: number,
+  status: StatusDocumentoComercial
+): Promise<void> {
+  const database = await getDatabase();
+
+  if (!id) {
+    throw new Error('Documento comercial inválido.');
+  }
+
+  const documento = await database.getFirstAsync<{
+    tipo: TipoDocumentoComercial;
+  }>(
+    `SELECT tipo FROM documentos_comerciais WHERE id = ?`,
+    [id]
+  );
+
+  if (!documento) {
+    throw new Error('Documento comercial não encontrado.');
+  }
+
+  validarStatusDocumento(documento.tipo, status);
+
+  await database.runAsync(
+    `
+    UPDATE documentos_comerciais
+    SET status = ?, updated_at = datetime('now','localtime')
+    WHERE id = ?
+    `,
+    [status, id]
   );
 }
 
