@@ -9,6 +9,20 @@ let databaseInitialization: Promise<SQLite.SQLiteDatabase> | null = null;
 
 export type DirecaoOrdenacao = 'ASC' | 'DESC';
 
+export const UNIDADES_MEDIDA_ESTOQUE = [
+  'un',
+  'kg',
+  'g',
+  'l',
+  'ml',
+  'caixa',
+  'pacote',
+  'duzia',
+] as const;
+
+export type UnidadeMedidaEstoque =
+  (typeof UNIDADES_MEDIDA_ESTOQUE)[number];
+
 // ===============================
 // TYPES DE PRODUTOS / ESTOQUE
 // ===============================
@@ -30,22 +44,14 @@ export type ProdutoEstoque = {
 export type NovoProdutoEstoque = {
   nome: string;
   codigo_barras?: string;
-  preco_ultima_entrada?: number;
-  preco_medio?: number;
-  quantidade?: number;
-  quantidade_embalagem?: number;
-  unidade_medida?: string;
+  unidade_medida: UnidadeMedidaEstoque;
 };
 
 export type EditarProdutoEstoque = {
   id: number;
   nome: string;
   codigo_barras?: string;
-  preco_ultima_entrada?: number;
-  preco_medio?: number;
-  quantidade?: number;
-  quantidade_embalagem?: number;
-  unidade_medida?: string;
+  unidade_medida: UnidadeMedidaEstoque;
 };
 
 export type OrdenarProdutoPor =
@@ -54,7 +60,8 @@ export type OrdenarProdutoPor =
   | 'codigo_barras'
   | 'preco_ultima_entrada'
   | 'preco_medio'
-  | 'quantidade';
+  | 'quantidade'
+  | 'unidade_medida';
 
 // ===============================
 // TYPES DE CLIENTES
@@ -370,7 +377,7 @@ async function initializeDatabase(): Promise<SQLite.SQLiteDatabase> {
         ativo INTEGER DEFAULT 1,
         preco REAL DEFAULT 0,
         quantidade_embalagem REAL DEFAULT 1,
-        unidade_medida TEXT DEFAULT 'un'
+        unidade_medida TEXT NOT NULL DEFAULT 'un'
       );  
 
       CREATE TABLE IF NOT EXISTS movimentacoes (
@@ -619,6 +626,16 @@ async function aplicarMigracoesProdutos(): Promise<void> {
   await adicionarColunaSeNaoExistir('produtos', 'quantidade', 'REAL DEFAULT 0');
   await adicionarColunaSeNaoExistir('produtos', 'ativo', 'INTEGER DEFAULT 1');
   await adicionarColunaSeNaoExistir('produtos', 'preco', 'REAL DEFAULT 0');
+  await adicionarColunaSeNaoExistir(
+    'produtos',
+    'quantidade_embalagem',
+    'REAL DEFAULT 1'
+  );
+  await adicionarColunaSeNaoExistir(
+    'produtos',
+    'unidade_medida',
+    "TEXT NOT NULL DEFAULT 'un'"
+  );
 
   const database = db;
 
@@ -630,6 +647,28 @@ async function aplicarMigracoesProdutos(): Promise<void> {
     UPDATE produtos
     SET nome = descricao
     WHERE nome IS NULL OR nome = '';
+  `);
+
+  await database.execAsync(`
+    UPDATE produtos
+    SET unidade_medida = 'un'
+    WHERE unidade_medida IS NULL OR TRIM(unidade_medida) = '';
+
+    CREATE TRIGGER IF NOT EXISTS trg_produtos_unidade_obrigatoria_insert
+    BEFORE INSERT ON produtos
+    FOR EACH ROW
+    WHEN NEW.unidade_medida IS NULL OR TRIM(NEW.unidade_medida) = ''
+    BEGIN
+      SELECT RAISE(ABORT, 'A unidade de medida e obrigatoria.');
+    END;
+
+    CREATE TRIGGER IF NOT EXISTS trg_produtos_unidade_obrigatoria_update
+    BEFORE UPDATE OF unidade_medida ON produtos
+    FOR EACH ROW
+    WHEN NEW.unidade_medida IS NULL OR TRIM(NEW.unidade_medida) = ''
+    BEGIN
+      SELECT RAISE(ABORT, 'A unidade de medida e obrigatoria.');
+    END;
   `);
 
   await database.execAsync(`
@@ -692,18 +731,6 @@ async function aplicarMigracoesPrecificacao(): Promise<void> {
   }
 
   await adicionarColunaSeNaoExistir(
-    'produtos',
-    'quantidade_embalagem',
-    'REAL DEFAULT 1'
-  );
-
-  await adicionarColunaSeNaoExistir(
-    'produtos',
-    'unidade_medida',
-    "TEXT DEFAULT 'un'"
-  );
-
-  await adicionarColunaSeNaoExistir(
     'receita_itens',
     'quantidade_numero',
     'REAL DEFAULT 0'
@@ -749,14 +776,6 @@ async function aplicarMigracoesPrecificacao(): Promise<void> {
 // FUNÇÕES AUXILIARES
 // ===============================
 
-function tratarNumero(valor: number | undefined | null): number {
-  if (valor === undefined || valor === null || Number.isNaN(valor)) {
-    return 0;
-  }
-
-  return valor;
-}
-
 function validarDirecaoOrdenacao(direcao: DirecaoOrdenacao): DirecaoOrdenacao {
   return direcao === 'DESC' ? 'DESC' : 'ASC';
 }
@@ -778,6 +797,7 @@ export async function listarProdutos(
     'preco_ultima_entrada',
     'preco_medio',
     'quantidade',
+    'unidade_medida',
   ];
 
   const colunaOrdenacao = colunasPermitidas.includes(ordenarPor)
@@ -821,6 +841,7 @@ export async function buscarProdutos(
     'preco_ultima_entrada',
     'preco_medio',
     'quantidade',
+    'unidade_medida',
   ];
 
   const colunaOrdenacao = colunasPermitidas.includes(ordenarPor)
@@ -903,30 +924,18 @@ export async function cadastrarProduto(
 
   const nome = produto.nome.trim();
   const codigoBarras = produto.codigo_barras?.trim() || '';
-  const precoUltimaEntrada = tratarNumero(produto.preco_ultima_entrada);
-  const precoMedio = produto.preco_medio ?? precoUltimaEntrada;
-  const quantidade = tratarNumero(produto.quantidade);
-  const quantidadeEmbalagem = produto.quantidade_embalagem ?? 1;
-  const unidadeMedida = produto.unidade_medida?.trim() || 'un';
+  const unidadeMedida = produto.unidade_medida?.trim().toLowerCase() || '';
 
   if (!nome) {
     throw new Error('Informe o nome do produto.');
   }
 
-  if (quantidade < 0) {
-    throw new Error('A quantidade não pode ser negativa.');
-  }
-
-  if (precoUltimaEntrada < 0) {
-    throw new Error('O preço da última entrada não pode ser negativo.');
-  }
-
-  if (precoMedio < 0) {
-    throw new Error('O preço médio não pode ser negativo.');
-  }
-
-  if (quantidadeEmbalagem <= 0) {
-    throw new Error('A quantidade da embalagem deve ser maior que zero.');
+  if (
+    !UNIDADES_MEDIDA_ESTOQUE.includes(
+      unidadeMedida as UnidadeMedidaEstoque
+    )
+  ) {
+    throw new Error('Selecione uma unidade de medida válida.');
   }
 
   await database.runAsync(
@@ -942,19 +951,9 @@ export async function cadastrarProduto(
       unidade_medida,
       ativo,
       preco
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, ?)
+    ) VALUES (?, ?, ?, 0, 0, 0, 1, ?, 1, 0)
     `,
-    [
-      nome,
-      nome,
-      codigoBarras,
-      precoUltimaEntrada,
-      precoMedio,
-      quantidade,
-      quantidadeEmbalagem,
-      unidadeMedida,
-      precoUltimaEntrada,
-    ]
+    [nome, nome, codigoBarras, unidadeMedida]
   );
 }
 
@@ -965,11 +964,7 @@ export async function editarProduto(
 
   const nome = produto.nome.trim();
   const codigoBarras = produto.codigo_barras?.trim() || '';
-  const precoUltimaEntrada = tratarNumero(produto.preco_ultima_entrada);
-  const precoMedio = tratarNumero(produto.preco_medio);
-  const quantidade = tratarNumero(produto.quantidade);
-  const quantidadeEmbalagem = produto.quantidade_embalagem ?? 1;
-  const unidadeMedida = produto.unidade_medida?.trim() || 'un';
+  const unidadeMedida = produto.unidade_medida?.trim().toLowerCase() || '';
 
   if (!produto.id) {
     throw new Error('Produto inválido.');
@@ -979,20 +974,12 @@ export async function editarProduto(
     throw new Error('Informe o nome do produto.');
   }
 
-  if (quantidade < 0) {
-    throw new Error('A quantidade não pode ser negativa.');
-  }
-
-  if (precoUltimaEntrada < 0) {
-    throw new Error('O preço da última entrada não pode ser negativo.');
-  }
-
-  if (precoMedio < 0) {
-    throw new Error('O preço médio não pode ser negativo.');
-  }
-
-  if (quantidadeEmbalagem <= 0) {
-    throw new Error('A quantidade da embalagem deve ser maior que zero.');
+  if (
+    !UNIDADES_MEDIDA_ESTOQUE.includes(
+      unidadeMedida as UnidadeMedidaEstoque
+    )
+  ) {
+    throw new Error('Selecione uma unidade de medida válida.');
   }
 
   await database.runAsync(
@@ -1002,26 +989,10 @@ export async function editarProduto(
       descricao = ?,
       nome = ?,
       codigo_barras = ?,
-      preco_ultima_entrada = ?,
-      preco_medio = ?,
-      quantidade = ?,
-      quantidade_embalagem = ?,
-      unidade_medida = ?,
-      preco = ?
+      unidade_medida = ?
     WHERE id = ?
     `,
-    [
-      nome,
-      nome,
-      codigoBarras,
-      precoUltimaEntrada,
-      precoMedio,
-      quantidade,
-      quantidadeEmbalagem,
-      unidadeMedida,
-      precoUltimaEntrada,
-      produto.id,
-    ]
+    [nome, nome, codigoBarras, unidadeMedida, produto.id]
   );
 }
 
@@ -3410,7 +3381,11 @@ export type ResultadoCalculoIngrediente = {
 };
 
 function normalizarUnidade(unidade: string): string {
-  const unidadeTratada = unidade.trim().toLowerCase();
+  const unidadeTratada = unidade
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
 
   if (
     unidadeTratada === 'unidade' ||
@@ -3418,6 +3393,22 @@ function normalizarUnidade(unidade: string): string {
     unidadeTratada === 'und'
   ) {
     return 'un';
+  }
+
+  if (unidadeTratada === 'litro' || unidadeTratada === 'litros') {
+    return 'l';
+  }
+
+  if (unidadeTratada === 'caixas') {
+    return 'caixa';
+  }
+
+  if (unidadeTratada === 'pacotes') {
+    return 'pacote';
+  }
+
+  if (unidadeTratada === 'duzias') {
+    return 'duzia';
   }
 
   return unidadeTratada;
@@ -3434,7 +3425,12 @@ function obterGrupoUnidade(unidade: string): 'peso' | 'volume' | 'unidade' | 'de
     return 'volume';
   }
 
-  if (unidadeNormalizada === 'un') {
+  if (
+    unidadeNormalizada === 'un' ||
+    unidadeNormalizada === 'caixa' ||
+    unidadeNormalizada === 'pacote' ||
+    unidadeNormalizada === 'duzia'
+  ) {
     return 'unidade';
   }
 
@@ -3482,7 +3478,12 @@ export function converterParaUnidadeBase(
     case 'ml':
       return quantidade;
 
+    case 'duzia':
+      return quantidade * 12;
+
     case 'un':
+    case 'caixa':
+    case 'pacote':
       return quantidade;
 
     default:
