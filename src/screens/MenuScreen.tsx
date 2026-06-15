@@ -1,11 +1,20 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  Alert,
+  ScrollView,
+} from 'react-native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { Ionicons } from '@expo/vector-icons';
 import { RootStackParamList } from '../types';
 import { useAuth } from '../contexts/useAuth';
 
-type Props = { navigation: StackNavigationProp<RootStackParamList, 'Menu'> };
+type Props = {
+  navigation: StackNavigationProp<RootStackParamList, 'Menu'>;
+};
 
 type MenuItem = {
   titulo: string;
@@ -21,47 +30,80 @@ export default function MenuScreen({ navigation }: Props) {
       await logout();
       navigation.replace('Login');
     } catch (err) {
-      Alert.alert('Erro', 'Não foi possível sair da conta. Tente novamente.');
+      Alert.alert(
+        'Erro',
+        'Não foi possível sair da conta. Tente novamente.'
+      );
     }
   };
 
   const menuItems: MenuItem[] = [
-    { titulo: 'ESTOQUE', rota: 'Estoque', icone: 'cube-outline' },
-    { titulo: 'RECEITAS', rota: 'Receitas', icone: 'restaurant-outline' },
-    { titulo: 'PRODUTOS', rota: 'ProdutosVenda', icone: 'pricetags-outline' },
-    { titulo: 'ORÇAMENTOS', rota: 'Orcamentos', icone: 'document-text-outline' },
-    { titulo: 'VENDAS', rota: 'Vendas', icone: 'cash-outline' },
-    { titulo: 'CLIENTES', rota: 'Clientes', icone: 'people-outline' },
+    {titulo: 'ESTOQUE', rota: 'Estoque', icone: 'cube-outline',},
+    {titulo: 'COMPRAS', rota: 'Compras', icone: 'cart-outline',},
+    {titulo: 'RECEITAS', rota: 'Receitas',icone: 'restaurant-outline',},
+    {titulo: 'PRODUTOS', rota: 'ProdutosVenda', icone: 'pricetags-outline', },
+    {titulo: 'ORÇAMENTOS', rota: 'Orcamentos', icone: 'document-text-outline',},
+    {titulo: 'VENDAS', rota: 'Vendas', icone: 'cash-outline',},
+    {titulo: 'CLIENTES', rota: 'Clientes',icone: 'people-outline',},
   ];
 
   return (
     <View style={styles.container}>
-      <TouchableOpacity style={styles.logoutButton} onPress={handleLogout} activeOpacity={0.8}>
-        <Ionicons name="log-out-outline" size={18} color="#fff" />
-        <Text style={styles.logoutText}>SAIR</Text>
-      </TouchableOpacity>
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
+        <TouchableOpacity
+          style={styles.logoutButton}
+          onPress={handleLogout}
+          activeOpacity={0.8}
+        >
+          <Ionicons
+            name="log-out-outline"
+            size={18}
+            color="#fff"
+          />
 
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>DOCE AJUDA</Text>
-        <Text style={styles.headerSubtitle}>Escolha uma opção para continuar</Text>
-      </View>
+          <Text style={styles.logoutText}>
+            SAIR
+          </Text>
+        </TouchableOpacity>
 
-      <View style={styles.grid}>
-        {menuItems.map((item) => (
-          <TouchableOpacity
-            key={item.titulo}
-            style={styles.card}
-            onPress={() => navigation.navigate(item.rota as any)}
-            activeOpacity={0.85}
-          >
-            <View style={styles.iconBox}>
-              <Ionicons name={item.icone} size={30} color="#000" />
-            </View>
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>
+            DOCE AJUDA
+          </Text>
 
-            <Text style={styles.cardText}>{item.titulo}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
+          <Text style={styles.headerSubtitle}>
+            Escolha uma opção para continuar
+          </Text>
+        </View>
+
+        <View style={styles.grid}>
+          {menuItems.map((item) => (
+            <TouchableOpacity
+              key={item.titulo}
+              style={styles.card}
+              onPress={() => navigation.navigate(item.rota as any)}
+              activeOpacity={0.85}
+            >
+              <View style={styles.iconBox}>
+                <Ionicons
+                  name={item.icone}
+                  size={30}
+                  color="#000"
+                />
+              </View>
+
+              <Text style={styles.cardText}>
+                {item.titulo}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </ScrollView>
     </View>
   );
 }
@@ -70,14 +112,20 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#ebebeb',
+  },
+
+  scrollView: {
+    flex: 1,
+  },
+
+  scrollContent: {
     paddingHorizontal: 24,
-    paddingTop: 55,
+    paddingTop: 50,
+    paddingBottom: 50,
   },
 
   logoutButton: {
-    position: 'absolute',
-    top: 50,
-    right: 24,
+    alignSelf: 'flex-end',
     backgroundColor: '#c40000',
     paddingVertical: 8,
     paddingHorizontal: 13,
@@ -85,7 +133,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
-    zIndex: 10,
   },
 
   logoutText: {
@@ -97,7 +144,7 @@ const styles = StyleSheet.create({
 
   header: {
     alignItems: 'center',
-    marginTop: 50,
+    marginTop: 28,
     marginBottom: 30,
   },
 
