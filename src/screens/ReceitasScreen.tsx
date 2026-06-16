@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from "react";
 import {
   View,
   Text,
@@ -9,27 +9,28 @@ import {
   StyleSheet,
   Alert,
   ScrollView,
-} from 'react-native';
-import { useFocusEffect, useNavigation } from '@react-navigation/native';
-import { Ionicons } from '@expo/vector-icons';
+} from "react-native";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
+import { Ionicons } from "@expo/vector-icons";
 
 import {
   ReceitaDatabase,
   ReceitaDetalhada,
   NovoItemReceita,
-  ProdutoParaReceita,
+  ProdutoEstoque,
   listarReceitas,
   buscarReceitaDetalhada,
   salvarReceitaCompleta,
   editarReceitaCompleta,
   excluirReceita,
-  buscarProdutosParaReceita,
-  buscarProdutoPorCodigoBarras,
-} from '../database/database';
+  listarProdutos,
+} from "../database/database";
 
-import BarcodeScannerModal from '../components/BarcodeScannerModal';
+import BarcodeScannerModal from "../components/BarcodeScannerModal";
 
-type ModoFormulario = 'cadastro' | 'edicao';
+type ModoFormulario = "cadastro" | "edicao";
+type OrdenarReceitaPor = "nome" | "rendimento";
+type DirecaoOrdenacao = "ASC" | "DESC";
 
 type ItemReceitaLocal = NovoItemReceita & {
   produto_nome: string;
@@ -37,73 +38,92 @@ type ItemReceitaLocal = NovoItemReceita & {
   unidade_medida: string;
 };
 
-const UNIDADES_MEDIDA = ['g', 'kg', 'ml', 'l', 'un'];
+const UNIDADES_MEDIDA = ["g", "kg", "ml", "l", "un"];
+
+function formatarNumero(valor: number): string {
+  return Number(valor || 0).toLocaleString("pt-BR", {
+    maximumFractionDigits: 3,
+  });
+}
 
 export default function ReceitasScreen() {
   const navigation = useNavigation<any>();
 
   const [receitas, setReceitas] = useState<ReceitaDatabase[]>([]);
-  const [busca, setBusca] = useState('');
+  const [busca, setBusca] = useState("");
+  const [ordenarPor, setOrdenarPor] = useState<OrdenarReceitaPor>("nome");
+  const [direcaoOrdenacao, setDirecaoOrdenacao] =
+    useState<DirecaoOrdenacao>("ASC");
 
   const [modalDetalhes, setModalDetalhes] = useState(false);
   const [modalFormulario, setModalFormulario] = useState(false);
   const [modalAdicionarProduto, setModalAdicionarProduto] = useState(false);
+  const [modalSelecionarProduto, setModalSelecionarProduto] = useState(false);
 
   const [modoFormulario, setModoFormulario] =
-    useState<ModoFormulario>('cadastro');
+    useState<ModoFormulario>("cadastro");
 
   const [receitaSelecionada, setReceitaSelecionada] =
     useState<ReceitaDetalhada | null>(null);
 
   const [receitaIdEdicao, setReceitaIdEdicao] = useState<number | null>(null);
 
-  const [nome, setNome] = useState('');
-  const [rendimento, setRendimento] = useState('');
-  const [modoPreparo, setModoPreparo] = useState('');
+  const [nome, setNome] = useState("");
+  const [rendimento, setRendimento] = useState("");
+  const [modoPreparo, setModoPreparo] = useState("");
 
   const [itensReceita, setItensReceita] = useState<ItemReceitaLocal[]>([]);
+  const [indiceItemEdicao, setIndiceItemEdicao] = useState<number | null>(null);
 
-  const [buscaProduto, setBuscaProduto] = useState('');
+  const [buscaProduto, setBuscaProduto] = useState("");
   const [produtosEncontrados, setProdutosEncontrados] = useState<
-    ProdutoParaReceita[]
+    ProdutoEstoque[]
   >([]);
   const [produtoSelecionado, setProdutoSelecionado] =
-    useState<ProdutoParaReceita | null>(null);
-  const [quantidadeUsada, setQuantidadeUsada] = useState('');
-  const [unidadeMedida, setUnidadeMedida] = useState('un');
+    useState<ProdutoEstoque | null>(null);
+  const [quantidadeUsada, setQuantidadeUsada] = useState("");
+  const [unidadeMedida, setUnidadeMedida] = useState("un");
 
   const [scannerVisivel, setScannerVisivel] = useState(false);
 
-  const obterNomeProduto = (produto: ProdutoParaReceita) => {
-    return produto.nome || produto.descricao || 'Produto sem nome';
+  const obterNomeProduto = (produto: ProdutoEstoque) => {
+    return produto.nome || produto.descricao || "Produto sem nome";
+  };
+
+  const obterQuantidadeEstoque = (produto: ProdutoEstoque) => {
+    return Number(produto.quantidade || 0);
+  };
+
+  const obterUnidadeEstoque = (produto: ProdutoEstoque) => {
+    return produto.unidade_medida || "un";
   };
 
   const formatarQuantidade = (quantidade: number, unidade: string) => {
     if (!quantidade) {
-      return '';
+      return "";
     }
 
     return `${quantidade} ${unidade}`;
   };
 
   const extrairQuantidadeAntiga = (quantidadeTexto: string) => {
-    const texto = quantidadeTexto.trim().replace(',', '.');
+    const texto = quantidadeTexto.trim().replace(",", ".");
     const quantidadeEncontrada = texto.match(/\d+(\.\d+)?/);
     const unidadeEncontrada = texto.match(/[a-zA-Z]+/);
 
     const unidadeTexto = unidadeEncontrada
       ? unidadeEncontrada[0].toLowerCase()
-      : 'un';
+      : "un";
 
-    const unidadeNormalizada = unidadeTexto.startsWith('un')
-      ? 'un'
+    const unidadeNormalizada = unidadeTexto.startsWith("un")
+      ? "un"
       : unidadeTexto;
 
     return {
       quantidade: quantidadeEncontrada ? Number(quantidadeEncontrada[0]) : 0,
       unidade: UNIDADES_MEDIDA.includes(unidadeNormalizada)
         ? unidadeNormalizada
-        : 'un',
+        : "un",
     };
   };
 
@@ -112,54 +132,125 @@ export default function ReceitasScreen() {
       const resultado = await listarReceitas();
       setReceitas(resultado);
     } catch (error) {
-      Alert.alert('Erro', 'Não foi possível carregar as receitas.');
+      Alert.alert("Erro", "Não foi possível carregar as receitas.");
     }
   }, []);
 
   useFocusEffect(
     useCallback(() => {
       carregarReceitas();
-    }, [carregarReceitas])
+    }, [carregarReceitas]),
   );
 
   const receitasFiltradas = useMemo(() => {
     const textoBusca = busca.trim().toLowerCase();
 
+    const filtradas = textoBusca
+      ? receitas.filter((receita) => {
+          const id = String(receita.id);
+          const nomeReceita = receita.nome.toLowerCase();
+          const rendimentoReceita = receita.rendimento.toLowerCase();
+
+          return (
+            id.includes(textoBusca) ||
+            nomeReceita.includes(textoBusca) ||
+            rendimentoReceita.includes(textoBusca)
+          );
+        })
+      : [...receitas];
+
+    return filtradas.sort((receitaA, receitaB) => {
+      const valorA = String(receitaA[ordenarPor] || "").toLowerCase();
+      const valorB = String(receitaB[ordenarPor] || "").toLowerCase();
+      const comparacao = valorA.localeCompare(valorB, "pt-BR");
+
+      return direcaoOrdenacao === "ASC" ? comparacao : -comparacao;
+    });
+  }, [receitas, busca, ordenarPor, direcaoOrdenacao]);
+
+  const produtosFiltrados = useMemo(() => {
+    const textoBusca = buscaProduto.trim().toLowerCase();
+
     if (!textoBusca) {
-      return receitas;
+      return produtosEncontrados;
     }
 
-    return receitas.filter((receita) => {
-      const id = String(receita.id);
-      const nomeReceita = receita.nome.toLowerCase();
-      const rendimentoReceita = receita.rendimento.toLowerCase();
+    return produtosEncontrados.filter((produto) => {
+      const id = String(produto.id);
+      const nomeProduto = obterNomeProduto(produto).toLowerCase();
+      const codigoBarras = String(produto.codigo_barras || "").toLowerCase();
 
       return (
         id.includes(textoBusca) ||
-        nomeReceita.includes(textoBusca) ||
-        rendimentoReceita.includes(textoBusca)
+        nomeProduto.includes(textoBusca) ||
+        codigoBarras.includes(textoBusca)
       );
     });
-  }, [receitas, busca]);
+  }, [produtosEncontrados, buscaProduto]);
+
+  const ordenarReceitas = (campo: OrdenarReceitaPor) => {
+    if (campo === ordenarPor) {
+      setDirecaoOrdenacao((direcaoAtual) =>
+        direcaoAtual === "ASC" ? "DESC" : "ASC",
+      );
+      return;
+    }
+
+    setOrdenarPor(campo);
+    setDirecaoOrdenacao("ASC");
+  };
+
+  const obterIconeOrdenacao = (campo: OrdenarReceitaPor) => {
+    if (campo !== ordenarPor) {
+      return "swap-vertical-outline" as const;
+    }
+
+    return direcaoOrdenacao === "ASC"
+      ? ("arrow-up-outline" as const)
+      : ("arrow-down-outline" as const);
+  };
 
   const limparFormulario = () => {
-    setNome('');
-    setRendimento('');
-    setModoPreparo('');
+    setNome("");
+    setRendimento("");
+    setModoPreparo("");
     setItensReceita([]);
     setReceitaIdEdicao(null);
   };
 
   const limparModalProduto = () => {
-    setBuscaProduto('');
+    setBuscaProduto("");
     setProdutosEncontrados([]);
     setProdutoSelecionado(null);
-    setQuantidadeUsada('');
-    setUnidadeMedida('un');
+    setQuantidadeUsada("");
+    setUnidadeMedida("un");
+    setIndiceItemEdicao(null);
+    setModalSelecionarProduto(false);
+  };
+
+  const carregarProdutosDoEstoque = async () => {
+    try {
+      const resultado = await listarProdutos("nome", "ASC");
+      setProdutosEncontrados(resultado);
+      return resultado;
+    } catch (error) {
+      Alert.alert("Erro", "Não foi possível carregar os produtos do estoque.");
+      return [] as ProdutoEstoque[];
+    }
+  };
+
+  const abrirSelecaoProduto = async () => {
+    setBuscaProduto("");
+
+    if (produtosEncontrados.length === 0) {
+      await carregarProdutosDoEstoque();
+    }
+
+    setModalSelecionarProduto(true);
   };
 
   const abrirCadastro = () => {
-    setModoFormulario('cadastro');
+    setModoFormulario("cadastro");
     setReceitaSelecionada(null);
     limparFormulario();
     limparModalProduto();
@@ -171,14 +262,14 @@ export default function ReceitasScreen() {
       const resultado = await buscarReceitaDetalhada(receita.id);
 
       if (!resultado) {
-        Alert.alert('Erro', 'Receita não encontrada.');
+        Alert.alert("Erro", "Receita não encontrada.");
         return;
       }
 
       setReceitaSelecionada(resultado);
       setModalDetalhes(true);
     } catch (error) {
-      Alert.alert('Erro', 'Não foi possível abrir os detalhes da receita.');
+      Alert.alert("Erro", "Não foi possível abrir os detalhes da receita.");
     }
   };
 
@@ -187,11 +278,11 @@ export default function ReceitasScreen() {
       return;
     }
 
-    setModoFormulario('edicao');
+    setModoFormulario("edicao");
     setReceitaIdEdicao(receitaSelecionada.id);
     setNome(receitaSelecionada.nome);
     setRendimento(receitaSelecionada.rendimento);
-    setModoPreparo(receitaSelecionada.modo_preparo);
+    setModoPreparo(receitaSelecionada.modo_preparo || "");
 
     const itensFormatados: ItemReceitaLocal[] = receitaSelecionada.itens.map(
       (item) => {
@@ -213,7 +304,7 @@ export default function ReceitasScreen() {
           quantidade_numero: quantidadeNumero,
           unidade_medida: unidade,
         };
-      }
+      },
     );
 
     setItensReceita(itensFormatados);
@@ -223,84 +314,92 @@ export default function ReceitasScreen() {
     setModalFormulario(true);
   };
 
-  const abrirModalAdicionarProduto = () => {
+  const abrirModalAdicionarProduto = async () => {
     limparModalProduto();
     setModalAdicionarProduto(true);
+    await carregarProdutosDoEstoque();
   };
 
-  const pesquisarProdutos = async (texto: string) => {
-    setBuscaProduto(texto);
+  const abrirEdicaoItemReceita = async (
+    item: ItemReceitaLocal,
+    indice: number,
+  ) => {
+    setBuscaProduto("");
+    setProdutosEncontrados([]);
     setProdutoSelecionado(null);
+    setQuantidadeUsada(String(item.quantidade_numero).replace(".", ","));
+    setUnidadeMedida(item.unidade_medida);
+    setIndiceItemEdicao(indice);
+    setModalAdicionarProduto(true);
 
-    try {
-      const resultado = await buscarProdutosParaReceita(texto);
-      setProdutosEncontrados(resultado);
-    } catch (error) {
-      Alert.alert('Erro', 'Não foi possível buscar os produtos.');
+    const produtos = await carregarProdutosDoEstoque();
+    const produtoAtual = produtos.find(
+      (produto) => produto.id === item.produto_id,
+    );
+
+    if (produtoAtual) {
+      setProdutoSelecionado(produtoAtual);
     }
   };
 
-  const selecionarProduto = (produto: ProdutoParaReceita) => {
+  const pesquisarProdutos = (texto: string) => {
+    setBuscaProduto(texto);
+  };
+
+  const selecionarProduto = (produto: ProdutoEstoque) => {
     setProdutoSelecionado(produto);
-    setBuscaProduto(obterNomeProduto(produto));
-    setProdutosEncontrados([]);
+
+    const unidadeProduto = obterUnidadeEstoque(produto).toLowerCase();
+
+    if (UNIDADES_MEDIDA.includes(unidadeProduto)) {
+      setUnidadeMedida(unidadeProduto);
+    }
+
+    setModalSelecionarProduto(false);
   };
 
   const abrirScanner = () => {
     setScannerVisivel(true);
   };
 
-  const aoReceberCodigo = async (codigo: string) => {
-    try {
-      setScannerVisivel(false);
-      setBuscaProduto(codigo);
-
-      const produto = await buscarProdutoPorCodigoBarras(codigo);
-
-      if (!produto) {
-        Alert.alert(
-          'Produto não encontrado',
-          'Nenhum produto foi encontrado com esse código de barras.'
-        );
-        return;
-      }
-
-      setProdutoSelecionado(produto);
-      setBuscaProduto(obterNomeProduto(produto));
-      setProdutosEncontrados([]);
-    } catch (error) {
-      Alert.alert('Erro', 'Não foi possível buscar o produto pelo código.');
-    }
+  const aoReceberCodigo = (codigo: string) => {
+    setScannerVisivel(false);
+    setBuscaProduto(codigo.trim());
   };
 
-  const adicionarProdutoNaReceita = () => {
+  const salvarItemDaReceita = () => {
     if (!produtoSelecionado) {
-      Alert.alert('Erro', 'Selecione um produto.');
+      Alert.alert("Erro", "Selecione um produto.");
       return;
     }
 
     if (!quantidadeUsada.trim()) {
-      Alert.alert('Erro', 'Informe a quantidade usada.');
+      Alert.alert("Erro", "Informe a quantidade usada.");
       return;
     }
 
-    const quantidadeNumero = Number(quantidadeUsada.replace(',', '.'));
+    const quantidadeNumero = Number(quantidadeUsada.replace(",", "."));
 
     if (Number.isNaN(quantidadeNumero) || quantidadeNumero <= 0) {
-      Alert.alert('Erro', 'Informe uma quantidade válida.');
+      Alert.alert("Erro", "Informe uma quantidade válida.");
       return;
     }
 
     const jaExiste = itensReceita.some(
-      (item) => item.produto_id === produtoSelecionado.id
+      (item, indice) =>
+        item.produto_id === produtoSelecionado.id &&
+        indice !== indiceItemEdicao,
     );
 
     if (jaExiste) {
-      Alert.alert('Erro', 'Esse produto já foi adicionado à receita.');
+      Alert.alert(
+        "Erro",
+        "Esse produto já foi adicionado. Edite o item existente.",
+      );
       return;
     }
 
-    const novoItem: ItemReceitaLocal = {
+    const itemAtualizado: ItemReceitaLocal = {
       produto_id: produtoSelecionado.id,
       produto_nome: obterNomeProduto(produtoSelecionado),
       quantidade_usada: formatarQuantidade(quantidadeNumero, unidadeMedida),
@@ -308,36 +407,40 @@ export default function ReceitasScreen() {
       unidade_medida: unidadeMedida,
     };
 
-    setItensReceita((itensAtuais) => [...itensAtuais, novoItem]);
+    setItensReceita((itensAtuais) => {
+      if (indiceItemEdicao === null) {
+        return [...itensAtuais, itemAtualizado];
+      }
+
+      return itensAtuais.map((item, indice) =>
+        indice === indiceItemEdicao ? itemAtualizado : item,
+      );
+    });
+
     limparModalProduto();
     setModalAdicionarProduto(false);
   };
 
-  const removerProdutoDaReceita = (produtoId: number) => {
+  const removerProdutoDaReceita = (indiceProduto: number) => {
     setItensReceita((itensAtuais) =>
-      itensAtuais.filter((item) => item.produto_id !== produtoId)
+      itensAtuais.filter((_, indice) => indice !== indiceProduto),
     );
   };
 
   const salvarReceita = async () => {
     try {
       if (!nome.trim()) {
-        Alert.alert('Erro', 'Informe o nome da receita.');
+        Alert.alert("Erro", "Informe o nome da receita.");
         return;
       }
 
       if (!rendimento.trim()) {
-        Alert.alert('Erro', 'Informe o rendimento da receita.');
+        Alert.alert("Erro", "Informe o rendimento da receita.");
         return;
       }
 
       if (itensReceita.length === 0) {
-        Alert.alert('Erro', 'Adicione pelo menos um produto à receita.');
-        return;
-      }
-
-      if (!modoPreparo.trim()) {
-        Alert.alert('Erro', 'Informe o modo de preparo.');
+        Alert.alert("Erro", "Adicione pelo menos um produto à receita.");
         return;
       }
 
@@ -348,16 +451,16 @@ export default function ReceitasScreen() {
         unidade_medida: item.unidade_medida,
       }));
 
-      if (modoFormulario === 'cadastro') {
+      if (modoFormulario === "cadastro") {
         await salvarReceitaCompleta(
           nome.trim(),
           rendimento.trim(),
           modoPreparo.trim(),
-          itensParaSalvar
+          itensParaSalvar,
         );
       } else {
         if (!receitaIdEdicao) {
-          Alert.alert('Erro', 'Receita inválida.');
+          Alert.alert("Erro", "Receita inválida.");
           return;
         }
 
@@ -366,7 +469,7 @@ export default function ReceitasScreen() {
           nome.trim(),
           rendimento.trim(),
           modoPreparo.trim(),
-          itensParaSalvar
+          itensParaSalvar,
         );
       }
 
@@ -377,9 +480,11 @@ export default function ReceitasScreen() {
       carregarReceitas();
     } catch (error) {
       const mensagem =
-        error instanceof Error ? error.message : 'Não foi possível salvar a receita.';
+        error instanceof Error
+          ? error.message
+          : "Não foi possível salvar a receita.";
 
-      Alert.alert('Erro', mensagem);
+      Alert.alert("Erro", mensagem);
     }
   };
 
@@ -389,16 +494,16 @@ export default function ReceitasScreen() {
     }
 
     Alert.alert(
-      'Excluir receita',
+      "Excluir receita",
       `Deseja realmente excluir "${receitaSelecionada.nome}"?`,
       [
         {
-          text: 'Cancelar',
-          style: 'cancel',
+          text: "Cancelar",
+          style: "cancel",
         },
         {
-          text: 'Excluir',
-          style: 'destructive',
+          text: "Excluir",
+          style: "destructive",
           onPress: async () => {
             try {
               await excluirReceita(receitaSelecionada.id);
@@ -409,13 +514,13 @@ export default function ReceitasScreen() {
               const mensagem =
                 error instanceof Error
                   ? error.message
-                  : 'Não foi possível excluir a receita.';
+                  : "Não foi possível excluir a receita.";
 
-              Alert.alert('Erro', mensagem);
+              Alert.alert("Erro", mensagem);
             }
           },
         },
-      ]
+      ],
     );
   };
 
@@ -440,36 +545,59 @@ export default function ReceitasScreen() {
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
-          <Text style={styles.backButtonText}>‹</Text>
+          <Ionicons name="arrow-back" size={22} color="#fff" />
         </TouchableOpacity>
 
         <View style={styles.headerTextArea}>
+          <Ionicons name="restaurant-outline" size={22} color="#1a1a1a" />
           <Text style={styles.headerTitle}>RECEITAS</Text>
         </View>
       </View>
 
-      <TextInput
-        style={styles.searchInput}
-        placeholder="Buscar por nome, rendimento ou ID"
-        placeholderTextColor="#888"
-        value={busca}
-        onChangeText={setBusca}
-      />
+      <View style={styles.searchContainer}>
+        <Ionicons name="search-outline" size={20} color="#666" />
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Buscar por nome, rendimento ou ID"
+          placeholderTextColor="#888"
+          value={busca}
+          onChangeText={setBusca}
+        />
+      </View>
 
       <View style={styles.topButtons}>
         <TouchableOpacity style={styles.primaryButton} onPress={abrirCadastro}>
-          <Text style={styles.primaryButtonText}>+ Receita</Text>
+          <Ionicons name="add-circle-outline" size={21} color="#fff" />
+          <Text style={styles.primaryButtonText}>NOVA RECEITA</Text>
         </TouchableOpacity>
       </View>
 
       <View style={styles.tableHeader}>
-        <View style={styles.headerNome}>
+        <TouchableOpacity
+          style={styles.headerNome}
+          onPress={() => ordenarReceitas("nome")}
+          activeOpacity={0.7}
+        >
           <Text style={styles.headerCellText}>RECEITA</Text>
-        </View>
+          <Ionicons
+            name={obterIconeOrdenacao("nome")}
+            size={15}
+            color="#1a1a1a"
+          />
+        </TouchableOpacity>
 
-        <View style={styles.headerRendimento}>
+        <TouchableOpacity
+          style={styles.headerRendimento}
+          onPress={() => ordenarReceitas("rendimento")}
+          activeOpacity={0.7}
+        >
           <Text style={styles.headerCellText}>RENDIMENTO</Text>
-        </View>
+          <Ionicons
+            name={obterIconeOrdenacao("rendimento")}
+            size={15}
+            color="#1a1a1a"
+          />
+        </TouchableOpacity>
       </View>
 
       <FlatList
@@ -545,7 +673,8 @@ export default function ReceitasScreen() {
                       Modo de preparo
                     </Text>
                     <Text style={styles.modoPreparoTexto}>
-                      {receitaSelecionada.modo_preparo}
+                      {receitaSelecionada.modo_preparo?.trim() ||
+                        "Não informado."}
                     </Text>
                   </View>
                 </ScrollView>
@@ -555,6 +684,7 @@ export default function ReceitasScreen() {
                     style={[styles.detailsButton, styles.editButton]}
                     onPress={abrirEdicao}
                   >
+                    <Ionicons name="create-outline" size={18} color="#fff" />
                     <Text style={styles.detailsButtonText}>Editar</Text>
                   </TouchableOpacity>
 
@@ -562,6 +692,7 @@ export default function ReceitasScreen() {
                     style={[styles.detailsButton, styles.deleteButton]}
                     onPress={confirmarExclusao}
                   >
+                    <Ionicons name="trash-outline" size={18} color="#fff" />
                     <Text style={styles.detailsButtonText}>Excluir</Text>
                   </TouchableOpacity>
                 </View>
@@ -573,6 +704,7 @@ export default function ReceitasScreen() {
                     setReceitaSelecionada(null);
                   }}
                 >
+                  <Ionicons name="close-outline" size={19} color="#fff" />
                   <Text style={styles.detailsButtonText}>Fechar</Text>
                 </TouchableOpacity>
               </>
@@ -585,13 +717,13 @@ export default function ReceitasScreen() {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContentLarge}>
             <Text style={styles.modalTitle}>
-              {modoFormulario === 'cadastro'
-                ? 'NOVA RECEITA'
-                : 'EDITAR RECEITA'}
+              {modoFormulario === "cadastro"
+                ? "NOVA RECEITA"
+                : "EDITAR RECEITA"}
             </Text>
 
             <ScrollView showsVerticalScrollIndicator>
-              {modoFormulario === 'edicao' && receitaIdEdicao && (
+              {modoFormulario === "edicao" && receitaIdEdicao && (
                 <>
                   <Text style={styles.inputLabel}>ID:</Text>
                   <TextInput
@@ -643,8 +775,11 @@ export default function ReceitasScreen() {
                     nestedScrollEnabled
                     showsVerticalScrollIndicator
                   >
-                    {itensReceita.map((item) => (
-                      <View key={item.produto_id} style={styles.itemReceita}>
+                    {itensReceita.map((item, indice) => (
+                      <View
+                        key={`${item.produto_id}-${indice}`}
+                        style={styles.itemReceita}
+                      >
                         <View style={styles.itemReceitaInfo}>
                           <Text style={styles.itemReceitaNome}>
                             {item.produto_nome}
@@ -654,25 +789,36 @@ export default function ReceitasScreen() {
                           </Text>
                         </View>
 
-                        <TouchableOpacity
-                          style={styles.removeItemButton}
-                          onPress={() =>
-                            removerProdutoDaReceita(item.produto_id)
-                          }
-                        >
-                          <Ionicons
-                            name="trash-outline"
-                            size={18}
-                            color="#fff"
-                          />
-                        </TouchableOpacity>
+                        <View style={styles.itemReceitaAcoes}>
+                          <TouchableOpacity
+                            style={styles.editItemButton}
+                            onPress={() => abrirEdicaoItemReceita(item, indice)}
+                          >
+                            <Ionicons
+                              name="create-outline"
+                              size={18}
+                              color="#fff"
+                            />
+                          </TouchableOpacity>
+
+                          <TouchableOpacity
+                            style={styles.removeItemButton}
+                            onPress={() => removerProdutoDaReceita(indice)}
+                          >
+                            <Ionicons
+                              name="trash-outline"
+                              size={18}
+                              color="#fff"
+                            />
+                          </TouchableOpacity>
+                        </View>
                       </View>
                     ))}
                   </ScrollView>
                 )}
               </View>
 
-              <Text style={styles.inputLabel}>Modo de preparo:</Text>
+              <Text style={styles.inputLabel}>Modo de preparo (opcional):</Text>
               <TextInput
                 style={styles.textArea}
                 placeholder="Digite o modo de preparo da receita"
@@ -692,6 +838,7 @@ export default function ReceitasScreen() {
                     setModalFormulario(false);
                   }}
                 >
+                  <Ionicons name="close-outline" size={18} color="#fff" />
                   <Text style={styles.modalButtonText}>Cancelar</Text>
                 </TouchableOpacity>
 
@@ -699,6 +846,7 @@ export default function ReceitasScreen() {
                   style={[styles.modalButton, styles.saveButton]}
                   onPress={salvarReceita}
                 >
+                  <Ionicons name="save-outline" size={18} color="#fff" />
                   <Text style={styles.modalButtonText}>Salvar</Text>
                 </TouchableOpacity>
               </View>
@@ -707,85 +855,54 @@ export default function ReceitasScreen() {
         </View>
       </Modal>
 
-      <Modal visible={modalAdicionarProduto} transparent animationType="fade">
+      <Modal
+        visible={modalAdicionarProduto}
+        transparent
+        animationType="fade"
+        onRequestClose={() => {
+          limparModalProduto();
+          setModalAdicionarProduto(false);
+        }}
+      >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>ADICIONAR PRODUTO</Text>
+            <Text style={styles.modalTitle}>
+              {indiceItemEdicao === null
+                ? "ADICIONAR PRODUTO"
+                : "EDITAR PRODUTO"}
+            </Text>
 
             <Text style={styles.inputLabel}>Produto:</Text>
 
-            <View style={styles.inputComIconeContainer}>
-              <TextInput
-                style={styles.inputComIcone}
-                placeholder="Buscar por nome, ID ou código de barras"
-                placeholderTextColor="#888"
-                value={buscaProduto}
-                onChangeText={pesquisarProdutos}
-              />
-
-              <TouchableOpacity
-                style={styles.botaoScannerInput}
-                onPress={abrirScanner}
-                activeOpacity={0.7}
-              >
-                <Ionicons name="barcode-outline" size={24} color="#000" />
-              </TouchableOpacity>
-            </View>
-
-            <FlatList
-              data={produtosEncontrados}
-              style={styles.produtoLista}
-              nestedScrollEnabled
-              showsVerticalScrollIndicator
-              keyExtractor={(item) => item.id.toString()}
-              ListEmptyComponent={
-                buscaProduto.trim() ? (
-                  <View style={styles.produtoListaVazia}>
-                    <Text style={styles.produtoListaVaziaText}>
-                      Nenhum produto encontrado.
-                    </Text>
-                  </View>
-                ) : (
-                  <View style={styles.produtoListaVazia}>
-                    <Text style={styles.produtoListaVaziaText}>
-                      Digite para buscar um produto.
-                    </Text>
-                  </View>
-                )
-              }
-              renderItem={({ item }) => {
-                const selecionado = produtoSelecionado?.id === item.id;
-
-                return (
-                  <TouchableOpacity
-                    style={[
-                      styles.produtoItem,
-                      selecionado && styles.produtoItemSelecionado,
-                    ]}
-                    onPress={() => selecionarProduto(item)}
-                  >
-                    <Text style={styles.produtoItemText} numberOfLines={2}>
-                      {item.id} - {obterNomeProduto(item)}
-                    </Text>
-
-                    <Text style={styles.produtoItemSubText}>
-                      Código: {item.codigo_barras || '-'}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              }}
-            />
-
-            {produtoSelecionado && (
-              <View style={styles.produtoSelecionadoBox}>
-                <Text style={styles.produtoSelecionadoLabel}>
-                  Produto selecionado:
+            <TouchableOpacity
+              style={styles.seletorProduto}
+              onPress={abrirSelecaoProduto}
+              activeOpacity={0.7}
+            >
+              <View style={styles.seletorProdutoTextoArea}>
+                <Text
+                  style={
+                    produtoSelecionado
+                      ? styles.seletorProdutoTexto
+                      : styles.seletorProdutoPlaceholder
+                  }
+                  numberOfLines={1}
+                >
+                  {produtoSelecionado
+                    ? obterNomeProduto(produtoSelecionado)
+                    : "Selecionar produto"}
                 </Text>
-                <Text style={styles.produtoSelecionadoText}>
-                  {obterNomeProduto(produtoSelecionado)}
-                </Text>
+
+                {produtoSelecionado && (
+                  <Text style={styles.seletorProdutoSubtexto}>
+                    Unidade do estoque:{" "}
+                    {obterUnidadeEstoque(produtoSelecionado)}
+                  </Text>
+                )}
               </View>
-            )}
+
+              <Ionicons name="chevron-down" size={20} color="#444" />
+            </TouchableOpacity>
 
             <Text style={styles.inputLabel}>Quantidade usada:</Text>
             <TextInput
@@ -829,16 +946,103 @@ export default function ReceitasScreen() {
                   setModalAdicionarProduto(false);
                 }}
               >
+                <Ionicons name="close-outline" size={18} color="#fff" />
                 <Text style={styles.modalButtonText}>Cancelar</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
                 style={[styles.modalButton, styles.saveButton]}
-                onPress={adicionarProdutoNaReceita}
+                onPress={salvarItemDaReceita}
               >
-                <Text style={styles.modalButtonText}>Adicionar</Text>
+                <Ionicons name="checkmark-outline" size={18} color="#fff" />
+                <Text style={styles.modalButtonText}>
+                  {indiceItemEdicao === null ? "Adicionar" : "Salvar"}
+                </Text>
               </TouchableOpacity>
             </View>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal
+        visible={modalSelecionarProduto}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setModalSelecionarProduto(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalSelecaoProdutoContent}>
+            <Text style={styles.modalSelecaoProdutoTitulo}>
+              SELECIONAR PRODUTO
+            </Text>
+
+            <View style={styles.buscaProdutoContainer}>
+              <TextInput
+                style={styles.buscaProdutoInput}
+                value={buscaProduto}
+                onChangeText={pesquisarProdutos}
+                placeholder="Nome, ID ou código de barras"
+                placeholderTextColor="#888"
+              />
+
+              <TouchableOpacity
+                style={styles.botaoScannerBusca}
+                onPress={abrirScanner}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="barcode-outline" size={23} color="#111" />
+              </TouchableOpacity>
+            </View>
+
+            <FlatList
+              data={produtosFiltrados}
+              keyExtractor={(item) => item.id.toString()}
+              style={styles.listaSelecaoProdutos}
+              contentContainerStyle={styles.listaSelecaoProdutosConteudo}
+              showsVerticalScrollIndicator
+              ListEmptyComponent={
+                <View style={styles.produtoListaVazia}>
+                  <Text style={styles.produtoListaVaziaText}>
+                    Nenhum produto encontrado.
+                  </Text>
+                </View>
+              }
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={styles.produtoOpcaoSelecao}
+                  onPress={() => selecionarProduto(item)}
+                  activeOpacity={0.7}
+                >
+                  <View style={styles.produtoOpcaoInfo}>
+                    <Text
+                      style={styles.produtoOpcaoNome}
+                      numberOfLines={1}
+                    >
+                      {obterNomeProduto(item)}
+                    </Text>
+
+                    <Text style={styles.produtoOpcaoEstoque}>
+                      Estoque: {formatarNumero(obterQuantidadeEstoque(item))}{" "}
+                      {obterUnidadeEstoque(item)}
+                    </Text>
+                  </View>
+
+                  <Ionicons
+                    name="chevron-forward"
+                    size={22}
+                    color="#555"
+                  />
+                </TouchableOpacity>
+              )}
+            />
+
+            <TouchableOpacity
+              style={styles.botaoFecharSelecao}
+              onPress={() => setModalSelecionarProduto(false)}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.botaoFecharSelecaoTexto}>FECHAR</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </Modal>
@@ -855,108 +1059,117 @@ export default function ReceitasScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#ebebeb',
+    backgroundColor: "#ebebeb",
     paddingHorizontal: 16,
     paddingTop: 50,
   },
   header: {
-    backgroundColor: '#e0e0e0',
+    backgroundColor: "#e0e0e0",
     borderRadius: 14,
     paddingVertical: 16,
     paddingHorizontal: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     marginBottom: 14,
-    position: 'relative',
+    position: "relative",
   },
   backButton: {
-    position: 'absolute',
+    position: "absolute",
     left: 12,
     top: 10,
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: '#000',
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: "#000",
+    alignItems: "center",
+    justifyContent: "center",
     zIndex: 2,
-  },
-  backButtonText: {
-    color: '#fff',
-    fontSize: 34,
-    fontWeight: '500',
-    lineHeight: 36,
-    marginTop: -2,
   },
   headerTextArea: {
     paddingHorizontal: 42,
-    alignItems: 'center',
+    alignItems: "center",
+    justifyContent: "center",
+    flexDirection: "row",
+    gap: 7,
   },
   headerTitle: {
     fontSize: 22,
-    fontWeight: '900',
-    color: '#1a1a1a',
+    fontWeight: "900",
+    color: "#1a1a1a",
     letterSpacing: 2,
-    textAlign: 'center',
+    textAlign: "center",
   },
-  searchInput: {
-    backgroundColor: '#fff',
+  searchContainer: {
+    minHeight: 48,
+    backgroundColor: "#fff",
     borderWidth: 1,
-    borderColor: '#d0d0d0',
+    borderColor: "#d0d0d0",
     borderRadius: 10,
-    paddingVertical: 12,
-    paddingHorizontal: 14,
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#1a1a1a',
+    paddingHorizontal: 13,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
     marginBottom: 10,
   },
+  searchInput: {
+    flex: 1,
+    minHeight: 46,
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#1a1a1a",
+  },
   topButtons: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 8,
     marginBottom: 14,
   },
   primaryButton: {
     flex: 1,
-    backgroundColor: '#000',
+    backgroundColor: "#000",
     borderRadius: 10,
     paddingVertical: 13,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
+    flexDirection: "row",
+    gap: 7,
   },
   primaryButtonText: {
-    color: '#fff',
-    fontWeight: '900',
+    color: "#fff",
+    fontWeight: "900",
     fontSize: 14,
     letterSpacing: 0.5,
   },
   tableHeader: {
-    flexDirection: 'row',
-    backgroundColor: '#c8c8c8',
+    flexDirection: "row",
+    backgroundColor: "#c8c8c8",
     borderRadius: 8,
     marginBottom: 5,
-    overflow: 'hidden',
+    overflow: "hidden",
   },
   headerNome: {
     flex: 2,
     paddingVertical: 11,
     paddingHorizontal: 8,
     borderRightWidth: 1,
-    borderRightColor: '#b0b0b0',
-    alignItems: 'center',
-    justifyContent: 'center',
+    borderRightColor: "#b0b0b0",
+    alignItems: "center",
+    justifyContent: "center",
+    flexDirection: "row",
+    gap: 5,
   },
   headerRendimento: {
     flex: 1.4,
     paddingVertical: 11,
     paddingHorizontal: 6,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
+    flexDirection: "row",
+    gap: 5,
   },
   headerCellText: {
-    fontWeight: '900',
-    color: '#1a1a1a',
-    textAlign: 'center',
+    fontWeight: "900",
+    color: "#1a1a1a",
+    textAlign: "center",
     fontSize: 12,
     letterSpacing: 0.4,
   },
@@ -967,75 +1180,75 @@ const styles = StyleSheet.create({
     paddingBottom: 28,
   },
   row: {
-    flexDirection: 'row',
-    backgroundColor: '#fff',
+    flexDirection: "row",
+    backgroundColor: "#fff",
     marginBottom: 5,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#e1e1e1',
-    overflow: 'hidden',
+    borderColor: "#e1e1e1",
+    overflow: "hidden",
     minHeight: 56,
-    alignItems: 'center',
+    alignItems: "center",
   },
   cellNome: {
     flex: 2,
     paddingVertical: 10,
     paddingHorizontal: 10,
-    fontWeight: '800',
-    color: '#1a1a1a',
-    textAlign: 'left',
+    fontWeight: "800",
+    color: "#1a1a1a",
+    textAlign: "left",
     fontSize: 13,
   },
   cellRendimento: {
     flex: 1.4,
     paddingVertical: 10,
     paddingHorizontal: 8,
-    fontWeight: '800',
-    color: '#1a1a1a',
-    textAlign: 'center',
+    fontWeight: "800",
+    color: "#1a1a1a",
+    textAlign: "center",
     fontSize: 13,
   },
   emptyBox: {
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderRadius: 8,
     padding: 20,
-    alignItems: 'center',
+    alignItems: "center",
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: "#ddd",
   },
   emptyText: {
-    color: '#555',
+    color: "#555",
     fontSize: 14,
-    fontWeight: '700',
+    fontWeight: "700",
   },
   emptyTextSmall: {
-    color: '#555',
+    color: "#555",
     fontSize: 13,
-    fontWeight: '700',
-    textAlign: 'center',
+    fontWeight: "700",
+    textAlign: "center",
     paddingVertical: 8,
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.6)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "rgba(0,0,0,0.6)",
+    justifyContent: "center",
+    alignItems: "center",
     paddingHorizontal: 16,
   },
   detailsModalContent: {
-    width: '92%',
-    maxHeight: '88%',
-    backgroundColor: '#fff',
+    width: "92%",
+    maxHeight: "88%",
+    backgroundColor: "#fff",
     borderRadius: 14,
     padding: 20,
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: "#ddd",
   },
   detailsModalTitle: {
     fontSize: 18,
-    fontWeight: '900',
-    color: '#1a1a1a',
-    textAlign: 'center',
+    fontWeight: "900",
+    color: "#1a1a1a",
+    textAlign: "center",
     marginBottom: 18,
     letterSpacing: 1,
   },
@@ -1043,21 +1256,21 @@ const styles = StyleSheet.create({
     maxHeight: 470,
   },
   detailsCard: {
-    backgroundColor: '#f6f6f6',
+    backgroundColor: "#f6f6f6",
     borderRadius: 10,
     paddingVertical: 6,
     paddingHorizontal: 12,
     borderWidth: 1,
-    borderColor: '#e1e1e1',
+    borderColor: "#e1e1e1",
     marginBottom: 16,
   },
   detailRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
     paddingVertical: 9,
     borderBottomWidth: 1,
-    borderBottomColor: '#e4e4e4',
+    borderBottomColor: "#e4e4e4",
     gap: 10,
   },
   detailRowLast: {
@@ -1066,46 +1279,46 @@ const styles = StyleSheet.create({
   detailLabel: {
     flex: 1,
     fontSize: 13,
-    fontWeight: '900',
-    color: '#333',
+    fontWeight: "900",
+    color: "#333",
   },
   detailValue: {
     flex: 1.3,
     fontSize: 13,
-    fontWeight: '700',
-    color: '#1a1a1a',
-    textAlign: 'right',
+    fontWeight: "700",
+    color: "#1a1a1a",
+    textAlign: "right",
   },
   detailSectionTitle: {
     fontSize: 14,
-    fontWeight: '900',
-    color: '#1a1a1a',
+    fontWeight: "900",
+    color: "#1a1a1a",
     marginBottom: 8,
   },
   ingredienteDetalhe: {
     paddingVertical: 8,
     borderBottomWidth: 1,
-    borderBottomColor: '#e4e4e4',
+    borderBottomColor: "#e4e4e4",
   },
   ingredienteNome: {
     fontSize: 13,
-    fontWeight: '900',
-    color: '#1a1a1a',
+    fontWeight: "900",
+    color: "#1a1a1a",
   },
   ingredienteQuantidade: {
     fontSize: 13,
-    fontWeight: '700',
-    color: '#555',
+    fontWeight: "700",
+    color: "#555",
     marginTop: 2,
   },
   modoPreparoTexto: {
     fontSize: 13,
-    fontWeight: '600',
-    color: '#333',
+    fontWeight: "600",
+    color: "#333",
     lineHeight: 20,
   },
   detailsButtonsRow: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 10,
     marginBottom: 10,
   },
@@ -1113,99 +1326,105 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 12,
     borderRadius: 9,
-    alignItems: 'center',
+    alignItems: "center",
+    justifyContent: "center",
+    flexDirection: "row",
+    gap: 6,
   },
   detailsCloseButton: {
-    width: '100%',
+    width: "100%",
     paddingVertical: 12,
     borderRadius: 9,
-    alignItems: 'center',
+    alignItems: "center",
+    justifyContent: "center",
+    flexDirection: "row",
+    gap: 6,
   },
   detailsButtonText: {
-    color: '#fff',
-    fontWeight: '900',
+    color: "#fff",
+    fontWeight: "900",
     fontSize: 14,
     letterSpacing: 0.5,
   },
   modalContent: {
-    width: '100%',
-    maxHeight: '85%',
-    backgroundColor: '#fff',
+    width: "100%",
+    maxHeight: "85%",
+    backgroundColor: "#fff",
     borderRadius: 14,
     padding: 18,
   },
   modalContentLarge: {
-    width: '100%',
-    maxHeight: '88%',
-    backgroundColor: '#fff',
+    width: "100%",
+    maxHeight: "88%",
+    backgroundColor: "#fff",
     borderRadius: 14,
     padding: 18,
   },
   modalTitle: {
     fontSize: 18,
-    fontWeight: '900',
-    color: '#1a1a1a',
-    textAlign: 'center',
+    fontWeight: "900",
+    color: "#1a1a1a",
+    textAlign: "center",
     marginBottom: 16,
     letterSpacing: 0.8,
   },
   input: {
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderWidth: 1.5,
-    borderColor: '#ccc',
+    borderColor: "#ccc",
     borderRadius: 9,
     paddingVertical: 12,
     paddingHorizontal: 12,
     fontSize: 15,
-    fontWeight: '600',
-    color: '#1a1a1a',
+    fontWeight: "600",
+    color: "#1a1a1a",
     marginBottom: 11,
   },
   inputLabel: {
     fontSize: 13,
-    fontWeight: '900',
-    color: '#1a1a1a',
+    fontWeight: "900",
+    color: "#1a1a1a",
     marginBottom: 5,
     marginLeft: 2,
   },
   inputDisabled: {
-    backgroundColor: '#f0f0f0',
-    color: '#777',
+    backgroundColor: "#f0f0f0",
+    color: "#777",
   },
   textArea: {
     minHeight: 130,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderWidth: 1.5,
-    borderColor: '#ccc',
+    borderColor: "#ccc",
     borderRadius: 9,
     paddingVertical: 12,
     paddingHorizontal: 12,
     fontSize: 15,
-    fontWeight: '600',
-    color: '#1a1a1a',
+    fontWeight: "600",
+    color: "#1a1a1a",
     marginBottom: 11,
   },
   addProdutoButton: {
-    backgroundColor: '#000',
+    backgroundColor: "#000",
     borderRadius: 10,
     paddingVertical: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     marginBottom: 10,
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 8,
   },
   addProdutoButtonText: {
-    color: '#fff',
-    fontWeight: '900',
+    color: "#fff",
+    fontWeight: "900",
     fontSize: 14,
     letterSpacing: 0.5,
   },
   itensBox: {
-    backgroundColor: '#f6f6f6',
+    backgroundColor: "#f6f6f6",
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: "#ddd",
     padding: 10,
     marginBottom: 12,
   },
@@ -1213,118 +1432,180 @@ const styles = StyleSheet.create({
     maxHeight: 210,
   },
   itemReceita: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingVertical: 9,
     borderBottomWidth: 1,
-    borderBottomColor: '#e4e4e4',
+    borderBottomColor: "#e4e4e4",
   },
   itemReceitaInfo: {
     flex: 1,
   },
   itemReceitaNome: {
     fontSize: 13,
-    fontWeight: '900',
-    color: '#1a1a1a',
+    fontWeight: "900",
+    color: "#1a1a1a",
   },
   itemReceitaQuantidade: {
     fontSize: 13,
-    fontWeight: '700',
-    color: '#555',
+    fontWeight: "700",
+    color: "#555",
     marginTop: 2,
+  },
+  itemReceitaAcoes: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 7,
+    marginLeft: 8,
+  },
+  editItemButton: {
+    width: 34,
+    height: 34,
+    borderRadius: 9,
+    backgroundColor: "#000",
+    alignItems: "center",
+    justifyContent: "center",
   },
   removeItemButton: {
     width: 34,
     height: 34,
     borderRadius: 9,
-    backgroundColor: '#c90000',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginLeft: 8,
+    backgroundColor: "#c90000",
+    alignItems: "center",
+    justifyContent: "center",
   },
-  inputComIconeContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#fff',
+  seletorProduto: {
+    minHeight: 52,
+    backgroundColor: "#fff",
     borderWidth: 1.5,
-    borderColor: '#ccc',
+    borderColor: "#ccc",
     borderRadius: 10,
     paddingHorizontal: 12,
-    marginBottom: 10,
-    height: 45,
-  },
-  inputComIcone: {
-    flex: 1,
-    height: '100%',
-    color: '#000',
-    fontSize: 15,
-  },
-  botaoScannerInput: {
-    width: 40,
-    height: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  produtoLista: {
-    height: 210,
-    maxHeight: 210,
+    paddingVertical: 8,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     marginBottom: 12,
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 8,
   },
-  produtoListaVazia: {
-    padding: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
+  seletorProdutoTextoArea: {
+    flex: 1,
+    marginRight: 10,
   },
-  produtoListaVaziaText: {
-    color: '#555',
-    fontSize: 13,
-    fontWeight: '700',
-    textAlign: 'center',
+  seletorProdutoTexto: {
+    fontSize: 15,
+    fontWeight: "800",
+    color: "#1a1a1a",
   },
-  produtoItem: {
-    paddingVertical: 10,
-    paddingHorizontal: 10,
-    borderBottomWidth: 1,
-    borderColor: '#eee',
+  seletorProdutoPlaceholder: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: "#888",
   },
-  produtoItemSelecionado: {
-    backgroundColor: '#e8e8e8',
-  },
-  produtoItemText: {
-    fontSize: 13,
-    color: '#1a1a1a',
-    fontWeight: '800',
-  },
-  produtoItemSubText: {
+  seletorProdutoSubtexto: {
     fontSize: 12,
-    color: '#666',
-    fontWeight: '700',
+    fontWeight: "700",
+    color: "#666",
     marginTop: 2,
   },
-  produtoSelecionadoBox: {
-    backgroundColor: '#f6f6f6',
-    borderRadius: 9,
-    borderWidth: 1,
-    borderColor: '#ddd',
-    padding: 10,
-    marginBottom: 10,
+  modalSelecaoProdutoContent: {
+    width: "100%",
+    maxHeight: "86%",
+    backgroundColor: "#f5f5f5",
+    borderRadius: 18,
+    padding: 18,
   },
-  produtoSelecionadoLabel: {
-    fontSize: 12,
-    fontWeight: '800',
-    color: '#555',
-    marginBottom: 3,
+  modalSelecaoProdutoTitulo: {
+    fontSize: 20,
+    fontWeight: "900",
+    color: "#111",
+    textAlign: "center",
+    marginBottom: 18,
+    letterSpacing: 0.5,
   },
-  produtoSelecionadoText: {
+  buscaProdutoContainer: {
+    minHeight: 54,
+    backgroundColor: "#fff",
+    borderWidth: 1.5,
+    borderColor: "#c7c7c7",
+    borderRadius: 13,
+    paddingLeft: 13,
+    paddingRight: 7,
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 14,
+  },
+  buscaProdutoInput: {
+    flex: 1,
+    minHeight: 52,
+    color: "#111",
+    fontSize: 15,
+    fontWeight: "600",
+  },
+  botaoScannerBusca: {
+    width: 44,
+    height: 44,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  listaSelecaoProdutos: {
+    maxHeight: 390,
+    marginBottom: 14,
+  },
+  listaSelecaoProdutosConteudo: {
+    paddingBottom: 2,
+  },
+  produtoListaVazia: {
+    minHeight: 90,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  produtoListaVaziaText: {
+    color: "#666",
     fontSize: 13,
-    fontWeight: '900',
-    color: '#1a1a1a',
+    fontWeight: "700",
+    textAlign: "center",
+  },
+  produtoOpcaoSelecao: {
+    minHeight: 72,
+    backgroundColor: "#fff",
+    borderRadius: 13,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    marginBottom: 9,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  produtoOpcaoInfo: {
+    flex: 1,
+    marginRight: 10,
+  },
+  produtoOpcaoNome: {
+    fontSize: 16,
+    fontWeight: "900",
+    color: "#111",
+  },
+  produtoOpcaoEstoque: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#666",
+    marginTop: 5,
+  },
+  botaoFecharSelecao: {
+    minHeight: 52,
+    backgroundColor: "#d1d1d1",
+    borderRadius: 13,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  botaoFecharSelecaoTexto: {
+    color: "#111",
+    fontSize: 15,
+    fontWeight: "900",
+    letterSpacing: 0.5,
   },
   unidadeContainer: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 8,
     marginBottom: 12,
   },
@@ -1332,49 +1613,52 @@ const styles = StyleSheet.create({
     flex: 1,
     borderRadius: 9,
     borderWidth: 1.5,
-    borderColor: '#ccc',
+    borderColor: "#ccc",
     paddingVertical: 10,
-    alignItems: 'center',
-    backgroundColor: '#fff',
+    alignItems: "center",
+    backgroundColor: "#fff",
   },
   unidadeButtonSelected: {
-    backgroundColor: '#000',
-    borderColor: '#000',
+    backgroundColor: "#000",
+    borderColor: "#000",
   },
   unidadeButtonText: {
     fontSize: 13,
-    fontWeight: '900',
-    color: '#1a1a1a',
+    fontWeight: "900",
+    color: "#1a1a1a",
   },
   unidadeButtonTextSelected: {
-    color: '#fff',
+    color: "#fff",
   },
   modalButtons: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 10,
-    justifyContent: 'space-between',
+    justifyContent: "space-between",
   },
   modalButton: {
     flex: 1,
     paddingVertical: 12,
     borderRadius: 9,
-    alignItems: 'center',
+    alignItems: "center",
+    justifyContent: "center",
+    flexDirection: "row",
+    gap: 6,
   },
   cancelButton: {
-    backgroundColor: '#888',
+    backgroundColor: "#888",
   },
   saveButton: {
-    backgroundColor: '#000',
+    backgroundColor: "#000",
   },
   editButton: {
-    backgroundColor: '#000',
+    backgroundColor: "#000",
   },
   deleteButton: {
-    backgroundColor: '#c90000',
+    backgroundColor: "#c90000",
   },
   modalButtonText: {
-    color: '#fff',
-    fontWeight: '900',
+    color: "#fff",
+    fontWeight: "900",
     fontSize: 14,
     letterSpacing: 0.5,
   },
