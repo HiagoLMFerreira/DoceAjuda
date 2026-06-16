@@ -20,6 +20,7 @@ import {
   CustoVariavelDatabase,
   NovoProdutoVenda,
   ParametrosPrecificacao,
+  ProdutoEstoque,
   ProdutoParaReceita,
   ProdutoVendaDatabase,
   ProdutoVendaDetalhado,
@@ -33,9 +34,7 @@ import {
   atualizarCustoVariavel,
   atualizarProdutoVendaCompleto,
   buscarParametrosPrecificacao,
-  buscarProdutoPorCodigoBarras,
   buscarProdutoVendaDetalhado,
-  buscarProdutosParaReceita,
   buscarReceitaParaPrecificacao,
   calcularCustoIngrediente,
   calcularCustoMaoDeObra,
@@ -48,6 +47,7 @@ import {
   formatarMoeda,
   listarCustosFixos,
   listarCustosVariaveis,
+  listarProdutos,
   listarProdutosVenda,
   listarReceitas,
   salvarParametrosPrecificacao,
@@ -55,7 +55,13 @@ import {
 } from '../database/database';
 
 type ModoFormulario = 'cadastro' | 'edicao';
-type AbaParametros = 'menu' | 'fixos' | 'variaveis' | 'maoDeObra' | 'margem' | 'ajuda';
+type AbaParametros =
+  | 'menu'
+  | 'fixos'
+  | 'variaveis'
+  | 'maoDeObra'
+  | 'margem'
+  | 'ajuda';
 type TipoCusto = 'fixo' | 'variavel';
 type OrdenarProdutoVendaPor = 'nome' | 'preco_venda';
 type DirecaoOrdenacaoProduto = 'asc' | 'desc';
@@ -85,6 +91,8 @@ type ItemProdutoLocal = {
   mensagem?: string;
 };
 
+type ProdutoEstoqueSelecionavel = ProdutoEstoque | ProdutoParaReceita;
+
 const PARAMETROS_INICIAIS: ParametrosPrecificacao = {
   id: 1,
   salario_desejado: 0,
@@ -96,6 +104,12 @@ const PARAMETROS_INICIAIS: ParametrosPrecificacao = {
 };
 
 const UNIDADES = ['g', 'kg', 'ml', 'l', 'un'];
+
+function formatarNumero(valor: number): string {
+  return Number(valor || 0).toLocaleString('pt-BR', {
+    maximumFractionDigits: 3,
+  });
+}
 
 export default function ProdutosVendaScreen() {
   const navigation = useNavigation<any>();
@@ -120,7 +134,9 @@ export default function ProdutosVendaScreen() {
   const [modalFormulario, setModalFormulario] = useState(false);
   const [modalParametros, setModalParametros] = useState(false);
   const [modalAdicionarReceita, setModalAdicionarReceita] = useState(false);
+  const [modalSelecionarReceita, setModalSelecionarReceita] = useState(false);
   const [modalAdicionarItem, setModalAdicionarItem] = useState(false);
+  const [modalSelecionarItem, setModalSelecionarItem] = useState(false);
   const [scannerVisivel, setScannerVisivel] = useState(false);
 
   const [modoFormulario, setModoFormulario] =
@@ -131,9 +147,9 @@ export default function ProdutosVendaScreen() {
   const [descricao, setDescricao] = useState('');
   const [tempoProducao, setTempoProducao] = useState('');
   const [precoVenda, setPrecoVenda] = useState('');
-  const [receitasProduto, setReceitasProduto] = useState<
-    ReceitaProdutoLocal[]
-  >([]);
+  const [receitasProduto, setReceitasProduto] = useState<ReceitaProdutoLocal[]>(
+    []
+  );
   const [itensProduto, setItensProduto] = useState<ItemProdutoLocal[]>([]);
 
   const [receitasDisponiveis, setReceitasDisponiveis] = useState<
@@ -145,16 +161,16 @@ export default function ProdutosVendaScreen() {
   const [quantidadeReceita, setQuantidadeReceita] = useState('');
 
   const [buscaItem, setBuscaItem] = useState('');
-  const [itensEncontrados, setItensEncontrados] = useState<
-    ProdutoParaReceita[]
-  >([]);
-  const [itemSelecionado, setItemSelecionado] =
-    useState<ProdutoParaReceita | null>(null);
+  const [itensEncontrados, setItensEncontrados] = useState<ProdutoEstoque[]>(
+    []
+  );
+  const [itemSelecionado, setItemSelecionado] = useState<ProdutoEstoque | null>(
+    null
+  );
   const [quantidadeItem, setQuantidadeItem] = useState('');
   const [unidadeItem, setUnidadeItem] = useState('un');
 
-  const [abaParametros, setAbaParametros] =
-    useState<AbaParametros>('menu');
+  const [abaParametros, setAbaParametros] = useState<AbaParametros>('menu');
   const [custoEditandoId, setCustoEditandoId] = useState<number | null>(null);
   const [nomeCusto, setNomeCusto] = useState('');
   const [valorCusto, setValorCusto] = useState('');
@@ -185,8 +201,15 @@ export default function ProdutosVendaScreen() {
     return String(valor).replace('.', ',');
   };
 
-  const obterNomeProduto = (produto: ProdutoParaReceita): string =>
+  const obterNomeProduto = (produto: ProdutoEstoqueSelecionavel): string =>
     produto.nome || produto.descricao || 'Produto sem nome';
+
+  const obterQuantidadeEstoque = (
+    produto: ProdutoEstoqueSelecionavel
+  ): number => Number(produto.quantidade || 0);
+
+  const obterUnidadeEstoque = (produto: ProdutoEstoqueSelecionavel): string =>
+    produto.unidade_medida || 'un';
 
   const totalCustosFixos = useMemo(
     () =>
@@ -277,9 +300,7 @@ export default function ProdutosVendaScreen() {
         comparacao = Number(a.id) - Number(b.id);
       }
 
-      return direcaoOrdenacaoProduto === 'asc'
-        ? comparacao
-        : comparacao * -1;
+      return direcaoOrdenacaoProduto === 'asc' ? comparacao : comparacao * -1;
     });
   }, [produtos, ordenarProdutoPor, direcaoOrdenacaoProduto]);
 
@@ -316,6 +337,26 @@ export default function ProdutosVendaScreen() {
         })
       );
   }, [receitasDisponiveis, buscaReceita]);
+
+  const produtosFiltrados = useMemo(() => {
+    const textoBusca = buscaItem.trim().toLowerCase();
+
+    if (!textoBusca) {
+      return itensEncontrados;
+    }
+
+    return itensEncontrados.filter((produto) => {
+      const id = String(produto.id);
+      const nomeProduto = obterNomeProduto(produto).toLowerCase();
+      const codigoBarras = String(produto.codigo_barras || '').toLowerCase();
+
+      return (
+        id.includes(textoBusca) ||
+        nomeProduto.includes(textoBusca) ||
+        codigoBarras.includes(textoBusca)
+      );
+    });
+  }, [itensEncontrados, buscaItem]);
 
   const carregarProdutos = useCallback(async () => {
     try {
@@ -437,7 +478,7 @@ export default function ProdutosVendaScreen() {
   };
 
   const calcularItem = (
-    produto: ProdutoParaReceita,
+    produto: ProdutoEstoqueSelecionavel,
     quantidade: number,
     unidade: string
   ): ItemProdutoLocal => {
@@ -463,16 +504,33 @@ export default function ProdutosVendaScreen() {
     };
   };
 
-  const abrirAdicionarReceita = async () => {
+  const carregarReceitasDisponiveis = async () => {
     try {
       const receitas = await listarReceitas();
       setReceitasDisponiveis(receitas);
-      limparModalReceita();
-      setModalFormulario(false);
-      setModalAdicionarReceita(true);
+      return receitas;
     } catch (error) {
       Alert.alert('Erro', 'Não foi possível carregar as receitas.');
+      setReceitasDisponiveis([]);
+      return [] as ReceitaDatabase[];
     }
+  };
+
+  const pesquisarReceitas = (texto: string) => {
+    setBuscaReceita(texto);
+  };
+
+  const abrirSelecaoReceita = async () => {
+    setBuscaReceita('');
+    await carregarReceitasDisponiveis();
+    setModalSelecionarReceita(true);
+  };
+
+  const abrirAdicionarReceita = async () => {
+    limparModalReceita();
+    setModalFormulario(false);
+    setModalAdicionarReceita(true);
+    await abrirSelecaoReceita();
   };
 
   const selecionarReceita = async (receita: ReceitaDatabase) => {
@@ -485,6 +543,7 @@ export default function ProdutosVendaScreen() {
       }
 
       setReceitaSelecionada(detalhe);
+      setModalSelecionarReceita(false);
     } catch (error) {
       Alert.alert('Erro', 'Não foi possível carregar a receita.');
     }
@@ -499,14 +558,15 @@ export default function ProdutosVendaScreen() {
     const quantidade = textoParaNumero(quantidadeReceita);
 
     if (quantidade <= 0) {
-      Alert.alert('Atenção', 'Informe quantas unidades da receita serão usadas.');
+      Alert.alert(
+        'Atenção',
+        'Informe quantas unidades da receita serão usadas.'
+      );
       return;
     }
 
     if (
-      receitasProduto.some(
-        (item) => item.receita_id === receitaSelecionada.id
-      )
+      receitasProduto.some((item) => item.receita_id === receitaSelecionada.id)
     ) {
       Alert.alert('Atenção', 'Essa receita já foi adicionada ao produto.');
       return;
@@ -525,29 +585,50 @@ export default function ProdutosVendaScreen() {
     setModalFormulario(true);
   };
 
-  const pesquisarItens = async (texto: string) => {
-    setBuscaItem(texto);
-    setItemSelecionado(null);
-
+  const carregarProdutosDoEstoque = async () => {
     try {
-      const resultado = await buscarProdutosParaReceita(texto);
+      const resultado = await listarProdutos('nome', 'ASC');
       setItensEncontrados(resultado);
+      return resultado;
     } catch (error) {
-      Alert.alert('Erro', 'Não foi possível buscar os itens do estoque.');
+      Alert.alert('Erro', 'Não foi possível carregar os produtos do estoque.');
+      setItensEncontrados([]);
+      return [] as ProdutoEstoque[];
     }
   };
 
-  const abrirAdicionarItem = () => {
+  const pesquisarProdutos = (texto: string) => {
+    setBuscaItem(texto);
+  };
+
+  const abrirSelecaoProduto = async () => {
+    setBuscaItem('');
+    await carregarProdutosDoEstoque();
+    setModalSelecionarItem(true);
+  };
+
+  const abrirAdicionarItem = async () => {
     limparModalItem();
     setModalFormulario(false);
     setModalAdicionarItem(true);
+    await abrirSelecaoProduto();
   };
 
-  const selecionarItem = (produto: ProdutoParaReceita) => {
+  const selecionarProduto = (produto: ProdutoEstoque) => {
     setItemSelecionado(produto);
-    setBuscaItem(obterNomeProduto(produto));
-    setItensEncontrados([]);
-    setUnidadeItem(produto.unidade_medida || 'un');
+
+    const unidadeProduto = obterUnidadeEstoque(produto).toLowerCase();
+
+    if (UNIDADES.includes(unidadeProduto)) {
+      setUnidadeItem(unidadeProduto);
+    }
+
+    setModalSelecionarItem(false);
+    setModalAdicionarItem(true);
+  };
+
+  const abrirScanner = () => {
+    setScannerVisivel(true);
   };
 
   const adicionarItemAoProduto = () => {
@@ -589,23 +670,9 @@ export default function ProdutosVendaScreen() {
     setModalFormulario(true);
   };
 
-  const aoReceberCodigo = async (codigo: string) => {
-    try {
-      setScannerVisivel(false);
-      const produto = await buscarProdutoPorCodigoBarras(codigo);
-
-      if (!produto) {
-        Alert.alert(
-          'Produto não encontrado',
-          'Nenhum item foi encontrado com esse código de barras.'
-        );
-        return;
-      }
-
-      selecionarItem(produto);
-    } catch (error) {
-      Alert.alert('Erro', 'Não foi possível buscar o item pelo código.');
-    }
+  const aoReceberCodigo = (codigo: string) => {
+    setScannerVisivel(false);
+    setBuscaItem(codigo.trim());
   };
 
   const removerReceita = (receitaId: number) => {
@@ -769,7 +836,9 @@ export default function ProdutosVendaScreen() {
       setProdutoIdEdicao(produtoDetalhado.id);
       setNome(produtoDetalhado.nome);
       setDescricao(produtoDetalhado.descricao);
-      setTempoProducao(numeroParaTexto(produtoDetalhado.tempo_producao_minutos));
+      setTempoProducao(
+        numeroParaTexto(produtoDetalhado.tempo_producao_minutos)
+      );
       setPrecoVenda(numeroParaTexto(produtoDetalhado.preco_venda));
       setReceitasProduto(
         receitasCalculadas.filter(
@@ -842,14 +911,14 @@ export default function ProdutosVendaScreen() {
       await carregarParametros();
     } catch (error) {
       const mensagem =
-        error instanceof Error ? error.message : 'Não foi possível salvar o custo.';
+        error instanceof Error
+          ? error.message
+          : 'Não foi possível salvar o custo.';
       Alert.alert('Erro', mensagem);
     }
   };
 
-  const editarCusto = (
-    item: CustoFixoDatabase | CustoVariavelDatabase
-  ) => {
+  const editarCusto = (item: CustoFixoDatabase | CustoVariavelDatabase) => {
     setCustoEditandoId(item.id);
     setNomeCusto(item.nome);
     setValorCusto(numeroParaTexto(item.valor));
@@ -973,7 +1042,9 @@ export default function ProdutosVendaScreen() {
 
       <View style={styles.produtoPrecoArea}>
         <Text style={styles.produtoPrecoLabel}>VENDA</Text>
-        <Text style={styles.produtoPreco}>{formatarMoeda(item.preco_venda)}</Text>
+        <Text style={styles.produtoPreco}>
+          {formatarMoeda(item.preco_venda)}
+        </Text>
       </View>
 
       <Ionicons name="chevron-forward" size={20} color="#333" />
@@ -1108,9 +1179,7 @@ export default function ProdutosVendaScreen() {
             onPress={() => setAbaParametros('menu')}
           >
             <Ionicons name="arrow-back" size={19} color="#111" />
-            <Text style={styles.voltarModuloText}>
-              Voltar aos parâmetros
-            </Text>
+            <Text style={styles.voltarModuloText}>Voltar aos parâmetros</Text>
           </TouchableOpacity>
 
           <Text style={styles.parametroModuloTitulo}>
@@ -1180,8 +1249,8 @@ export default function ProdutosVendaScreen() {
 
             <Text style={styles.ajudaTexto}>
               A margem informa qual porcentagem do preço de venda será lucro.
-              Com custo de R$ 30,00 e margem de 30%, o preço sugerido será
-              R$ 42,86.
+              Com custo de R$ 30,00 e margem de 30%, o preço sugerido será R$
+              42,86.
             </Text>
 
             <View style={styles.formulaBox}>
@@ -1254,13 +1323,18 @@ export default function ProdutosVendaScreen() {
           />
 
           <View style={styles.calculoDestaqueBox}>
-            <Text style={styles.calculoDestaqueLabel}>Valor calculado da hora</Text>
+            <Text style={styles.calculoDestaqueLabel}>
+              Valor calculado da hora
+            </Text>
             <Text style={styles.calculoDestaqueValor}>
               {formatarMoeda(valorHora)}
             </Text>
           </View>
 
-          <TouchableOpacity style={styles.fullBlackButton} onPress={salvarMaoDeObra}>
+          <TouchableOpacity
+            style={styles.fullBlackButton}
+            onPress={salvarMaoDeObra}
+          >
             <Ionicons name="save-outline" size={20} color="#fff" />
             <Text style={styles.fullBlackButtonText}>Salvar mão de obra</Text>
           </TouchableOpacity>
@@ -1296,13 +1370,18 @@ export default function ProdutosVendaScreen() {
 
           <View style={styles.simulacaoBox}>
             <Text style={styles.simulacaoTitulo}>Simulação</Text>
-            <Text style={styles.simulacaoTexto}>Custo do produto: R$ 100,00</Text>
+            <Text style={styles.simulacaoTexto}>
+              Custo do produto: R$ 100,00
+            </Text>
             <Text style={styles.simulacaoResultado}>
               Preço sugerido: {formatarMoeda(simulacao)}
             </Text>
           </View>
 
-          <TouchableOpacity style={styles.fullBlackButton} onPress={salvarMargem}>
+          <TouchableOpacity
+            style={styles.fullBlackButton}
+            onPress={salvarMargem}
+          >
             <Ionicons name="save-outline" size={20} color="#fff" />
             <Text style={styles.fullBlackButtonText}>Salvar margem</Text>
           </TouchableOpacity>
@@ -1398,7 +1477,10 @@ export default function ProdutosVendaScreen() {
           <Ionicons name="chevron-forward" size={21} color="#333" />
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.closeGrayButton} onPress={fecharParametros}>
+        <TouchableOpacity
+          style={styles.closeGrayButton}
+          onPress={fecharParametros}
+        >
           <Text style={styles.closeGrayButtonText}>Fechar</Text>
         </TouchableOpacity>
       </>
@@ -1459,9 +1541,7 @@ export default function ProdutosVendaScreen() {
             {ordenarProdutoPor === 'nome' && (
               <Ionicons
                 name={
-                  direcaoOrdenacaoProduto === 'asc'
-                    ? 'caret-up'
-                    : 'caret-down'
+                  direcaoOrdenacaoProduto === 'asc' ? 'caret-up' : 'caret-down'
                 }
                 size={14}
                 color="#111"
@@ -1480,9 +1560,7 @@ export default function ProdutosVendaScreen() {
             {ordenarProdutoPor === 'preco_venda' && (
               <Ionicons
                 name={
-                  direcaoOrdenacaoProduto === 'asc'
-                    ? 'caret-up'
-                    : 'caret-down'
+                  direcaoOrdenacaoProduto === 'asc' ? 'caret-up' : 'caret-down'
                 }
                 size={14}
                 color="#111"
@@ -1541,7 +1619,9 @@ export default function ProdutosVendaScreen() {
                 textAlignVertical="top"
               />
 
-              <Text style={styles.inputLabel}>Tempo de produção (minutos):</Text>
+              <Text style={styles.inputLabel}>
+                Tempo de produção (minutos):
+              </Text>
               <TextInput
                 style={styles.input}
                 placeholder="Ex: 30"
@@ -1553,33 +1633,34 @@ export default function ProdutosVendaScreen() {
 
               <Text style={styles.sectionTitle}>Composição do produto</Text>
 
-              <View style={styles.composicaoButtons}>
-                <TouchableOpacity
-                  style={styles.composicaoButton}
-                  onPress={abrirAdicionarReceita}
-                >
-                  <Ionicons name="restaurant-outline" size={20} color="#fff" />
-                  <Text style={styles.composicaoButtonText}>Receita</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={styles.composicaoButton}
-                  onPress={abrirAdicionarItem}
-                >
-                  <Ionicons name="cube-outline" size={20} color="#fff" />
-                  <Text style={styles.composicaoButtonText}>Item/Embalagem</Text>
-                </TouchableOpacity>
-              </View>
-
               <View style={styles.composicaoBox}>
-                <Text style={styles.composicaoBoxTitle}>Receitas utilizadas</Text>
+                <View style={styles.composicaoBoxHeader}>
+                  <Text style={styles.composicaoBoxTitle}>
+                    Receitas utilizadas
+                  </Text>
+
+                  <TouchableOpacity
+                    style={styles.adicionarComponenteButton}
+                    onPress={abrirAdicionarReceita}
+                    activeOpacity={0.75}
+                  >
+                    <Ionicons name="add" size={18} color="#fff" />
+                    <Text style={styles.adicionarComponenteButtonText}>
+                      Receita
+                    </Text>
+                  </TouchableOpacity>
+                </View>
                 {receitasProduto.length === 0 ? (
-                  <Text style={styles.emptySmall}>Nenhuma receita adicionada.</Text>
+                  <Text style={styles.emptySmall}>
+                    Nenhuma receita adicionada.
+                  </Text>
                 ) : (
                   receitasProduto.map((item) => (
                     <View key={item.receita_id} style={styles.composicaoItem}>
                       <View style={styles.composicaoItemInfo}>
-                        <Text style={styles.composicaoItemNome}>{item.nome}</Text>
+                        <Text style={styles.composicaoItemNome}>
+                          {item.nome}
+                        </Text>
                         <Text style={styles.composicaoItemSubtexto}>
                           {item.quantidade_unidades} un do rendimento •{' '}
                           {formatarMoeda(item.custo_total)}
@@ -1597,9 +1678,22 @@ export default function ProdutosVendaScreen() {
               </View>
 
               <View style={styles.composicaoBox}>
-                <Text style={styles.composicaoBoxTitle}>
-                  Itens, matérias-primas e embalagens
-                </Text>
+                <View style={styles.composicaoBoxHeader}>
+                  <Text style={styles.composicaoBoxTitle}>
+                    Itens Adicionais
+                  </Text>
+
+                  <TouchableOpacity
+                    style={styles.adicionarComponenteButton}
+                    onPress={abrirAdicionarItem}
+                    activeOpacity={0.75}
+                  >
+                    <Ionicons name="add" size={18} color="#fff" />
+                    <Text style={styles.adicionarComponenteButtonText}>
+                      Item
+                    </Text>
+                  </TouchableOpacity>
+                </View>
                 {itensProduto.length === 0 ? (
                   <Text style={styles.emptySmall}>Nenhum item adicionado.</Text>
                 ) : (
@@ -1609,7 +1703,9 @@ export default function ProdutosVendaScreen() {
                       style={styles.composicaoItem}
                     >
                       <View style={styles.composicaoItemInfo}>
-                        <Text style={styles.composicaoItemNome}>{item.nome}</Text>
+                        <Text style={styles.composicaoItemNome}>
+                          {item.nome}
+                        </Text>
                         <Text style={styles.composicaoItemSubtexto}>
                           {item.quantidade_usada} {item.unidade_medida} •{' '}
                           {formatarMoeda(item.custo_total)}
@@ -1631,23 +1727,33 @@ export default function ProdutosVendaScreen() {
 
                 <View style={styles.resumoLinha}>
                   <Text style={styles.resumoLabel}>Receitas</Text>
-                  <Text style={styles.resumoValor}>{formatarMoeda(custoReceitas)}</Text>
+                  <Text style={styles.resumoValor}>
+                    {formatarMoeda(custoReceitas)}
+                  </Text>
                 </View>
                 <View style={styles.resumoLinha}>
-                  <Text style={styles.resumoLabel}>Itens e embalagens</Text>
-                  <Text style={styles.resumoValor}>{formatarMoeda(custoItens)}</Text>
+                  <Text style={styles.resumoLabel}>Itens Adicionais</Text>
+                  <Text style={styles.resumoValor}>
+                    {formatarMoeda(custoItens)}
+                  </Text>
                 </View>
                 <View style={styles.resumoLinha}>
                   <Text style={styles.resumoLabel}>Mão de obra</Text>
-                  <Text style={styles.resumoValor}>{formatarMoeda(custoMaoDeObra)}</Text>
+                  <Text style={styles.resumoValor}>
+                    {formatarMoeda(custoMaoDeObra)}
+                  </Text>
                 </View>
                 <View style={styles.resumoLinha}>
                   <Text style={styles.resumoLabel}>Custos rateados</Text>
-                  <Text style={styles.resumoValor}>{formatarMoeda(custoOperacional)}</Text>
+                  <Text style={styles.resumoValor}>
+                    {formatarMoeda(custoOperacional)}
+                  </Text>
                 </View>
                 <View style={styles.resumoLinhaTotal}>
                   <Text style={styles.resumoLabelTotal}>Custo total</Text>
-                  <Text style={styles.resumoValorTotal}>{formatarMoeda(custoTotal)}</Text>
+                  <Text style={styles.resumoValorTotal}>
+                    {formatarMoeda(custoTotal)}
+                  </Text>
                 </View>
                 <View style={styles.resumoLinhaDestaque}>
                   <Text style={styles.resumoLabelDestaque}>
@@ -1711,47 +1817,33 @@ export default function ProdutosVendaScreen() {
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>ADICIONAR RECEITA</Text>
 
-            <TextInput
-              style={styles.input}
-              placeholder="Buscar receita por nome ou ID"
-              placeholderTextColor="#888"
-              value={buscaReceita}
-              onChangeText={setBuscaReceita}
-            />
+            {receitaSelecionada ? (
+              <View style={styles.selecionadoBox}>
+                <Text style={styles.selecionadoLabel}>
+                  Receita selecionada:
+                </Text>
+                <Text style={styles.selecionadoValue}>
+                  {receitaSelecionada.nome}
+                </Text>
+                <Text style={styles.selectionItemSubtitle}>
+                  Rendimento: {receitaSelecionada.rendimento}
+                </Text>
+              </View>
+            ) : (
+              <Text style={styles.emptySmall}>
+                Nenhuma receita selecionada.
+              </Text>
+            )}
 
-            <ScrollView style={styles.selectionList} keyboardShouldPersistTaps="handled">
-              {receitasFiltradas.length === 0 ? (
-                <Text style={styles.emptySmall}>Nenhuma receita encontrada.</Text>
-              ) : (
-                receitasFiltradas.map((receita) => (
-                  <TouchableOpacity
-                    key={receita.id}
-                    style={[
-                      styles.selectionItem,
-                      receitaSelecionada?.id === receita.id &&
-                        styles.selectionItemSelected,
-                    ]}
-                    onPress={() => selecionarReceita(receita)}
-                  >
-                    <View style={{ flex: 1 }}>
-                      <Text style={styles.selectionItemTitle}>{receita.nome}</Text>
-                      <Text style={styles.selectionItemSubtitle}>
-                        Rendimento: {receita.rendimento}
-                      </Text>
-                    </View>
-                    <Ionicons
-                      name={
-                        receitaSelecionada?.id === receita.id
-                          ? 'checkmark-circle'
-                          : 'chevron-forward'
-                      }
-                      size={21}
-                      color="#111"
-                    />
-                  </TouchableOpacity>
-                ))
-              )}
-            </ScrollView>
+            <TouchableOpacity
+              style={styles.selectProductButton}
+              onPress={() => void abrirSelecaoReceita()}
+            >
+              <Ionicons name="swap-horizontal-outline" size={20} color="#fff" />
+              <Text style={styles.selectProductButtonText}>
+                {receitaSelecionada ? 'Trocar receita' : 'Selecionar receita'}
+              </Text>
+            </TouchableOpacity>
 
             <Text style={styles.inputLabel}>
               Quantas unidades do rendimento serão usadas?
@@ -1769,6 +1861,7 @@ export default function ProdutosVendaScreen() {
               <TouchableOpacity
                 style={[styles.modalButton, styles.grayButton]}
                 onPress={() => {
+                  setModalSelecionarReceita(false);
                   setModalAdicionarReceita(false);
                   limparModalReceita();
                   setModalFormulario(true);
@@ -1788,68 +1881,183 @@ export default function ProdutosVendaScreen() {
         </View>
       </Modal>
 
+      <Modal
+        visible={modalSelecionarReceita}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setModalSelecionarReceita(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalSelecaoProdutoContent}>
+            <Text style={styles.modalSelecaoProdutoTitulo}>
+              SELECIONAR RECEITA
+            </Text>
+
+            <View style={styles.buscaProdutoContainer}>
+              <TextInput
+                style={styles.buscaProdutoInput}
+                value={buscaReceita}
+                onChangeText={pesquisarReceitas}
+                placeholder="Nome, ID ou rendimento"
+                placeholderTextColor="#888"
+              />
+
+              <View style={styles.botaoScannerBusca}>
+                <Ionicons name="search-outline" size={23} color="#111" />
+              </View>
+            </View>
+
+            <FlatList
+              data={receitasFiltradas}
+              keyExtractor={(item) => item.id.toString()}
+              style={styles.listaSelecaoProdutos}
+              contentContainerStyle={styles.listaSelecaoProdutosConteudo}
+              showsVerticalScrollIndicator
+              keyboardShouldPersistTaps="handled"
+              ListEmptyComponent={
+                <View style={styles.produtoListaVazia}>
+                  <Text style={styles.produtoListaVaziaText}>
+                    Nenhuma receita encontrada.
+                  </Text>
+                </View>
+              }
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={styles.produtoOpcaoSelecao}
+                  onPress={() => selecionarReceita(item)}
+                  activeOpacity={0.7}
+                >
+                  <View style={styles.produtoOpcaoInfo}>
+                    <Text style={styles.produtoOpcaoNome} numberOfLines={1}>
+                      {item.nome}
+                    </Text>
+
+                    <Text style={styles.produtoOpcaoEstoque}>
+                      ID: {item.id} • Rendimento: {item.rendimento}
+                    </Text>
+                  </View>
+
+                  <Ionicons name="chevron-forward" size={22} color="#555" />
+                </TouchableOpacity>
+              )}
+            />
+
+            <TouchableOpacity
+              style={styles.botaoFecharSelecao}
+              onPress={() => setModalSelecionarReceita(false)}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.botaoFecharSelecaoTexto}>FECHAR</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal
+        visible={modalSelecionarItem}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setModalSelecionarItem(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalSelecaoProdutoContent}>
+            <Text style={styles.modalSelecaoProdutoTitulo}>
+              SELECIONAR PRODUTO
+            </Text>
+
+            <View style={styles.buscaProdutoContainer}>
+              <TextInput
+                style={styles.buscaProdutoInput}
+                value={buscaItem}
+                onChangeText={pesquisarProdutos}
+                placeholder="Nome, ID ou código de barras"
+                placeholderTextColor="#888"
+              />
+
+              <TouchableOpacity
+                style={styles.botaoScannerBusca}
+                onPress={abrirScanner}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="barcode-outline" size={23} color="#111" />
+              </TouchableOpacity>
+            </View>
+
+            <FlatList
+              data={produtosFiltrados}
+              keyExtractor={(item) => item.id.toString()}
+              style={styles.listaSelecaoProdutos}
+              contentContainerStyle={styles.listaSelecaoProdutosConteudo}
+              showsVerticalScrollIndicator
+              keyboardShouldPersistTaps="handled"
+              ListEmptyComponent={
+                <View style={styles.produtoListaVazia}>
+                  <Text style={styles.produtoListaVaziaText}>
+                    Nenhum produto encontrado.
+                  </Text>
+                </View>
+              }
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={styles.produtoOpcaoSelecao}
+                  onPress={() => selecionarProduto(item)}
+                  activeOpacity={0.7}
+                >
+                  <View style={styles.produtoOpcaoInfo}>
+                    <Text style={styles.produtoOpcaoNome} numberOfLines={1}>
+                      {obterNomeProduto(item)}
+                    </Text>
+
+                    <Text style={styles.produtoOpcaoEstoque}>
+                      Estoque: {formatarNumero(obterQuantidadeEstoque(item))}{' '}
+                      {obterUnidadeEstoque(item)}
+                    </Text>
+                  </View>
+
+                  <Ionicons name="chevron-forward" size={22} color="#555" />
+                </TouchableOpacity>
+              )}
+            />
+
+            <TouchableOpacity
+              style={styles.botaoFecharSelecao}
+              onPress={() => setModalSelecionarItem(false)}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.botaoFecharSelecaoTexto}>FECHAR</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
       <Modal visible={modalAdicionarItem} transparent animationType="fade">
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>ADICIONAR ITEM</Text>
 
-            <View style={styles.inputComIconeContainer}>
-              <TextInput
-                style={styles.inputComIcone}
-                placeholder="Buscar item por nome, ID ou código"
-                placeholderTextColor="#888"
-                value={buscaItem}
-                onChangeText={pesquisarItens}
-              />
-              <TouchableOpacity
-                style={styles.scannerButton}
-                onPress={() => setScannerVisivel(true)}
-              >
-                <Ionicons name="barcode-outline" size={24} color="#111" />
-              </TouchableOpacity>
-            </View>
-
-            <ScrollView style={styles.selectionList} keyboardShouldPersistTaps="handled">
-              {itensEncontrados.length === 0 ? (
-                <Text style={styles.emptySmall}>
-                  {buscaItem.trim()
-                    ? 'Nenhum item encontrado.'
-                    : 'Digite para buscar um item do estoque.'}
-                </Text>
-              ) : (
-                itensEncontrados.map((item) => (
-                  <TouchableOpacity
-                    key={item.id}
-                    style={[
-                      styles.selectionItem,
-                      itemSelecionado?.id === item.id &&
-                        styles.selectionItemSelected,
-                    ]}
-                    onPress={() => selecionarItem(item)}
-                  >
-                    <View style={{ flex: 1 }}>
-                      <Text style={styles.selectionItemTitle}>
-                        {obterNomeProduto(item)}
-                      </Text>
-                      <Text style={styles.selectionItemSubtitle}>
-                        Embalagem: {item.quantidade_embalagem}{' '}
-                        {item.unidade_medida} • {formatarMoeda(item.preco_medio)}
-                      </Text>
-                    </View>
-                    <Ionicons name="chevron-forward" size={21} color="#111" />
-                  </TouchableOpacity>
-                ))
-              )}
-            </ScrollView>
-
-            {itemSelecionado && (
+            {itemSelecionado ? (
               <View style={styles.selecionadoBox}>
                 <Text style={styles.selecionadoLabel}>Item selecionado:</Text>
                 <Text style={styles.selecionadoValue}>
                   {obterNomeProduto(itemSelecionado)}
                 </Text>
+                <Text style={styles.selectionItemSubtitle}>
+                  Embalagem: {itemSelecionado.quantidade_embalagem}{' '}
+                  {itemSelecionado.unidade_medida} •{' '}
+                  {formatarMoeda(itemSelecionado.preco_medio)}
+                </Text>
               </View>
+            ) : (
+              <Text style={styles.emptySmall}>Nenhum item selecionado.</Text>
             )}
+
+            <TouchableOpacity
+              style={styles.selectProductButton}
+              onPress={() => void abrirSelecaoProduto()}
+            >
+              <Ionicons name="swap-horizontal-outline" size={20} color="#fff" />
+              <Text style={styles.selectProductButtonText}>Trocar item</Text>
+            </TouchableOpacity>
 
             <Text style={styles.inputLabel}>Quantidade usada:</Text>
             <TextInput
@@ -1875,7 +2083,8 @@ export default function ProdutosVendaScreen() {
                   <Text
                     style={[
                       styles.unidadeButtonText,
-                      unidadeItem === unidade && styles.unidadeButtonTextSelected,
+                      unidadeItem === unidade &&
+                        styles.unidadeButtonTextSelected,
                     ]}
                   >
                     {unidade}
@@ -1915,7 +2124,9 @@ export default function ProdutosVendaScreen() {
                 <Text style={styles.modalTitle}>DETALHES DO PRODUTO</Text>
                 <ScrollView showsVerticalScrollIndicator>
                   <View style={styles.detailsCard}>
-                    <Text style={styles.detailsTitle}>{produtoDetalhado.nome}</Text>
+                    <Text style={styles.detailsTitle}>
+                      {produtoDetalhado.nome}
+                    </Text>
                     {!!produtoDetalhado.descricao && (
                       <Text style={styles.detailsDescription}>
                         {produtoDetalhado.descricao}
@@ -1933,7 +2144,9 @@ export default function ProdutosVendaScreen() {
                     ) : (
                       produtoDetalhado.receitas.map((item) => (
                         <View key={item.id} style={styles.detailsItem}>
-                          <Text style={styles.detailsItemName}>{item.receita_nome}</Text>
+                          <Text style={styles.detailsItemName}>
+                            {item.receita_nome}
+                          </Text>
                           <Text style={styles.detailsItemValue}>
                             {item.quantidade_unidades} unidade(s) do rendimento
                           </Text>
@@ -1943,13 +2156,17 @@ export default function ProdutosVendaScreen() {
                   </View>
 
                   <View style={styles.detailsCard}>
-                    <Text style={styles.detailsSectionTitle}>Itens e embalagens</Text>
+                    <Text style={styles.detailsSectionTitle}>
+                      Itens Adicionais
+                    </Text>
                     {produtoDetalhado.itens.length === 0 ? (
                       <Text style={styles.emptySmall}>Nenhum item.</Text>
                     ) : (
                       produtoDetalhado.itens.map((item) => (
                         <View key={item.id} style={styles.detailsItem}>
-                          <Text style={styles.detailsItemName}>{item.produto_nome}</Text>
+                          <Text style={styles.detailsItemName}>
+                            {item.produto_nome}
+                          </Text>
                           <Text style={styles.detailsItemValue}>
                             {item.quantidade_usada} {item.unidade_medida}
                           </Text>
@@ -1979,25 +2196,33 @@ export default function ProdutosVendaScreen() {
                       </Text>
                     </View>
                     <View style={styles.detailsPriceRow}>
-                      <Text style={styles.detailsPriceLabel}>Custos rateados</Text>
+                      <Text style={styles.detailsPriceLabel}>
+                        Custos rateados
+                      </Text>
                       <Text style={styles.detailsPriceValue}>
                         {formatarMoeda(produtoDetalhado.custo_operacional)}
                       </Text>
                     </View>
                     <View style={styles.detailsPriceRowStrong}>
-                      <Text style={styles.detailsPriceLabelStrong}>Custo total</Text>
+                      <Text style={styles.detailsPriceLabelStrong}>
+                        Custo total
+                      </Text>
                       <Text style={styles.detailsPriceValueStrong}>
                         {formatarMoeda(produtoDetalhado.custo_total)}
                       </Text>
                     </View>
                     <View style={styles.detailsPriceRow}>
-                      <Text style={styles.detailsPriceLabel}>Preço sugerido</Text>
+                      <Text style={styles.detailsPriceLabel}>
+                        Preço sugerido
+                      </Text>
                       <Text style={styles.detailsPriceValue}>
                         {formatarMoeda(produtoDetalhado.preco_sugerido)}
                       </Text>
                     </View>
                     <View style={styles.detailsSalePrice}>
-                      <Text style={styles.detailsSaleLabel}>Preço de venda</Text>
+                      <Text style={styles.detailsSaleLabel}>
+                        Preço de venda
+                      </Text>
                       <Text style={styles.detailsSaleValue}>
                         {formatarMoeda(produtoDetalhado.preco_venda)}
                       </Text>
@@ -2310,6 +2535,30 @@ const styles = StyleSheet.create({
     marginTop: 5,
     marginBottom: 8,
   },
+  composicaoBoxHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
+    marginBottom: 5,
+  },
+  adicionarComponenteButton: {
+    minHeight: 34,
+    borderRadius: 8,
+    backgroundColor: '#000',
+    paddingHorizontal: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+  },
+  adicionarComponenteButtonText: {
+    color: '#fff',
+    fontSize: 11,
+    fontWeight: '900',
+    width: 40,
+    textAlign: 'center',
+  },
   composicaoButtons: {
     flexDirection: 'row',
     gap: 8,
@@ -2486,6 +2735,17 @@ const styles = StyleSheet.create({
     borderRadius: 9,
     marginBottom: 11,
   },
+  productSelectionList: {
+    height: 260,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 9,
+    marginBottom: 2,
+  },
+  productSelectionListEmpty: {
+    flexGrow: 1,
+    justifyContent: 'center',
+  },
   selectionItem: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -2532,6 +2792,118 @@ const styles = StyleSheet.create({
     height: 40,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  selectProductButton: {
+    minHeight: 43,
+    backgroundColor: '#000',
+    borderRadius: 9,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 7,
+    marginBottom: 12,
+  },
+  selectProductButtonText: {
+    color: '#fff',
+    fontSize: 13,
+    fontWeight: '900',
+  },
+  modalSelecaoProdutoContent: {
+    width: '100%',
+    maxHeight: '86%',
+    backgroundColor: '#f5f5f5',
+    borderRadius: 18,
+    padding: 18,
+  },
+  modalSelecaoProdutoTitulo: {
+    fontSize: 20,
+    fontWeight: '900',
+    color: '#111',
+    textAlign: 'center',
+    marginBottom: 18,
+    letterSpacing: 0.5,
+  },
+  buscaProdutoContainer: {
+    minHeight: 54,
+    backgroundColor: '#fff',
+    borderWidth: 1.5,
+    borderColor: '#c7c7c7',
+    borderRadius: 13,
+    paddingLeft: 13,
+    paddingRight: 7,
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 14,
+  },
+  buscaProdutoInput: {
+    flex: 1,
+    minHeight: 52,
+    color: '#111',
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  botaoScannerBusca: {
+    width: 44,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  listaSelecaoProdutos: {
+    maxHeight: 390,
+    marginBottom: 14,
+  },
+  listaSelecaoProdutosConteudo: {
+    paddingBottom: 2,
+  },
+  produtoListaVazia: {
+    minHeight: 90,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  produtoListaVaziaText: {
+    color: '#666',
+    fontSize: 13,
+    fontWeight: '700',
+    textAlign: 'center',
+  },
+  produtoOpcaoSelecao: {
+    minHeight: 72,
+    backgroundColor: '#fff',
+    borderRadius: 13,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    marginBottom: 9,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  produtoOpcaoInfo: {
+    flex: 1,
+    marginRight: 10,
+  },
+  produtoOpcaoNome: {
+    fontSize: 16,
+    fontWeight: '900',
+    color: '#111',
+  },
+  produtoOpcaoEstoque: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#666',
+    marginTop: 5,
+  },
+  botaoFecharSelecao: {
+    minHeight: 52,
+    backgroundColor: '#d1d1d1',
+    borderRadius: 13,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  botaoFecharSelecaoTexto: {
+    color: '#111',
+    fontSize: 15,
+    fontWeight: '900',
+    letterSpacing: 0.5,
   },
   selecionadoBox: {
     backgroundColor: '#f1f1f1',
