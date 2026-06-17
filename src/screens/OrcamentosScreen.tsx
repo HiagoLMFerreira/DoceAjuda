@@ -6,6 +6,7 @@ import {
   Modal,
   Pressable,
   SafeAreaView,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -436,48 +437,54 @@ export default function OrcamentosScreen({ navigation }: Props) {
             </View>
 
             {carregandoDetalhes || !orcamentoSelecionado ? (
-              <ActivityIndicator style={styles.loadingDetalhes} color="#111" />
+              <View style={styles.loadingDetalhesContainer}>
+                <ActivityIndicator color="#111" />
+              </View>
             ) : (
-              <FlatList
-                data={orcamentoSelecionado.itens}
-                keyExtractor={(item) => String(item.id)}
-                showsVerticalScrollIndicator={false}
+              <ScrollView
+                style={styles.detalhesScroll}
                 contentContainerStyle={styles.detalhesContent}
-                ListHeaderComponent={
-                  <View>
-                    <View style={styles.infoCard}>
-                      <View style={styles.infoLinha}>
-                        <Text style={styles.infoLabel}>Cliente</Text>
-                        <Text style={styles.infoValor}>
-                          {orcamentoSelecionado.cliente_nome}
-                        </Text>
-                      </View>
-                      <View style={styles.infoLinha}>
-                        <Text style={styles.infoLabel}>Data</Text>
-                        <Text style={styles.infoValor}>
-                          {formatarData(orcamentoSelecionado.created_at)}
-                        </Text>
-                      </View>
-                      <View style={styles.infoLinha}>
-                        <Text style={styles.infoLabel}>Validade</Text>
-                        <Text style={styles.infoValor}>
-                          {orcamentoSelecionado.data_validade || '-'}
-                        </Text>
-                      </View>
-                      <View style={styles.infoLinhaSemBorda}>
-                        <Text style={styles.infoLabel}>Status</Text>
-                        <Text style={styles.infoValor}>
-                          {obterTextoStatus(orcamentoSelecionado.status)}
-                        </Text>
-                      </View>
-                    </View>
-
-                    <Text style={styles.detalhesSecaoTitulo}>ITENS</Text>
+                showsVerticalScrollIndicator
+                nestedScrollEnabled
+              >
+                <View style={styles.infoCard}>
+                  <View style={styles.infoLinha}>
+                    <Text style={styles.infoLabel}>Cliente</Text>
+                    <Text style={styles.infoValor} numberOfLines={2}>
+                      {orcamentoSelecionado.cliente_nome}
+                    </Text>
                   </View>
-                }
-                renderItem={({ item }) => (
-                  <View style={styles.detalheItemCard}>
-                    <Text style={styles.detalheItemNome}>{item.produto_nome}</Text>
+
+                  <View style={styles.infoLinha}>
+                    <Text style={styles.infoLabel}>Data</Text>
+                    <Text style={styles.infoValor}>
+                      {formatarData(orcamentoSelecionado.created_at)}
+                    </Text>
+                  </View>
+
+                  <View style={styles.infoLinha}>
+                    <Text style={styles.infoLabel}>Validade</Text>
+                    <Text style={styles.infoValor}>
+                      {orcamentoSelecionado.data_validade || '-'}
+                    </Text>
+                  </View>
+
+                  <View style={styles.infoLinhaSemBorda}>
+                    <Text style={styles.infoLabel}>Status</Text>
+                    <Text style={styles.infoValor}>
+                      {obterTextoStatus(orcamentoSelecionado.status)}
+                    </Text>
+                  </View>
+                </View>
+
+                <Text style={styles.detalhesSecaoTitulo}>ITENS</Text>
+
+                {orcamentoSelecionado.itens.map((item) => (
+                  <View key={String(item.id)} style={styles.detalheItemCard}>
+                    <Text style={styles.detalheItemNome} numberOfLines={2}>
+                      {item.produto_nome}
+                    </Text>
+
                     <View style={styles.detalheItemLinha}>
                       <Text style={styles.detalheItemTexto}>
                         {item.quantidade} × {formatarMoeda(item.valor_unitario)}
@@ -487,27 +494,24 @@ export default function OrcamentosScreen({ navigation }: Props) {
                       </Text>
                     </View>
                   </View>
-                )}
-                ListFooterComponent={
-                  <View>
-                    {!!orcamentoSelecionado.observacoes && (
-                      <View style={styles.observacoesCard}>
-                        <Text style={styles.observacoesTitulo}>Observações</Text>
-                        <Text style={styles.observacoesTexto}>
-                          {orcamentoSelecionado.observacoes}
-                        </Text>
-                      </View>
-                    )}
+                ))}
 
-                    <View style={styles.totalDetalhesCard}>
-                      <Text style={styles.totalDetalhesLabel}>TOTAL</Text>
-                      <Text style={styles.totalDetalhesValor}>
-                        {formatarMoeda(orcamentoSelecionado.valor_total)}
-                      </Text>
-                    </View>
+                {!!orcamentoSelecionado.observacoes && (
+                  <View style={styles.observacoesCard}>
+                    <Text style={styles.observacoesTitulo}>Observações</Text>
+                    <Text style={styles.observacoesTexto}>
+                      {orcamentoSelecionado.observacoes}
+                    </Text>
                   </View>
-                }
-              />
+                )}
+
+                <View style={styles.totalDetalhesCard}>
+                  <Text style={styles.totalDetalhesLabel}>TOTAL</Text>
+                  <Text style={styles.totalDetalhesValor}>
+                    {formatarMoeda(orcamentoSelecionado.valor_total)}
+                  </Text>
+                </View>
+              </ScrollView>
             )}
 
             {orcamentoSelecionado?.status === 'PENDENTE' && (
@@ -781,7 +785,7 @@ const styles = StyleSheet.create({
     fontSize: 17,
     fontWeight: '900',
     color: '#111',
-    marginBottom: 13,
+    marginLeft: 38,
   },
   opcaoOrdenacao: {
     minHeight: 49,
@@ -806,7 +810,9 @@ const styles = StyleSheet.create({
     fontWeight: '900',
   },
   modalDetalhes: {
-    maxHeight: '90%',
+    width: '100%',
+    height: '94%',
+    maxHeight: 700,
     backgroundColor: '#ebebeb',
     borderRadius: 22,
     overflow: 'hidden',
@@ -816,6 +822,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 13,
+    flexShrink: 0,
+  },
+  detalhesScroll: {
+    flex: 1,
+    minHeight: 0,
+    maxHeight: '70%',
   },
   botaoFechar: {
     width: 38,
@@ -827,7 +839,7 @@ const styles = StyleSheet.create({
   },
   detalhesContent: {
     paddingHorizontal: 15,
-    paddingBottom: 16,
+  paddingBottom: 18,
   },
   infoCard: {
     backgroundColor: '#fff',
@@ -924,10 +936,14 @@ const styles = StyleSheet.create({
     fontSize: 21,
   },
   detalhesAcoes: {
+    flexShrink: 0,
     gap: 9,
-    padding: 14,
+    paddingHorizontal: 14,
+    paddingTop: 12,
+    paddingBottom: 16,
     borderTopWidth: 1,
     borderTopColor: '#d1d1d1',
+    backgroundColor: '#ebebeb',
   },
   detalhesAcoesLinha: {
     flexDirection: 'row',
@@ -955,7 +971,9 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: '800',
   },
-  loadingDetalhes: {
-    marginVertical: 45,
+  loadingDetalhesContainer: {
+    minHeight: 180,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });
