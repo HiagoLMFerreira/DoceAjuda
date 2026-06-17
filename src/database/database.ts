@@ -1,4 +1,4 @@
-import * as SQLite from 'expo-sqlite';
+import * as SQLite from "expo-sqlite";
 
 let db: SQLite.SQLiteDatabase | null = null;
 let databaseInitialization: Promise<SQLite.SQLiteDatabase> | null = null;
@@ -7,21 +7,20 @@ let databaseInitialization: Promise<SQLite.SQLiteDatabase> | null = null;
 // TYPES GERAIS
 // ===============================
 
-export type DirecaoOrdenacao = 'ASC' | 'DESC';
+export type DirecaoOrdenacao = "ASC" | "DESC";
 
 export const UNIDADES_MEDIDA_ESTOQUE = [
-  'un',
-  'kg',
-  'g',
-  'l',
-  'ml',
-  'caixa',
-  'pacote',
-  'duzia',
+  "un",
+  "kg",
+  "g",
+  "l",
+  "ml",
+  "caixa",
+  "pacote",
+  "duzia",
 ] as const;
 
-export type UnidadeMedidaEstoque =
-  (typeof UNIDADES_MEDIDA_ESTOQUE)[number];
+export type UnidadeMedidaEstoque = (typeof UNIDADES_MEDIDA_ESTOQUE)[number];
 
 // ===============================
 // TYPES DE PRODUTOS / ESTOQUE
@@ -55,19 +54,19 @@ export type EditarProdutoEstoque = {
 };
 
 export type OrdenarProdutoPor =
-  | 'id'
-  | 'nome'
-  | 'codigo_barras'
-  | 'preco_ultima_entrada'
-  | 'preco_medio'
-  | 'quantidade'
-  | 'unidade_medida';
+  | "id"
+  | "nome"
+  | "codigo_barras"
+  | "preco_ultima_entrada"
+  | "preco_medio"
+  | "quantidade"
+  | "unidade_medida";
 
 // ===============================
 // TYPES DE COMPRAS
 // ===============================
 
-export type StatusCompra = 'CONFIRMADA' | 'CANCELADA';
+export type StatusCompra = "CONFIRMADA" | "CANCELADA";
 
 export type CompraDatabase = {
   id: number;
@@ -112,11 +111,7 @@ export type NovaCompra = {
   itens: NovoItemCompra[];
 };
 
-export type OrdenarCompraPor =
-  | 'id'
-  | 'data_compra'
-  | 'valor_total'
-  | 'status';
+export type OrdenarCompraPor = "id" | "data_compra" | "valor_total" | "status";
 
 // ===============================
 // TYPES DE CLIENTES
@@ -143,7 +138,7 @@ export type EditarCliente = {
   endereco?: string;
 };
 
-export type OrdenarClientePor = 'id' | 'nome' | 'total_compras';
+export type OrdenarClientePor = "id" | "nome" | "total_compras";
 
 // ===============================
 // TYPES DE RECEITAS
@@ -203,7 +198,7 @@ export type ProdutoParaReceita = {
 // TYPES DE PRECIFICAÇÃO
 // ===============================
 
-export type UnidadeMedida = 'g' | 'kg' | 'ml' | 'l' | 'un';
+export type UnidadeMedida = "g" | "kg" | "ml" | "l" | "un";
 
 export type ParametrosPrecificacao = {
   id: number;
@@ -263,7 +258,6 @@ export type ReceitaParaPrecificacao = {
   modo_preparo: string;
   itens: ReceitaItemPrecificacao[];
 };
-
 
 // ===============================
 // TYPES DE PRODUTOS PARA VENDA
@@ -344,19 +338,19 @@ export type ProdutoVendaDetalhado = ProdutoVendaDatabase & {
 // TYPES DE ORÇAMENTOS / VENDAS
 // ===============================
 
-export type TipoDocumentoComercial = 'ORCAMENTO' | 'VENDA';
+export type TipoDocumentoComercial = "ORCAMENTO" | "VENDA";
 
 export type StatusDocumentoComercial =
-  | 'PENDENTE'
-  | 'CONVERTIDO'
-  | 'CONCLUIDA'
-  | 'CANCELADA';
+  | "PENDENTE"
+  | "CONVERTIDO"
+  | "CONCLUIDA"
+  | "CANCELADA";
 
 export type OrdenarDocumentoComercialPor =
-  | 'id'
-  | 'cliente_nome'
-  | 'valor_total'
-  | 'created_at';
+  | "id"
+  | "cliente_nome"
+  | "valor_total"
+  | "created_at";
 
 export type DocumentoComercialDatabase = {
   id: number;
@@ -384,7 +378,19 @@ export type DocumentoComercialItemDatabase = {
 };
 
 export type DocumentoComercialDetalhado = DocumentoComercialDatabase & {
+  cliente_telefone?: string;
+  cliente_endereco?: string;
   itens: DocumentoComercialItemDatabase[];
+};
+
+export type NecessidadeOrcamento = {
+  produto_id: number;
+  produto_nome: string;
+  quantidade_necessaria: number;
+  quantidade_estoque: number;
+  quantidade_faltante: number;
+  unidade_medida: string;
+  estoque_suficiente: boolean;
 };
 
 export type DocumentoComercialItemInput = {
@@ -406,7 +412,7 @@ export type NovoDocumentoComercial = {
 
 export type ProdutoVendaParaDocumento = Pick<
   ProdutoVendaDatabase,
-  'id' | 'nome' | 'descricao' | 'preco_venda' | 'ativo'
+  "id" | "nome" | "descricao" | "preco_venda" | "ativo"
 >;
 
 // ===============================
@@ -414,7 +420,7 @@ export type ProdutoVendaParaDocumento = Pick<
 // ===============================
 
 async function initializeDatabase(): Promise<SQLite.SQLiteDatabase> {
-  const database = await SQLite.openDatabaseAsync('doceajuda.db');
+  const database = await SQLite.openDatabaseAsync("doceajuda.db");
 
   try {
     await database.execAsync(`
@@ -681,10 +687,10 @@ export async function getDatabase(): Promise<SQLite.SQLiteDatabase> {
 async function colunaExiste(
   database: SQLite.SQLiteDatabase,
   tabela: string,
-  coluna: string
+  coluna: string,
 ): Promise<boolean> {
   const colunas = await database.getAllAsync<{ name: string }>(
-    `PRAGMA table_info(${tabela})`
+    `PRAGMA table_info(${tabela})`,
   );
 
   return colunas.some((item) => item.name === coluna);
@@ -693,12 +699,12 @@ async function colunaExiste(
 async function adicionarColunaSeNaoExistir(
   tabela: string,
   coluna: string,
-  definicao: string
+  definicao: string,
 ): Promise<void> {
   const database = db;
 
   if (!database) {
-    throw new Error('Banco de dados ainda não foi inicializado.');
+    throw new Error("Banco de dados ainda não foi inicializado.");
   }
 
   const existe = await colunaExiste(database, tabela, coluna);
@@ -711,32 +717,40 @@ async function adicionarColunaSeNaoExistir(
 }
 
 async function aplicarMigracoesProdutos(): Promise<void> {
-  await adicionarColunaSeNaoExistir('produtos', 'nome', "TEXT DEFAULT ''");
-  await adicionarColunaSeNaoExistir('produtos', 'codigo_barras', "TEXT DEFAULT ''");
+  await adicionarColunaSeNaoExistir("produtos", "nome", "TEXT DEFAULT ''");
   await adicionarColunaSeNaoExistir(
-    'produtos',
-    'preco_ultima_entrada',
-    'REAL DEFAULT 0'
-  );
-  await adicionarColunaSeNaoExistir('produtos', 'preco_medio', 'REAL DEFAULT 0');
-  await adicionarColunaSeNaoExistir('produtos', 'quantidade', 'REAL DEFAULT 0');
-  await adicionarColunaSeNaoExistir('produtos', 'ativo', 'INTEGER DEFAULT 1');
-  await adicionarColunaSeNaoExistir('produtos', 'preco', 'REAL DEFAULT 0');
-  await adicionarColunaSeNaoExistir(
-    'produtos',
-    'quantidade_embalagem',
-    'REAL DEFAULT 1'
+    "produtos",
+    "codigo_barras",
+    "TEXT DEFAULT ''",
   );
   await adicionarColunaSeNaoExistir(
-    'produtos',
-    'unidade_medida',
-    "TEXT NOT NULL DEFAULT 'un'"
+    "produtos",
+    "preco_ultima_entrada",
+    "REAL DEFAULT 0",
+  );
+  await adicionarColunaSeNaoExistir(
+    "produtos",
+    "preco_medio",
+    "REAL DEFAULT 0",
+  );
+  await adicionarColunaSeNaoExistir("produtos", "quantidade", "REAL DEFAULT 0");
+  await adicionarColunaSeNaoExistir("produtos", "ativo", "INTEGER DEFAULT 1");
+  await adicionarColunaSeNaoExistir("produtos", "preco", "REAL DEFAULT 0");
+  await adicionarColunaSeNaoExistir(
+    "produtos",
+    "quantidade_embalagem",
+    "REAL DEFAULT 1",
+  );
+  await adicionarColunaSeNaoExistir(
+    "produtos",
+    "unidade_medida",
+    "TEXT NOT NULL DEFAULT 'un'",
   );
 
   const database = db;
 
   if (!database) {
-    throw new Error('Banco de dados não inicializado.');
+    throw new Error("Banco de dados não inicializado.");
   }
 
   await database.execAsync(`
@@ -786,50 +800,46 @@ async function aplicarMigracoesProdutos(): Promise<void> {
 
 async function aplicarMigracoesMovimentacoes(): Promise<void> {
   await adicionarColunaSeNaoExistir(
-    'movimentacoes',
-    'preco_unitario',
-    'REAL DEFAULT 0'
+    "movimentacoes",
+    "preco_unitario",
+    "REAL DEFAULT 0",
   );
 }
 
 async function aplicarMigracoesCompras(): Promise<void> {
+  await adicionarColunaSeNaoExistir("movimentacoes", "compra_id", "INTEGER");
+
   await adicionarColunaSeNaoExistir(
-    'movimentacoes',
-    'compra_id',
-    'INTEGER'
+    "movimentacoes",
+    "compra_item_id",
+    "INTEGER",
   );
 
   await adicionarColunaSeNaoExistir(
-    'movimentacoes',
-    'compra_item_id',
-    'INTEGER'
-  );
-
-  await adicionarColunaSeNaoExistir(
-    'compra_itens',
-    'quantidade_embalagens',
-    'REAL NOT NULL DEFAULT 1'
+    "compra_itens",
+    "quantidade_embalagens",
+    "REAL NOT NULL DEFAULT 1",
   );
   await adicionarColunaSeNaoExistir(
-    'compra_itens',
-    'quantidade_por_embalagem',
-    'REAL NOT NULL DEFAULT 1'
+    "compra_itens",
+    "quantidade_por_embalagem",
+    "REAL NOT NULL DEFAULT 1",
   );
   await adicionarColunaSeNaoExistir(
-    'compra_itens',
-    'unidade_conteudo',
-    "TEXT NOT NULL DEFAULT 'un'"
+    "compra_itens",
+    "unidade_conteudo",
+    "TEXT NOT NULL DEFAULT 'un'",
   );
   await adicionarColunaSeNaoExistir(
-    'compra_itens',
-    'valor_unitario_estoque',
-    'REAL NOT NULL DEFAULT 0'
+    "compra_itens",
+    "valor_unitario_estoque",
+    "REAL NOT NULL DEFAULT 0",
   );
 
   const database = db;
 
   if (!database) {
-    throw new Error('Banco de dados não inicializado.');
+    throw new Error("Banco de dados não inicializado.");
   }
 
   await database.execAsync(`
@@ -842,55 +852,62 @@ async function aplicarMigracoesCompras(): Promise<void> {
 }
 
 async function aplicarMigracoesClientes(): Promise<void> {
-  await adicionarColunaSeNaoExistir('clientes', 'telefone', "TEXT DEFAULT ''");
-  await adicionarColunaSeNaoExistir('clientes', 'endereco', "TEXT DEFAULT ''");
+  await adicionarColunaSeNaoExistir("clientes", "telefone", "TEXT DEFAULT ''");
+  await adicionarColunaSeNaoExistir("clientes", "endereco", "TEXT DEFAULT ''");
   await adicionarColunaSeNaoExistir(
-    'clientes',
-    'total_compras',
-    'REAL DEFAULT 0'
+    "clientes",
+    "total_compras",
+    "REAL DEFAULT 0",
   );
 }
 
 async function aplicarMigracoesReceitas(): Promise<void> {
-  await adicionarColunaSeNaoExistir('receitas', 'rendimento', "TEXT DEFAULT ''");
-  await adicionarColunaSeNaoExistir('receitas', 'modo_preparo', "TEXT DEFAULT ''");
   await adicionarColunaSeNaoExistir(
-    'receitas',
-    'created_at',
-    "TEXT DEFAULT (datetime('now','localtime'))"
+    "receitas",
+    "rendimento",
+    "TEXT DEFAULT ''",
+  );
+  await adicionarColunaSeNaoExistir(
+    "receitas",
+    "modo_preparo",
+    "TEXT DEFAULT ''",
+  );
+  await adicionarColunaSeNaoExistir(
+    "receitas",
+    "created_at",
+    "TEXT DEFAULT (datetime('now','localtime'))",
   );
 
   await adicionarColunaSeNaoExistir(
-    'receita_itens',
-    'quantidade_usada',
-    "TEXT DEFAULT ''"
+    "receita_itens",
+    "quantidade_usada",
+    "TEXT DEFAULT ''",
   );
 }
 
 async function aplicarMigracoesPrecificacao(): Promise<void> {
-
   const database = db;
 
   if (!database) {
-    throw new Error('Banco de dados não inicializado.');
+    throw new Error("Banco de dados não inicializado.");
   }
 
   await adicionarColunaSeNaoExistir(
-    'receita_itens',
-    'quantidade_numero',
-    'REAL DEFAULT 0'
+    "receita_itens",
+    "quantidade_numero",
+    "REAL DEFAULT 0",
   );
 
   await adicionarColunaSeNaoExistir(
-    'receita_itens',
-    'unidade_medida',
-    "TEXT DEFAULT 'un'"
+    "receita_itens",
+    "unidade_medida",
+    "TEXT DEFAULT 'un'",
   );
 
   await adicionarColunaSeNaoExistir(
-    'parametros_precificacao',
-    'salario_desejado',
-    'REAL DEFAULT 0'
+    "parametros_precificacao",
+    "salario_desejado",
+    "REAL DEFAULT 0",
   );
 
   await database.runAsync(
@@ -904,7 +921,7 @@ async function aplicarMigracoesPrecificacao(): Promise<void> {
       custos_variaveis,
       margem_lucro
     ) VALUES (1, 0, 0, 0, 180, 0, 30)
-    `
+    `,
   );
 
   await database.execAsync(`
@@ -922,7 +939,7 @@ async function aplicarMigracoesPrecificacao(): Promise<void> {
 // ===============================
 
 function validarDirecaoOrdenacao(direcao: DirecaoOrdenacao): DirecaoOrdenacao {
-  return direcao === 'DESC' ? 'DESC' : 'ASC';
+  return direcao === "DESC" ? "DESC" : "ASC";
 }
 
 // ===============================
@@ -930,24 +947,24 @@ function validarDirecaoOrdenacao(direcao: DirecaoOrdenacao): DirecaoOrdenacao {
 // ===============================
 
 export async function listarProdutos(
-  ordenarPor: OrdenarProdutoPor = 'nome',
-  direcao: DirecaoOrdenacao = 'ASC'
+  ordenarPor: OrdenarProdutoPor = "nome",
+  direcao: DirecaoOrdenacao = "ASC",
 ): Promise<ProdutoEstoque[]> {
   const database = await getDatabase();
 
   const colunasPermitidas: OrdenarProdutoPor[] = [
-    'id',
-    'nome',
-    'codigo_barras',
-    'preco_ultima_entrada',
-    'preco_medio',
-    'quantidade',
-    'unidade_medida',
+    "id",
+    "nome",
+    "codigo_barras",
+    "preco_ultima_entrada",
+    "preco_medio",
+    "quantidade",
+    "unidade_medida",
   ];
 
   const colunaOrdenacao = colunasPermitidas.includes(ordenarPor)
     ? ordenarPor
-    : 'nome';
+    : "nome";
 
   const direcaoOrdenacao = validarDirecaoOrdenacao(direcao);
 
@@ -973,25 +990,25 @@ export async function listarProdutos(
 }
 
 export async function buscarProdutos(
-  filtro: string = '',
-  ordenarPor: OrdenarProdutoPor = 'nome',
-  direcao: DirecaoOrdenacao = 'ASC'
+  filtro: string = "",
+  ordenarPor: OrdenarProdutoPor = "nome",
+  direcao: DirecaoOrdenacao = "ASC",
 ): Promise<ProdutoEstoque[]> {
   const database = await getDatabase();
 
   const colunasPermitidas: OrdenarProdutoPor[] = [
-    'id',
-    'nome',
-    'codigo_barras',
-    'preco_ultima_entrada',
-    'preco_medio',
-    'quantidade',
-    'unidade_medida',
+    "id",
+    "nome",
+    "codigo_barras",
+    "preco_ultima_entrada",
+    "preco_medio",
+    "quantidade",
+    "unidade_medida",
   ];
 
   const colunaOrdenacao = colunasPermitidas.includes(ordenarPor)
     ? ordenarPor
-    : 'nome';
+    : "nome";
 
   const direcaoOrdenacao = validarDirecaoOrdenacao(direcao);
   const busca = filtro.trim();
@@ -1027,7 +1044,7 @@ export async function buscarProdutos(
         )
       ORDER BY ${colunaOrdenacao} ${direcaoOrdenacao}
       `,
-      [buscaNumerica, `%${busca}%`, `%${busca}%`, `%${busca}%`]
+      [buscaNumerica, `%${busca}%`, `%${busca}%`, `%${busca}%`],
     );
 
     return resultado;
@@ -1056,31 +1073,29 @@ export async function buscarProdutos(
       )
     ORDER BY ${colunaOrdenacao} ${direcaoOrdenacao}
     `,
-    [`%${busca}%`, `%${busca}%`, `%${busca}%`]
+    [`%${busca}%`, `%${busca}%`, `%${busca}%`],
   );
 
   return resultado;
 }
 
 export async function cadastrarProduto(
-  produto: NovoProdutoEstoque
+  produto: NovoProdutoEstoque,
 ): Promise<void> {
   const database = await getDatabase();
 
   const nome = produto.nome.trim();
-  const codigoBarras = produto.codigo_barras?.trim() || '';
-  const unidadeMedida = produto.unidade_medida?.trim().toLowerCase() || '';
+  const codigoBarras = produto.codigo_barras?.trim() || "";
+  const unidadeMedida = produto.unidade_medida?.trim().toLowerCase() || "";
 
   if (!nome) {
-    throw new Error('Informe o nome do produto.');
+    throw new Error("Informe o nome do produto.");
   }
 
   if (
-    !UNIDADES_MEDIDA_ESTOQUE.includes(
-      unidadeMedida as UnidadeMedidaEstoque
-    )
+    !UNIDADES_MEDIDA_ESTOQUE.includes(unidadeMedida as UnidadeMedidaEstoque)
   ) {
-    throw new Error('Selecione uma unidade de medida válida.');
+    throw new Error("Selecione uma unidade de medida válida.");
   }
 
   await database.runAsync(
@@ -1098,33 +1113,31 @@ export async function cadastrarProduto(
       preco
     ) VALUES (?, ?, ?, 0, 0, 0, 1, ?, 1, 0)
     `,
-    [nome, nome, codigoBarras, unidadeMedida]
+    [nome, nome, codigoBarras, unidadeMedida],
   );
 }
 
 export async function editarProduto(
-  produto: EditarProdutoEstoque
+  produto: EditarProdutoEstoque,
 ): Promise<void> {
   const database = await getDatabase();
 
   const nome = produto.nome.trim();
-  const codigoBarras = produto.codigo_barras?.trim() || '';
-  const unidadeMedida = produto.unidade_medida?.trim().toLowerCase() || '';
+  const codigoBarras = produto.codigo_barras?.trim() || "";
+  const unidadeMedida = produto.unidade_medida?.trim().toLowerCase() || "";
 
   if (!produto.id) {
-    throw new Error('Produto inválido.');
+    throw new Error("Produto inválido.");
   }
 
   if (!nome) {
-    throw new Error('Informe o nome do produto.');
+    throw new Error("Informe o nome do produto.");
   }
 
   if (
-    !UNIDADES_MEDIDA_ESTOQUE.includes(
-      unidadeMedida as UnidadeMedidaEstoque
-    )
+    !UNIDADES_MEDIDA_ESTOQUE.includes(unidadeMedida as UnidadeMedidaEstoque)
   ) {
-    throw new Error('Selecione uma unidade de medida válida.');
+    throw new Error("Selecione uma unidade de medida válida.");
   }
 
   await database.runAsync(
@@ -1137,7 +1150,7 @@ export async function editarProduto(
       unidade_medida = ?
     WHERE id = ?
     `,
-    [nome, nome, codigoBarras, unidadeMedida, produto.id]
+    [nome, nome, codigoBarras, unidadeMedida, produto.id],
   );
 }
 
@@ -1145,7 +1158,7 @@ export async function excluirProduto(produtoId: number): Promise<void> {
   const database = await getDatabase();
 
   if (!produtoId) {
-    throw new Error('Produto inválido.');
+    throw new Error("Produto inválido.");
   }
 
   const usoEmCompra = await database.getFirstAsync<{ total: number }>(
@@ -1154,12 +1167,12 @@ export async function excluirProduto(produtoId: number): Promise<void> {
     FROM compra_itens
     WHERE produto_id = ?
     `,
-    [produtoId]
+    [produtoId],
   );
 
   if ((usoEmCompra?.total ?? 0) > 0) {
     throw new Error(
-      'Este item possui histórico de compras e não pode ser excluído. Você pode inativá-lo.'
+      "Este item possui histórico de compras e não pode ser excluído. Você pode inativá-lo.",
     );
   }
 
@@ -1169,51 +1182,45 @@ export async function excluirProduto(produtoId: number): Promise<void> {
     FROM produto_venda_itens
     WHERE produto_estoque_id = ?
     `,
-    [produtoId]
+    [produtoId],
   );
 
   if ((usoEmProdutoVenda?.total ?? 0) > 0) {
     throw new Error(
-      'Este item está sendo utilizado em um produto para venda e não pode ser excluído.'
+      "Este item está sendo utilizado em um produto para venda e não pode ser excluído.",
     );
   }
 
-  await database.runAsync(
-    'DELETE FROM movimentacoes WHERE produto_id = ?',
-    [produtoId]
-  );
+  await database.runAsync("DELETE FROM movimentacoes WHERE produto_id = ?", [
+    produtoId,
+  ]);
 
-  await database.runAsync(
-    'DELETE FROM receita_itens WHERE produto_id = ?',
-    [produtoId]
-  );
+  await database.runAsync("DELETE FROM receita_itens WHERE produto_id = ?", [
+    produtoId,
+  ]);
 
-  await database.runAsync(
-    'DELETE FROM produtos WHERE id = ?',
-    [produtoId]
-  );
+  await database.runAsync("DELETE FROM produtos WHERE id = ?", [produtoId]);
 }
 
 export async function inativarProduto(produtoId: number): Promise<void> {
   const database = await getDatabase();
 
   if (!produtoId) {
-    throw new Error('Produto inválido.');
+    throw new Error("Produto inválido.");
   }
 
-  await database.runAsync(
-    'UPDATE produtos SET ativo = 0 WHERE id = ?',
-    [produtoId]
-  );
+  await database.runAsync("UPDATE produtos SET ativo = 0 WHERE id = ?", [
+    produtoId,
+  ]);
 }
 
 export async function buscarProdutoPorId(
-  produtoId: number
+  produtoId: number,
 ): Promise<ProdutoEstoque | null> {
   const database = await getDatabase();
 
   if (!produtoId) {
-    throw new Error('Produto inválido.');
+    throw new Error("Produto inválido.");
   }
 
   const produto = await database.getFirstAsync<ProdutoEstoque>(
@@ -1233,7 +1240,7 @@ export async function buscarProdutoPorId(
     FROM produtos
     WHERE id = ?
     `,
-    [produtoId]
+    [produtoId],
   );
 
   return produto ?? null;
@@ -1253,25 +1260,26 @@ function validarDataCompra(dataCompra?: string): string {
   if (!data) {
     const agora = new Date();
     const ano = agora.getFullYear();
-    const mes = String(agora.getMonth() + 1).padStart(2, '0');
-    const dia = String(agora.getDate()).padStart(2, '0');
+    const mes = String(agora.getMonth() + 1).padStart(2, "0");
+    const dia = String(agora.getDate()).padStart(2, "0");
     return `${ano}-${mes}-${dia}`;
   }
 
   if (!/^\d{4}-\d{2}-\d{2}$/.test(data)) {
-    throw new Error('Informe a data da compra no formato AAAA-MM-DD.');
+    throw new Error("Informe a data da compra no formato AAAA-MM-DD.");
   }
 
   return data;
 }
 
-
 function normalizarUnidadeCompra(unidade: string): string {
   const valor = unidade.trim().toLowerCase();
 
-  if (valor === 'litro' || valor === 'litros') return 'l';
-  if (valor === 'unidade' || valor === 'unidades' || valor === 'und') return 'un';
-  if (valor === 'dúzia' || valor === 'duzias' || valor === 'dúzias') return 'duzia';
+  if (valor === "litro" || valor === "litros") return "l";
+  if (valor === "unidade" || valor === "unidades" || valor === "und")
+    return "un";
+  if (valor === "dúzia" || valor === "duzias" || valor === "dúzias")
+    return "duzia";
 
   return valor;
 }
@@ -1279,7 +1287,7 @@ function normalizarUnidadeCompra(unidade: string): string {
 function converterQuantidadeCompra(
   quantidade: number,
   unidadeOrigem: string,
-  unidadeDestino: string
+  unidadeDestino: string,
 ): number {
   const origem = normalizarUnidadeCompra(unidadeOrigem);
   const destino = normalizarUnidadeCompra(unidadeDestino);
@@ -1287,37 +1295,39 @@ function converterQuantidadeCompra(
   if (origem === destino) return quantidade;
 
   const fatores: Record<string, { grupo: string; fator: number }> = {
-    g: { grupo: 'peso', fator: 1 },
-    kg: { grupo: 'peso', fator: 1000 },
-    ml: { grupo: 'volume', fator: 1 },
-    l: { grupo: 'volume', fator: 1000 },
-    un: { grupo: 'unidade', fator: 1 },
-    duzia: { grupo: 'unidade', fator: 12 },
+    g: { grupo: "peso", fator: 1 },
+    kg: { grupo: "peso", fator: 1000 },
+    ml: { grupo: "volume", fator: 1 },
+    l: { grupo: "volume", fator: 1000 },
+    un: { grupo: "unidade", fator: 1 },
+    duzia: { grupo: "unidade", fator: 12 },
   };
 
   const origemConfig = fatores[origem];
   const destinoConfig = fatores[destino];
 
-  if (!origemConfig || !destinoConfig || origemConfig.grupo !== destinoConfig.grupo) {
+  if (
+    !origemConfig ||
+    !destinoConfig ||
+    origemConfig.grupo !== destinoConfig.grupo
+  ) {
     throw new Error(
-      `Não é possível converter ${unidadeOrigem} para ${unidadeDestino}.`
+      `Não é possível converter ${unidadeOrigem} para ${unidadeDestino}.`,
     );
   }
 
   return (quantidade * origemConfig.fator) / destinoConfig.fator;
 }
 
-export async function cadastrarCompra(
-  compra: NovaCompra
-): Promise<number> {
+export async function cadastrarCompra(compra: NovaCompra): Promise<number> {
   const database = await getDatabase();
 
   if (!compra.itens?.length) {
-    throw new Error('Adicione pelo menos um item à compra.');
+    throw new Error("Adicione pelo menos um item à compra.");
   }
 
   const dataCompra = validarDataCompra(compra.data_compra);
-  const observacoes = compra.observacoes?.trim() ?? '';
+  const observacoes = compra.observacoes?.trim() ?? "";
   const produtosAdicionados = new Set<number>();
   let compraId = 0;
 
@@ -1335,34 +1345,40 @@ export async function cadastrarCompra(
 
     for (const item of compra.itens) {
       if (!item.produto_id) {
-        throw new Error('Existe um produto inválido na compra.');
+        throw new Error("Existe um produto inválido na compra.");
       }
 
       if (produtosAdicionados.has(item.produto_id)) {
         throw new Error(
-          'O mesmo produto foi adicionado mais de uma vez. Edite o item existente.'
+          "O mesmo produto foi adicionado mais de uma vez. Edite o item existente.",
         );
       }
 
-      if (!Number.isFinite(item.quantidade_embalagens) || item.quantidade_embalagens <= 0) {
-        throw new Error('A quantidade de embalagens deve ser maior que zero.');
+      if (
+        !Number.isFinite(item.quantidade_embalagens) ||
+        item.quantidade_embalagens <= 0
+      ) {
+        throw new Error("A quantidade de embalagens deve ser maior que zero.");
       }
 
-      if (!Number.isFinite(item.quantidade_por_embalagem) || item.quantidade_por_embalagem <= 0) {
-        throw new Error('O conteúdo por embalagem deve ser maior que zero.');
+      if (
+        !Number.isFinite(item.quantidade_por_embalagem) ||
+        item.quantidade_por_embalagem <= 0
+      ) {
+        throw new Error("O conteúdo por embalagem deve ser maior que zero.");
       }
 
       if (!Number.isFinite(item.valor_unitario) || item.valor_unitario < 0) {
-        throw new Error('O valor unitário da embalagem não pode ser negativo.');
+        throw new Error("O valor unitário da embalagem não pode ser negativo.");
       }
 
       const produto = await database.getFirstAsync<ProdutoEstoque>(
         `SELECT * FROM produtos WHERE id = ? AND ativo = 1`,
-        [item.produto_id]
+        [item.produto_id],
       );
 
       if (!produto) {
-        throw new Error('Um dos produtos não foi encontrado ou está inativo.');
+        throw new Error("Um dos produtos não foi encontrado ou está inativo.");
       }
 
       const unidadeConteudo = normalizarUnidadeCompra(item.unidade_conteudo);
@@ -1370,19 +1386,24 @@ export async function cadastrarCompra(
         throw new Error(`Informe a unidade do conteúdo de ${produto.nome}.`);
       }
 
-      const conteudoTotal = item.quantidade_embalagens * item.quantidade_por_embalagem;
+      const conteudoTotal =
+        item.quantidade_embalagens * item.quantidade_por_embalagem;
       const quantidadeConvertida = converterQuantidadeCompra(
         conteudoTotal,
         unidadeConteudo,
-        produto.unidade_medida
+        produto.unidade_medida,
       );
 
       if (!Number.isFinite(quantidadeConvertida) || quantidadeConvertida <= 0) {
-        throw new Error(`A quantidade convertida de ${produto.nome} é inválida.`);
+        throw new Error(
+          `A quantidade convertida de ${produto.nome} é inválida.`,
+        );
       }
 
       const valorUnitario = arredondarCompra(item.valor_unitario);
-      const subtotal = arredondarCompra(item.quantidade_embalagens * valorUnitario);
+      const subtotal = arredondarCompra(
+        item.quantidade_embalagens * valorUnitario,
+      );
       const valorUnitarioEstoque = subtotal / quantidadeConvertida;
 
       itensPreparados.push({
@@ -1400,13 +1421,13 @@ export async function cadastrarCompra(
     }
 
     const valorTotal = arredondarCompra(
-      itensPreparados.reduce((total, item) => total + item.subtotal, 0)
+      itensPreparados.reduce((total, item) => total + item.subtotal, 0),
     );
 
     const resultadoCompra = await database.runAsync(
       `INSERT INTO compras (data_compra, status, valor_total, observacoes)
        VALUES (?, 'CONFIRMADA', ?, ?)`,
-      [dataCompra, valorTotal, observacoes]
+      [dataCompra, valorTotal, observacoes],
     );
 
     compraId = resultadoCompra.lastInsertRowId;
@@ -1430,18 +1451,18 @@ export async function cadastrarCompra(
           item.valorUnitario,
           item.valorUnitarioEstoque,
           item.subtotal,
-        ]
+        ],
       );
 
       const quantidadeAtual = item.produto.quantidade || 0;
       const precoMedioAtual = item.produto.preco_medio || 0;
       const novaQuantidade = quantidadeAtual + item.quantidadeConvertida;
-      const novoPrecoMedio = novaQuantidade > 0
-        ? (
-            quantidadeAtual * precoMedioAtual +
-            item.quantidadeConvertida * item.valorUnitarioEstoque
-          ) / novaQuantidade
-        : 0;
+      const novoPrecoMedio =
+        novaQuantidade > 0
+          ? (quantidadeAtual * precoMedioAtual +
+              item.quantidadeConvertida * item.valorUnitarioEstoque) /
+            novaQuantidade
+          : 0;
 
       await database.runAsync(
         `UPDATE produtos
@@ -1454,7 +1475,7 @@ export async function cadastrarCompra(
           novoPrecoMedio,
           item.valorUnitarioEstoque,
           item.produto.id,
-        ]
+        ],
       );
 
       await database.runAsync(
@@ -1467,7 +1488,7 @@ export async function cadastrarCompra(
           item.valorUnitarioEstoque,
           compraId,
           resultadoItem.lastInsertRowId,
-        ]
+        ],
       );
     }
   });
@@ -1476,23 +1497,23 @@ export async function cadastrarCompra(
 }
 
 export async function listarCompras(
-  filtro: string = '',
-  ordenarPor: OrdenarCompraPor = 'data_compra',
-  direcao: DirecaoOrdenacao = 'DESC'
+  filtro: string = "",
+  ordenarPor: OrdenarCompraPor = "data_compra",
+  direcao: DirecaoOrdenacao = "DESC",
 ): Promise<CompraDatabase[]> {
   const database = await getDatabase();
   const colunasPermitidas: Record<OrdenarCompraPor, string> = {
-    id: 'c.id',
-    data_compra: 'c.data_compra',
-    valor_total: 'c.valor_total',
-    status: 'c.status',
+    id: "c.id",
+    data_compra: "c.data_compra",
+    valor_total: "c.valor_total",
+    status: "c.status",
   };
 
-  const colunaOrdenacao = colunasPermitidas[ordenarPor] ?? 'c.data_compra';
+  const colunaOrdenacao = colunasPermitidas[ordenarPor] ?? "c.data_compra";
   const direcaoOrdenacao = validarDirecaoOrdenacao(direcao);
   const busca = filtro.trim();
   const parametros: Array<string | number> = [];
-  let where = '';
+  let where = "";
 
   if (busca) {
     const buscaNumerica = Number(busca);
@@ -1537,17 +1558,17 @@ export async function listarCompras(
     ${where}
     ORDER BY ${colunaOrdenacao} ${direcaoOrdenacao}, c.id ${direcaoOrdenacao}
     `,
-    parametros
+    parametros,
   );
 }
 
 export async function listarItensCompra(
-  compraId: number
+  compraId: number,
 ): Promise<CompraItemDatabase[]> {
   const database = await getDatabase();
 
   if (!compraId) {
-    throw new Error('Compra inválida.');
+    throw new Error("Compra inválida.");
   }
 
   return database.getAllAsync<CompraItemDatabase>(
@@ -1569,17 +1590,17 @@ export async function listarItensCompra(
     WHERE compra_id = ?
     ORDER BY id ASC
     `,
-    [compraId]
+    [compraId],
   );
 }
 
 export async function buscarCompraPorId(
-  compraId: number
+  compraId: number,
 ): Promise<CompraDetalhada | null> {
   const database = await getDatabase();
 
   if (!compraId) {
-    throw new Error('Compra inválida.');
+    throw new Error("Compra inválida.");
   }
 
   const compra = await database.getFirstAsync<CompraDatabase>(
@@ -1595,7 +1616,7 @@ export async function buscarCompraPorId(
     FROM compras
     WHERE id = ?
     `,
-    [compraId]
+    [compraId],
   );
 
   if (!compra) {
@@ -1612,26 +1633,26 @@ export async function cancelarCompra(compraId: number): Promise<void> {
   const database = await getDatabase();
 
   if (!compraId) {
-    throw new Error('Compra inválida.');
+    throw new Error("Compra inválida.");
   }
 
   await database.withTransactionAsync(async () => {
     const compra = await database.getFirstAsync<CompraDatabase>(
       `SELECT * FROM compras WHERE id = ?`,
-      [compraId]
+      [compraId],
     );
 
     if (!compra) {
-      throw new Error('Compra não encontrada.');
+      throw new Error("Compra não encontrada.");
     }
 
-    if (compra.status === 'CANCELADA') {
-      throw new Error('Esta compra já está cancelada.');
+    if (compra.status === "CANCELADA") {
+      throw new Error("Esta compra já está cancelada.");
     }
 
     const itens = await database.getAllAsync<CompraItemDatabase>(
       `SELECT * FROM compra_itens WHERE compra_id = ? ORDER BY id DESC`,
-      [compraId]
+      [compraId],
     );
 
     for (const item of itens) {
@@ -1644,16 +1665,18 @@ export async function cancelarCompra(compraId: number): Promise<void> {
         WHERE compra_item_id = ?
         LIMIT 1
         `,
-        [item.id]
+        [item.id],
       );
 
       if (!movimentacaoCompra) {
         throw new Error(
-          `Não foi encontrada a movimentação da compra para o produto ${item.produto_nome}.`
+          `Não foi encontrada a movimentação da compra para o produto ${item.produto_nome}.`,
         );
       }
 
-      const movimentacaoPosterior = await database.getFirstAsync<{ id: number }>(
+      const movimentacaoPosterior = await database.getFirstAsync<{
+        id: number;
+      }>(
         `
         SELECT id
         FROM movimentacoes
@@ -1661,18 +1684,18 @@ export async function cancelarCompra(compraId: number): Promise<void> {
           AND id > ?
         LIMIT 1
         `,
-        [item.produto_id, movimentacaoCompra.id]
+        [item.produto_id, movimentacaoCompra.id],
       );
 
       if (movimentacaoPosterior) {
         throw new Error(
-          `A compra não pode ser cancelada porque o produto ${item.produto_nome} possui movimentações posteriores.`
+          `A compra não pode ser cancelada porque o produto ${item.produto_nome} possui movimentações posteriores.`,
         );
       }
 
       const produto = await database.getFirstAsync<ProdutoEstoque>(
         `SELECT * FROM produtos WHERE id = ?`,
-        [item.produto_id]
+        [item.produto_id],
       );
 
       if (!produto) {
@@ -1681,7 +1704,7 @@ export async function cancelarCompra(compraId: number): Promise<void> {
 
       if (produto.quantidade < item.quantidade) {
         throw new Error(
-          `Não existe estoque suficiente de ${item.produto_nome} para cancelar esta compra.`
+          `Não existe estoque suficiente de ${item.produto_nome} para cancelar esta compra.`,
         );
       }
 
@@ -1689,9 +1712,10 @@ export async function cancelarCompra(compraId: number): Promise<void> {
       const valorTotalAnterior =
         produto.quantidade * produto.preco_medio -
         item.quantidade * item.valor_unitario_estoque;
-      const precoMedioAnterior = quantidadeAnterior > 0
-        ? Math.max(0, valorTotalAnterior / quantidadeAnterior)
-        : 0;
+      const precoMedioAnterior =
+        quantidadeAnterior > 0
+          ? Math.max(0, valorTotalAnterior / quantidadeAnterior)
+          : 0;
 
       const ultimaEntradaAnterior = await database.getFirstAsync<{
         preco_unitario: number;
@@ -1705,7 +1729,7 @@ export async function cancelarCompra(compraId: number): Promise<void> {
         ORDER BY id DESC
         LIMIT 1
         `,
-        [item.produto_id, movimentacaoCompra.id]
+        [item.produto_id, movimentacaoCompra.id],
       );
 
       const precoUltimaEntradaAnterior =
@@ -1727,12 +1751,12 @@ export async function cancelarCompra(compraId: number): Promise<void> {
           precoUltimaEntradaAnterior,
           precoUltimaEntradaAnterior,
           item.produto_id,
-        ]
+        ],
       );
 
       await database.runAsync(
         `DELETE FROM movimentacoes WHERE compra_item_id = ?`,
-        [item.id]
+        [item.id],
       );
     }
 
@@ -1744,7 +1768,7 @@ export async function cancelarCompra(compraId: number): Promise<void> {
         canceled_at = datetime('now','localtime')
       WHERE id = ?
       `,
-      [compraId]
+      [compraId],
     );
   });
 }
@@ -1753,21 +1777,21 @@ export async function excluirCompra(compraId: number): Promise<void> {
   const database = await getDatabase();
 
   if (!compraId) {
-    throw new Error('Compra inválida.');
+    throw new Error("Compra inválida.");
   }
 
   const compra = await database.getFirstAsync<CompraDatabase>(
     `SELECT * FROM compras WHERE id = ?`,
-    [compraId]
+    [compraId],
   );
 
   if (!compra) {
-    throw new Error('Compra não encontrada.');
+    throw new Error("Compra não encontrada.");
   }
 
-  if (compra.status !== 'CANCELADA') {
+  if (compra.status !== "CANCELADA") {
     throw new Error(
-      'Somente compras canceladas podem ser excluídas. Cancele a compra primeiro para estornar o estoque.'
+      "Somente compras canceladas podem ser excluídas. Cancele a compra primeiro para estornar o estoque.",
     );
   }
 
@@ -1780,32 +1804,34 @@ export async function excluirCompra(compraId: number): Promise<void> {
 
 export async function inserirMovimentacao(
   produtoId: number,
-  tipo: 'entrada' | 'saida',
+  tipo: "entrada" | "saida",
   qtd: number,
-  precoUnitario: number = 0
+  precoUnitario: number = 0,
 ): Promise<void> {
   const database = await getDatabase();
 
   if (!produtoId) {
-    throw new Error('Produto inválido.');
+    throw new Error("Produto inválido.");
   }
 
   if (qtd <= 0) {
-    throw new Error('A quantidade deve ser maior que zero.');
+    throw new Error("A quantidade deve ser maior que zero.");
   }
 
   if (precoUnitario < 0) {
-    throw new Error('O preço não pode ser negativo.');
+    throw new Error("O preço não pode ser negativo.");
   }
 
   const produto = await buscarProdutoPorId(produtoId);
 
   if (!produto) {
-    throw new Error('Produto não encontrado.');
+    throw new Error("Produto não encontrado.");
   }
 
-  if (tipo === 'saida' && qtd > produto.quantidade) {
-    throw new Error('Não é possível fazer uma saída maior que o estoque atual.');
+  if (tipo === "saida" && qtd > produto.quantidade) {
+    throw new Error(
+      "Não é possível fazer uma saída maior que o estoque atual.",
+    );
   }
 
   await database.runAsync(
@@ -1817,10 +1843,10 @@ export async function inserirMovimentacao(
       preco_unitario
     ) VALUES (?, ?, ?, ?)
     `,
-    [produtoId, tipo, qtd, precoUnitario]
+    [produtoId, tipo, qtd, precoUnitario],
   );
 
-  if (tipo === 'entrada') {
+  if (tipo === "entrada") {
     const quantidadeAtual = produto.quantidade;
     const precoMedioAtual = produto.preco_medio || 0;
     const novaQuantidade = quantidadeAtual + qtd;
@@ -1847,15 +1873,15 @@ export async function inserirMovimentacao(
         novaQuantidade,
         precoUnitario > 0 ? precoUnitario : produto.preco_ultima_entrada,
         novoPrecoMedio,
-        precoUnitario > 0 ? precoUnitario : produto.preco ?? 0,
+        precoUnitario > 0 ? precoUnitario : (produto.preco ?? 0),
         produtoId,
-      ]
+      ],
     );
   } else {
     const novaQuantidade = produto.quantidade - qtd;
 
     if (novaQuantidade < 0) {
-      throw new Error('A quantidade não pode ficar negativa.');
+      throw new Error("A quantidade não pode ficar negativa.");
     }
 
     await database.runAsync(
@@ -1864,7 +1890,7 @@ export async function inserirMovimentacao(
       SET quantidade = ?
       WHERE id = ?
       `,
-      [novaQuantidade, produtoId]
+      [novaQuantidade, produtoId],
     );
   }
 }
@@ -1873,7 +1899,7 @@ export async function listarMovimentacoesProduto(produtoId: number) {
   const database = await getDatabase();
 
   if (!produtoId) {
-    throw new Error('Produto inválido.');
+    throw new Error("Produto inválido.");
   }
 
   const movimentacoes = await database.getAllAsync(
@@ -1889,7 +1915,7 @@ export async function listarMovimentacoesProduto(produtoId: number) {
     WHERE produto_id = ?
     ORDER BY id DESC
     `,
-    [produtoId]
+    [produtoId],
   );
 
   return movimentacoes;
@@ -1900,21 +1926,21 @@ export async function listarMovimentacoesProduto(produtoId: number) {
 // ===============================
 
 export async function listarClientes(
-  filtro: string = '',
-  ordenarPor: OrdenarClientePor = 'nome',
-  direcao: DirecaoOrdenacao = 'ASC'
+  filtro: string = "",
+  ordenarPor: OrdenarClientePor = "nome",
+  direcao: DirecaoOrdenacao = "ASC",
 ): Promise<ClienteDatabase[]> {
   const database = await getDatabase();
 
   const colunasPermitidas: OrdenarClientePor[] = [
-    'id',
-    'nome',
-    'total_compras',
+    "id",
+    "nome",
+    "total_compras",
   ];
 
   const colunaOrdenacao = colunasPermitidas.includes(ordenarPor)
     ? ordenarPor
-    : 'nome';
+    : "nome";
 
   const direcaoOrdenacao = validarDirecaoOrdenacao(direcao);
   const busca = filtro.trim();
@@ -1935,7 +1961,7 @@ export async function listarClientes(
         WHERE id = ? OR nome LIKE ?
         ORDER BY ${colunaOrdenacao} ${direcaoOrdenacao}
         `,
-        [buscaNumerica, `%${busca}%`]
+        [buscaNumerica, `%${busca}%`],
       );
 
       return resultado;
@@ -1953,7 +1979,7 @@ export async function listarClientes(
       WHERE nome LIKE ?
       ORDER BY ${colunaOrdenacao} ${direcaoOrdenacao}
       `,
-      [`%${busca}%`]
+      [`%${busca}%`],
     );
 
     return resultado;
@@ -1975,8 +2001,8 @@ export async function listarClientes(
 
 export async function adicionarCliente(
   nome: string,
-  telefone: string = '',
-  endereco: string = ''
+  telefone: string = "",
+  endereco: string = "",
 ): Promise<number> {
   const database = await getDatabase();
 
@@ -1985,7 +2011,7 @@ export async function adicionarCliente(
   const enderecoTratado = endereco.trim();
 
   if (!nomeTratado) {
-    throw new Error('Informe o nome do cliente.');
+    throw new Error("Informe o nome do cliente.");
   }
 
   const resultado = await database.runAsync(
@@ -1997,7 +2023,7 @@ export async function adicionarCliente(
       total_compras
     ) VALUES (?, ?, ?, 0)
     `,
-    [nomeTratado, telefoneTratado, enderecoTratado]
+    [nomeTratado, telefoneTratado, enderecoTratado],
   );
 
   return resultado.lastInsertRowId;
@@ -2006,8 +2032,8 @@ export async function adicionarCliente(
 export async function atualizarCliente(
   id: number,
   nome: string,
-  telefone: string = '',
-  endereco: string = ''
+  telefone: string = "",
+  endereco: string = "",
 ): Promise<void> {
   const database = await getDatabase();
 
@@ -2016,11 +2042,11 @@ export async function atualizarCliente(
   const enderecoTratado = endereco.trim();
 
   if (!id) {
-    throw new Error('Cliente inválido.');
+    throw new Error("Cliente inválido.");
   }
 
   if (!nomeTratado) {
-    throw new Error('Informe o nome do cliente.');
+    throw new Error("Informe o nome do cliente.");
   }
 
   await database.runAsync(
@@ -2032,7 +2058,7 @@ export async function atualizarCliente(
       endereco = ?
     WHERE id = ?
     `,
-    [nomeTratado, telefoneTratado, enderecoTratado, id]
+    [nomeTratado, telefoneTratado, enderecoTratado, id],
   );
 }
 
@@ -2040,7 +2066,7 @@ export async function excluirCliente(id: number): Promise<void> {
   const database = await getDatabase();
 
   if (!id) {
-    throw new Error('Cliente inválido.');
+    throw new Error("Cliente inválido.");
   }
 
   const usoEmDocumento = await database.getFirstAsync<{ total: number }>(
@@ -2049,28 +2075,25 @@ export async function excluirCliente(id: number): Promise<void> {
     FROM documentos_comerciais
     WHERE cliente_id = ?
     `,
-    [id]
+    [id],
   );
 
   if ((usoEmDocumento?.total ?? 0) > 0) {
     throw new Error(
-      'Este cliente possui orçamentos ou vendas vinculados e não pode ser excluído.'
+      "Este cliente possui orçamentos ou vendas vinculados e não pode ser excluído.",
     );
   }
 
-  await database.runAsync(
-    'DELETE FROM clientes WHERE id = ?',
-    [id]
-  );
+  await database.runAsync("DELETE FROM clientes WHERE id = ?", [id]);
 }
 
 export async function buscarClientePorId(
-  id: number
+  id: number,
 ): Promise<ClienteDatabase | null> {
   const database = await getDatabase();
 
   if (!id) {
-    throw new Error('Cliente inválido.');
+    throw new Error("Cliente inválido.");
   }
 
   const cliente = await database.getFirstAsync<ClienteDatabase>(
@@ -2084,7 +2107,7 @@ export async function buscarClientePorId(
     FROM clientes
     WHERE id = ?
     `,
-    [id]
+    [id],
   );
 
   return cliente ?? null;
@@ -2092,16 +2115,16 @@ export async function buscarClientePorId(
 
 export async function atualizarTotalComprasCliente(
   id: number,
-  valorTotal: number
+  valorTotal: number,
 ): Promise<void> {
   const database = await getDatabase();
 
   if (!id) {
-    throw new Error('Cliente inválido.');
+    throw new Error("Cliente inválido.");
   }
 
   if (valorTotal < 0) {
-    throw new Error('O valor total não pode ser negativo.');
+    throw new Error("O valor total não pode ser negativo.");
   }
 
   await database.runAsync(
@@ -2110,7 +2133,7 @@ export async function atualizarTotalComprasCliente(
     SET total_compras = ?
     WHERE id = ?
     `,
-    [valorTotal, id]
+    [valorTotal, id],
   );
 }
 
@@ -2119,7 +2142,7 @@ export async function atualizarTotalComprasCliente(
 // ===============================
 
 export async function listarReceitas(
-  filtro: string = ''
+  filtro: string = "",
 ): Promise<ReceitaDatabase[]> {
   const database = await getDatabase();
   const busca = filtro.trim();
@@ -2140,7 +2163,7 @@ export async function listarReceitas(
         WHERE id = ? OR nome LIKE ? OR rendimento LIKE ?
         ORDER BY nome COLLATE NOCASE ASC
         `,
-        [buscaNumerica, `%${busca}%`, `%${busca}%`]
+        [buscaNumerica, `%${busca}%`, `%${busca}%`],
       );
 
       return resultado;
@@ -2158,7 +2181,7 @@ export async function listarReceitas(
       WHERE nome LIKE ? OR rendimento LIKE ?
       ORDER BY nome COLLATE NOCASE ASC
       `,
-      [`%${busca}%`, `%${busca}%`]
+      [`%${busca}%`, `%${busca}%`],
     );
 
     return resultado;
@@ -2180,8 +2203,8 @@ export async function listarReceitas(
 
 export async function adicionarReceita(
   nome: string,
-  rendimento: string = '',
-  modoPreparo: string = ''
+  rendimento: string = "",
+  modoPreparo: string = "",
 ): Promise<number> {
   const database = await getDatabase();
 
@@ -2190,15 +2213,15 @@ export async function adicionarReceita(
   const modoPreparoTratado = modoPreparo.trim();
 
   if (!nomeTratado) {
-    throw new Error('Informe o nome da receita.');
+    throw new Error("Informe o nome da receita.");
   }
 
   if (!rendimentoTratado) {
-    throw new Error('Informe o rendimento da receita.');
+    throw new Error("Informe o rendimento da receita.");
   }
 
   if (!modoPreparoTratado) {
-    throw new Error('Informe o modo de preparo da receita.');
+    throw new Error("Informe o modo de preparo da receita.");
   }
 
   const resultado = await database.runAsync(
@@ -2209,7 +2232,7 @@ export async function adicionarReceita(
       modo_preparo
     ) VALUES (?, ?, ?)
     `,
-    [nomeTratado, rendimentoTratado, modoPreparoTratado]
+    [nomeTratado, rendimentoTratado, modoPreparoTratado],
   );
 
   return resultado.lastInsertRowId;
@@ -2218,8 +2241,8 @@ export async function adicionarReceita(
 export async function atualizarReceita(
   id: number,
   nome: string,
-  rendimento: string = '',
-  modoPreparo: string = ''
+  rendimento: string = "",
+  modoPreparo: string = "",
 ): Promise<void> {
   const database = await getDatabase();
 
@@ -2228,19 +2251,19 @@ export async function atualizarReceita(
   const modoPreparoTratado = modoPreparo.trim();
 
   if (!id) {
-    throw new Error('Receita inválida.');
+    throw new Error("Receita inválida.");
   }
 
   if (!nomeTratado) {
-    throw new Error('Informe o nome da receita.');
+    throw new Error("Informe o nome da receita.");
   }
 
   if (!rendimentoTratado) {
-    throw new Error('Informe o rendimento da receita.');
+    throw new Error("Informe o rendimento da receita.");
   }
 
   if (!modoPreparoTratado) {
-    throw new Error('Informe o modo de preparo da receita.');
+    throw new Error("Informe o modo de preparo da receita.");
   }
 
   await database.runAsync(
@@ -2252,7 +2275,7 @@ export async function atualizarReceita(
       modo_preparo = ?
     WHERE id = ?
     `,
-    [nomeTratado, rendimentoTratado, modoPreparoTratado, id]
+    [nomeTratado, rendimentoTratado, modoPreparoTratado, id],
   );
 }
 
@@ -2260,7 +2283,7 @@ export async function excluirReceita(id: number): Promise<void> {
   const database = await getDatabase();
 
   if (!id) {
-    throw new Error('Receita inválida.');
+    throw new Error("Receita inválida.");
   }
 
   const usoEmProdutoVenda = await database.getFirstAsync<{ total: number }>(
@@ -2269,33 +2292,29 @@ export async function excluirReceita(id: number): Promise<void> {
     FROM produto_venda_receitas
     WHERE receita_id = ?
     `,
-    [id]
+    [id],
   );
 
   if ((usoEmProdutoVenda?.total ?? 0) > 0) {
     throw new Error(
-      'Esta receita está sendo utilizada em um produto para venda e não pode ser excluída.'
+      "Esta receita está sendo utilizada em um produto para venda e não pode ser excluída.",
     );
   }
 
-  await database.runAsync(
-    'DELETE FROM receita_itens WHERE receita_id = ?',
-    [id]
-  );
+  await database.runAsync("DELETE FROM receita_itens WHERE receita_id = ?", [
+    id,
+  ]);
 
-  await database.runAsync(
-    'DELETE FROM receitas WHERE id = ?',
-    [id]
-  );
+  await database.runAsync("DELETE FROM receitas WHERE id = ?", [id]);
 }
 
 export async function buscarReceitaPorId(
-  id: number
+  id: number,
 ): Promise<ReceitaDatabase | null> {
   const database = await getDatabase();
 
   if (!id) {
-    throw new Error('Receita inválida.');
+    throw new Error("Receita inválida.");
   }
 
   const receita = await database.getFirstAsync<ReceitaDatabase>(
@@ -2309,7 +2328,7 @@ export async function buscarReceitaPorId(
     FROM receitas
     WHERE id = ?
     `,
-    [id]
+    [id],
   );
 
   return receita ?? null;
@@ -2320,25 +2339,25 @@ export async function adicionarItemReceita(
   produtoId: number,
   quantidadeUsada: string,
   quantidadeNumero: number,
-  unidadeMedida: string
+  unidadeMedida: string,
 ): Promise<void> {
   const database = await getDatabase();
 
   const quantidadeTratada = quantidadeUsada.trim();
 
   if (!receitaId) {
-    throw new Error('Receita inválida.');
+    throw new Error("Receita inválida.");
   }
 
   if (!produtoId) {
-    throw new Error('Produto inválido.');
+    throw new Error("Produto inválido.");
   }
 
   if (!quantidadeTratada || !quantidadeNumero || quantidadeNumero <= 0) {
-    throw new Error('Informe uma quantidade usada válida para o produto.');
+    throw new Error("Informe uma quantidade usada válida para o produto.");
   }
 
-  const unidadeTratada = unidadeMedida.trim().toLowerCase() || 'un';
+  const unidadeTratada = unidadeMedida.trim().toLowerCase() || "un";
 
   await database.runAsync(
     `
@@ -2350,23 +2369,17 @@ export async function adicionarItemReceita(
       unidade_medida
     ) VALUES (?, ?, ?, ?, ?)
     `,
-    [
-      receitaId,
-      produtoId,
-      quantidadeTratada,
-      quantidadeNumero,
-      unidadeTratada,
-    ]
+    [receitaId, produtoId, quantidadeTratada, quantidadeNumero, unidadeTratada],
   );
 }
 
 export async function listarItensReceita(
-  receitaId: number
+  receitaId: number,
 ): Promise<ReceitaItemDetalhado[]> {
   const database = await getDatabase();
 
   if (!receitaId) {
-    throw new Error('Receita inválida.');
+    throw new Error("Receita inválida.");
   }
 
   const itens = await database.getAllAsync<ReceitaItemDetalhado>(
@@ -2385,7 +2398,7 @@ export async function listarItensReceita(
     WHERE ri.receita_id = ?
     ORDER BY p.nome COLLATE NOCASE ASC
     `,
-    [receitaId]
+    [receitaId],
   );
 
   return itens;
@@ -2395,17 +2408,16 @@ export async function excluirItensReceita(receitaId: number): Promise<void> {
   const database = await getDatabase();
 
   if (!receitaId) {
-    throw new Error('Receita inválida.');
+    throw new Error("Receita inválida.");
   }
 
-  await database.runAsync(
-    'DELETE FROM receita_itens WHERE receita_id = ?',
-    [receitaId]
-  );
+  await database.runAsync("DELETE FROM receita_itens WHERE receita_id = ?", [
+    receitaId,
+  ]);
 }
 
 export async function buscarReceitaDetalhada(
-  id: number
+  id: number,
 ): Promise<ReceitaDetalhada | null> {
   const receita = await buscarReceitaPorId(id);
 
@@ -2425,10 +2437,10 @@ export async function salvarReceitaCompleta(
   nome: string,
   rendimento: string,
   modoPreparo: string,
-  itens: NovoItemReceita[]
+  itens: NovoItemReceita[],
 ): Promise<number> {
   if (!itens.length) {
-    throw new Error('Adicione pelo menos um produto à receita.');
+    throw new Error("Adicione pelo menos um produto à receita.");
   }
 
   const receitaId = await adicionarReceita(nome, rendimento, modoPreparo);
@@ -2439,7 +2451,7 @@ export async function salvarReceitaCompleta(
       item.produto_id,
       item.quantidade_usada,
       item.quantidade_numero,
-      item.unidade_medida
+      item.unidade_medida,
     );
   }
 
@@ -2451,14 +2463,14 @@ export async function editarReceitaCompleta(
   nome: string,
   rendimento: string,
   modoPreparo: string,
-  itens: NovoItemReceita[]
+  itens: NovoItemReceita[],
 ): Promise<void> {
   if (!receitaId) {
-    throw new Error('Receita inválida.');
+    throw new Error("Receita inválida.");
   }
 
   if (!itens.length) {
-    throw new Error('Adicione pelo menos um produto à receita.');
+    throw new Error("Adicione pelo menos um produto à receita.");
   }
 
   await atualizarReceita(receitaId, nome, rendimento, modoPreparo);
@@ -2471,13 +2483,13 @@ export async function editarReceitaCompleta(
       item.produto_id,
       item.quantidade_usada,
       item.quantidade_numero,
-      item.unidade_medida
+      item.unidade_medida,
     );
   }
 }
 
 export async function buscarProdutosParaReceita(
-  filtro: string = ''
+  filtro: string = "",
 ): Promise<ProdutoParaReceita[]> {
   const database = await getDatabase();
   const busca = filtro.trim();
@@ -2511,7 +2523,7 @@ export async function buscarProdutosParaReceita(
       ORDER BY nome COLLATE NOCASE ASC
       LIMIT 20
       `,
-      [buscaNumerica, `%${busca}%`, `%${busca}%`, `%${busca}%`]
+      [buscaNumerica, `%${busca}%`, `%${busca}%`, `%${busca}%`],
     );
 
     return resultado;
@@ -2538,14 +2550,14 @@ export async function buscarProdutosParaReceita(
     ORDER BY nome COLLATE NOCASE ASC
     LIMIT 20
     `,
-    [`%${busca}%`, `%${busca}%`, `%${busca}%`]
+    [`%${busca}%`, `%${busca}%`, `%${busca}%`],
   );
 
   return resultado;
 }
 
 export async function buscarProdutoPorCodigoBarras(
-  codigoBarras: string
+  codigoBarras: string,
 ): Promise<ProdutoParaReceita | null> {
   const database = await getDatabase();
   const codigoTratado = codigoBarras.trim();
@@ -2570,7 +2582,7 @@ export async function buscarProdutoPorCodigoBarras(
       AND codigo_barras = ?
     LIMIT 1
     `,
-    [codigoTratado]
+    [codigoTratado],
   );
 
   return produto ?? null;
@@ -2594,7 +2606,7 @@ export async function buscarParametrosPrecificacao(): Promise<ParametrosPrecific
       custos_variaveis,
       margem_lucro
     ) VALUES (1, 0, 0, 0, 180, 0, 30)
-    `
+    `,
   );
 
   const parametros = await database.getFirstAsync<ParametrosPrecificacao>(
@@ -2621,11 +2633,11 @@ export async function buscarParametrosPrecificacao(): Promise<ParametrosPrecific
       ), p.custos_variaveis, 0) AS custos_variaveis
     FROM parametros_precificacao p
     WHERE p.id = 1
-    `
+    `,
   );
 
   if (!parametros) {
-    throw new Error('Não foi possível carregar os parâmetros de precificação.');
+    throw new Error("Não foi possível carregar os parâmetros de precificação.");
   }
 
   return parametros;
@@ -2634,7 +2646,7 @@ export async function buscarParametrosPrecificacao(): Promise<ParametrosPrecific
 export function salvarParametrosPrecificacao(
   salarioDesejado: number,
   horasTrabalhadasMes: number,
-  margemLucro: number
+  margemLucro: number,
 ): Promise<void>;
 
 export function salvarParametrosPrecificacao(
@@ -2642,7 +2654,7 @@ export function salvarParametrosPrecificacao(
   custosFixosMensais: number,
   horasTrabalhadasMes: number,
   custosVariaveis: number,
-  margemLucro: number
+  margemLucro: number,
 ): Promise<void>;
 
 export async function salvarParametrosPrecificacao(
@@ -2650,7 +2662,7 @@ export async function salvarParametrosPrecificacao(
   segundoValor: number,
   terceiroValor: number,
   quartoValor?: number,
-  quintoValor?: number
+  quintoValor?: number,
 ): Promise<void> {
   const database = await getDatabase();
 
@@ -2664,23 +2676,21 @@ export async function salvarParametrosPrecificacao(
     ? terceiroValor
     : segundoValor;
 
-  const margemLucro = usandoFormatoAntigo
-    ? quintoValor ?? 0
-    : terceiroValor;
+  const margemLucro = usandoFormatoAntigo ? (quintoValor ?? 0) : terceiroValor;
 
   const custosFixosLegados = usandoFormatoAntigo ? segundoValor : undefined;
   const custosVariaveisLegados = usandoFormatoAntigo ? quartoValor : undefined;
 
   if (salarioDesejado < 0) {
-    throw new Error('O salário desejado não pode ser negativo.');
+    throw new Error("O salário desejado não pode ser negativo.");
   }
 
   if (horasTrabalhadasMes <= 0) {
-    throw new Error('As horas trabalhadas no mês devem ser maiores que zero.');
+    throw new Error("As horas trabalhadas no mês devem ser maiores que zero.");
   }
 
   if (margemLucro < 0 || margemLucro >= 100) {
-    throw new Error('A margem de lucro deve estar entre 0% e 99,99%.');
+    throw new Error("A margem de lucro deve estar entre 0% e 99,99%.");
   }
 
   const valorHora = salarioDesejado / horasTrabalhadasMes;
@@ -2712,7 +2722,7 @@ export async function salvarParametrosPrecificacao(
       horasTrabalhadasMes,
       custosVariaveisLegados ?? 0,
       margemLucro,
-    ]
+    ],
   );
 }
 
@@ -2721,11 +2731,11 @@ export async function salvarParametrosPrecificacao(
 // ===============================
 
 export async function listarCustosFixos(
-  incluirInativos: boolean = false
+  incluirInativos: boolean = false,
 ): Promise<CustoFixoDatabase[]> {
   const database = await getDatabase();
 
-  const where = incluirInativos ? '' : 'WHERE ativo = 1';
+  const where = incluirInativos ? "" : "WHERE ativo = 1";
 
   return database.getAllAsync<CustoFixoDatabase>(`
     SELECT id, nome, valor, ativo, created_at
@@ -2737,23 +2747,23 @@ export async function listarCustosFixos(
 
 export async function adicionarCustoFixo(
   nome: string,
-  valor: number
+  valor: number,
 ): Promise<number> {
   const database = await getDatabase();
   const nomeTratado = nome.trim();
 
   if (!nomeTratado) {
-    throw new Error('Informe o nome do custo fixo.');
+    throw new Error("Informe o nome do custo fixo.");
   }
 
   if (valor < 0) {
-    throw new Error('O valor do custo fixo não pode ser negativo.');
+    throw new Error("O valor do custo fixo não pode ser negativo.");
   }
 
   const resultado = await database.runAsync(
     `INSERT INTO custos_fixos (nome, valor, ativo) VALUES (?, ?, 1)`,
     nomeTratado,
-    valor
+    valor,
   );
 
   return resultado.lastInsertRowId;
@@ -2762,39 +2772,40 @@ export async function adicionarCustoFixo(
 export async function atualizarCustoFixo(
   id: number,
   nome: string,
-  valor: number
+  valor: number,
 ): Promise<void> {
   const database = await getDatabase();
   const nomeTratado = nome.trim();
 
-  if (!id) throw new Error('Custo fixo inválido.');
-  if (!nomeTratado) throw new Error('Informe o nome do custo fixo.');
-  if (valor < 0) throw new Error('O valor do custo fixo não pode ser negativo.');
+  if (!id) throw new Error("Custo fixo inválido.");
+  if (!nomeTratado) throw new Error("Informe o nome do custo fixo.");
+  if (valor < 0)
+    throw new Error("O valor do custo fixo não pode ser negativo.");
 
   await database.runAsync(
     `UPDATE custos_fixos SET nome = ?, valor = ? WHERE id = ?`,
     nomeTratado,
     valor,
-    id
+    id,
   );
 }
 
 export async function excluirCustoFixo(id: number): Promise<void> {
   const database = await getDatabase();
-  if (!id) throw new Error('Custo fixo inválido.');
-  await database.runAsync('DELETE FROM custos_fixos WHERE id = ?', id);
+  if (!id) throw new Error("Custo fixo inválido.");
+  await database.runAsync("DELETE FROM custos_fixos WHERE id = ?", id);
 }
 
 export async function alterarStatusCustoFixo(
   id: number,
-  ativo: boolean
+  ativo: boolean,
 ): Promise<void> {
   const database = await getDatabase();
-  if (!id) throw new Error('Custo fixo inválido.');
+  if (!id) throw new Error("Custo fixo inválido.");
   await database.runAsync(
-    'UPDATE custos_fixos SET ativo = ? WHERE id = ?',
+    "UPDATE custos_fixos SET ativo = ? WHERE id = ?",
     ativo ? 1 : 0,
-    id
+    id,
   );
 }
 
@@ -2813,11 +2824,11 @@ export async function obterTotalCustosFixos(): Promise<number> {
 // ===============================
 
 export async function listarCustosVariaveis(
-  incluirInativos: boolean = false
+  incluirInativos: boolean = false,
 ): Promise<CustoVariavelDatabase[]> {
   const database = await getDatabase();
 
-  const where = incluirInativos ? '' : 'WHERE ativo = 1';
+  const where = incluirInativos ? "" : "WHERE ativo = 1";
 
   return database.getAllAsync<CustoVariavelDatabase>(`
     SELECT id, nome, valor, ativo, created_at
@@ -2829,23 +2840,23 @@ export async function listarCustosVariaveis(
 
 export async function adicionarCustoVariavel(
   nome: string,
-  valor: number
+  valor: number,
 ): Promise<number> {
   const database = await getDatabase();
   const nomeTratado = nome.trim();
 
   if (!nomeTratado) {
-    throw new Error('Informe o nome do custo variável.');
+    throw new Error("Informe o nome do custo variável.");
   }
 
   if (valor < 0) {
-    throw new Error('O valor do custo variável não pode ser negativo.');
+    throw new Error("O valor do custo variável não pode ser negativo.");
   }
 
   const resultado = await database.runAsync(
     `INSERT INTO custos_variaveis (nome, valor, ativo) VALUES (?, ?, 1)`,
     nomeTratado,
-    valor
+    valor,
   );
 
   return resultado.lastInsertRowId;
@@ -2854,39 +2865,40 @@ export async function adicionarCustoVariavel(
 export async function atualizarCustoVariavel(
   id: number,
   nome: string,
-  valor: number
+  valor: number,
 ): Promise<void> {
   const database = await getDatabase();
   const nomeTratado = nome.trim();
 
-  if (!id) throw new Error('Custo variável inválido.');
-  if (!nomeTratado) throw new Error('Informe o nome do custo variável.');
-  if (valor < 0) throw new Error('O valor do custo variável não pode ser negativo.');
+  if (!id) throw new Error("Custo variável inválido.");
+  if (!nomeTratado) throw new Error("Informe o nome do custo variável.");
+  if (valor < 0)
+    throw new Error("O valor do custo variável não pode ser negativo.");
 
   await database.runAsync(
     `UPDATE custos_variaveis SET nome = ?, valor = ? WHERE id = ?`,
     nomeTratado,
     valor,
-    id
+    id,
   );
 }
 
 export async function excluirCustoVariavel(id: number): Promise<void> {
   const database = await getDatabase();
-  if (!id) throw new Error('Custo variável inválido.');
-  await database.runAsync('DELETE FROM custos_variaveis WHERE id = ?', id);
+  if (!id) throw new Error("Custo variável inválido.");
+  await database.runAsync("DELETE FROM custos_variaveis WHERE id = ?", id);
 }
 
 export async function alterarStatusCustoVariavel(
   id: number,
-  ativo: boolean
+  ativo: boolean,
 ): Promise<void> {
   const database = await getDatabase();
-  if (!id) throw new Error('Custo variável inválido.');
+  if (!id) throw new Error("Custo variável inválido.");
   await database.runAsync(
-    'UPDATE custos_variaveis SET ativo = ? WHERE id = ?',
+    "UPDATE custos_variaveis SET ativo = ? WHERE id = ?",
     ativo ? 1 : 0,
-    id
+    id,
   );
 }
 
@@ -2901,7 +2913,7 @@ export async function obterTotalCustosVariaveis(): Promise<number> {
 }
 
 export async function buscarReceitaParaPrecificacao(
-  receitaId: number
+  receitaId: number,
 ): Promise<ReceitaParaPrecificacao | null> {
   const database = await getDatabase();
 
@@ -2920,7 +2932,7 @@ export async function buscarReceitaParaPrecificacao(
     FROM receitas
     WHERE id = ?
     `,
-    [receitaId]
+    [receitaId],
   );
 
   if (!receita) {
@@ -2946,7 +2958,7 @@ export async function buscarReceitaParaPrecificacao(
     WHERE ri.receita_id = ?
     ORDER BY p.nome COLLATE NOCASE ASC
     `,
-    [receitaId]
+    [receitaId],
   );
 
   return {
@@ -2956,7 +2968,7 @@ export async function buscarReceitaParaPrecificacao(
 }
 
 export function extrairNumeroRendimento(rendimento: string): number {
-  const match = rendimento.replace(',', '.').match(/\d+(\.\d+)?/);
+  const match = rendimento.replace(",", ".").match(/\d+(\.\d+)?/);
 
   if (!match) {
     return 0;
@@ -2965,59 +2977,58 @@ export function extrairNumeroRendimento(rendimento: string): number {
   return Number(match[0]);
 }
 
-
 // ===============================
 // CRUD DE PRODUTOS PARA VENDA
 // ===============================
 
 function validarProdutoVenda(produto: NovoProdutoVenda): void {
   if (!produto.nome.trim()) {
-    throw new Error('Informe o nome do produto para venda.');
+    throw new Error("Informe o nome do produto para venda.");
   }
 
   if (produto.tempo_producao_minutos <= 0) {
-    throw new Error('Informe um tempo de produção maior que zero.');
+    throw new Error("Informe um tempo de produção maior que zero.");
   }
 
   if (produto.margem_lucro < 0 || produto.margem_lucro >= 100) {
-    throw new Error('A margem de lucro deve estar entre 0% e 99,99%.');
+    throw new Error("A margem de lucro deve estar entre 0% e 99,99%.");
   }
 
   if (produto.preco_venda <= 0) {
-    throw new Error('Informe o preço definitivo de venda.');
+    throw new Error("Informe o preço definitivo de venda.");
   }
 
   if (produto.receitas.length === 0 && produto.itens.length === 0) {
-    throw new Error('Adicione pelo menos uma receita ou item do estoque.');
+    throw new Error("Adicione pelo menos uma receita ou item do estoque.");
   }
 
   const receitaInvalida = produto.receitas.some(
-    (item) => !item.receita_id || item.quantidade_unidades <= 0
+    (item) => !item.receita_id || item.quantidade_unidades <= 0,
   );
 
   if (receitaInvalida) {
-    throw new Error('Existe uma receita com quantidade inválida.');
+    throw new Error("Existe uma receita com quantidade inválida.");
   }
 
   const itemInvalido = produto.itens.some(
     (item) =>
       !item.produto_estoque_id ||
       item.quantidade_usada <= 0 ||
-      !item.unidade_medida.trim()
+      !item.unidade_medida.trim(),
   );
 
   if (itemInvalido) {
-    throw new Error('Existe um item do estoque com quantidade inválida.');
+    throw new Error("Existe um item do estoque com quantidade inválida.");
   }
 }
 
 export async function listarProdutosVenda(
-  filtro: string = '',
-  incluirInativos: boolean = false
+  filtro: string = "",
+  incluirInativos: boolean = false,
 ): Promise<ProdutoVendaDatabase[]> {
   const database = await getDatabase();
   const busca = filtro.trim();
-  const condicaoAtivo = incluirInativos ? '' : 'pv.ativo = 1';
+  const condicaoAtivo = incluirInativos ? "" : "pv.ativo = 1";
   const condicoes: string[] = [];
   const parametros: (string | number)[] = [];
 
@@ -3029,15 +3040,15 @@ export async function listarProdutosVenda(
     const buscaNumerica = Number(busca);
 
     if (!Number.isNaN(buscaNumerica)) {
-      condicoes.push('(pv.id = ? OR pv.nome LIKE ? OR pv.descricao LIKE ?)');
+      condicoes.push("(pv.id = ? OR pv.nome LIKE ? OR pv.descricao LIKE ?)");
       parametros.push(buscaNumerica, `%${busca}%`, `%${busca}%`);
     } else {
-      condicoes.push('(pv.nome LIKE ? OR pv.descricao LIKE ?)');
+      condicoes.push("(pv.nome LIKE ? OR pv.descricao LIKE ?)");
       parametros.push(`%${busca}%`, `%${busca}%`);
     }
   }
 
-  const where = condicoes.length > 0 ? `WHERE ${condicoes.join(' AND ')}` : '';
+  const where = condicoes.length > 0 ? `WHERE ${condicoes.join(" AND ")}` : "";
 
   return database.getAllAsync<ProdutoVendaDatabase>(
     `
@@ -3061,17 +3072,17 @@ export async function listarProdutosVenda(
     ${where}
     ORDER BY pv.nome COLLATE NOCASE ASC
     `,
-    parametros
+    parametros,
   );
 }
 
 export async function buscarProdutoVendaPorId(
-  id: number
+  id: number,
 ): Promise<ProdutoVendaDatabase | null> {
   const database = await getDatabase();
 
   if (!id) {
-    throw new Error('Produto para venda inválido.');
+    throw new Error("Produto para venda inválido.");
   }
 
   const produto = await database.getFirstAsync<ProdutoVendaDatabase>(
@@ -3095,14 +3106,14 @@ export async function buscarProdutoVendaPorId(
     FROM produtos_venda
     WHERE id = ?
     `,
-    [id]
+    [id],
   );
 
   return produto ?? null;
 }
 
 export async function buscarProdutoVendaDetalhado(
-  id: number
+  id: number,
 ): Promise<ProdutoVendaDetalhado | null> {
   const database = await getDatabase();
   const produto = await buscarProdutoVendaPorId(id);
@@ -3125,7 +3136,7 @@ export async function buscarProdutoVendaDetalhado(
     WHERE pvr.produto_venda_id = ?
     ORDER BY r.nome COLLATE NOCASE ASC
     `,
-    [id]
+    [id],
   );
 
   const itens = await database.getAllAsync<ProdutoVendaItemDetalhado>(
@@ -3145,7 +3156,7 @@ export async function buscarProdutoVendaDetalhado(
     WHERE pvi.produto_venda_id = ?
     ORDER BY p.nome COLLATE NOCASE ASC
     `,
-    [id]
+    [id],
   );
 
   return {
@@ -3158,7 +3169,7 @@ export async function buscarProdutoVendaDetalhado(
 async function inserirComposicaoProdutoVenda(
   database: SQLite.SQLiteDatabase,
   produtoVendaId: number,
-  produto: NovoProdutoVenda
+  produto: NovoProdutoVenda,
 ): Promise<void> {
   for (const receita of produto.receitas) {
     await database.runAsync(
@@ -3169,7 +3180,7 @@ async function inserirComposicaoProdutoVenda(
         quantidade_unidades
       ) VALUES (?, ?, ?)
       `,
-      [produtoVendaId, receita.receita_id, receita.quantidade_unidades]
+      [produtoVendaId, receita.receita_id, receita.quantidade_unidades],
     );
   }
 
@@ -3188,13 +3199,13 @@ async function inserirComposicaoProdutoVenda(
         item.produto_estoque_id,
         item.quantidade_usada,
         item.unidade_medida.trim().toLowerCase(),
-      ]
+      ],
     );
   }
 }
 
 export async function salvarProdutoVendaCompleto(
-  produto: NovoProdutoVenda
+  produto: NovoProdutoVenda,
 ): Promise<number> {
   validarProdutoVenda(produto);
   const database = await getDatabase();
@@ -3220,7 +3231,7 @@ export async function salvarProdutoVendaCompleto(
       `,
       [
         produto.nome.trim(),
-        produto.descricao?.trim() ?? '',
+        produto.descricao?.trim() ?? "",
         produto.tempo_producao_minutos,
         produto.custo_receitas,
         produto.custo_itens,
@@ -3230,7 +3241,7 @@ export async function salvarProdutoVendaCompleto(
         produto.margem_lucro,
         produto.preco_sugerido,
         produto.preco_venda,
-      ]
+      ],
     );
 
     produtoVendaId = resultado.lastInsertRowId;
@@ -3242,10 +3253,10 @@ export async function salvarProdutoVendaCompleto(
 
 export async function atualizarProdutoVendaCompleto(
   id: number,
-  produto: NovoProdutoVenda
+  produto: NovoProdutoVenda,
 ): Promise<void> {
   if (!id) {
-    throw new Error('Produto para venda inválido.');
+    throw new Error("Produto para venda inválido.");
   }
 
   validarProdutoVenda(produto);
@@ -3272,7 +3283,7 @@ export async function atualizarProdutoVendaCompleto(
       `,
       [
         produto.nome.trim(),
-        produto.descricao?.trim() ?? '',
+        produto.descricao?.trim() ?? "",
         produto.tempo_producao_minutos,
         produto.custo_receitas,
         produto.custo_itens,
@@ -3283,17 +3294,17 @@ export async function atualizarProdutoVendaCompleto(
         produto.preco_sugerido,
         produto.preco_venda,
         id,
-      ]
+      ],
     );
 
     await database.runAsync(
-      'DELETE FROM produto_venda_receitas WHERE produto_venda_id = ?',
-      [id]
+      "DELETE FROM produto_venda_receitas WHERE produto_venda_id = ?",
+      [id],
     );
 
     await database.runAsync(
-      'DELETE FROM produto_venda_itens WHERE produto_venda_id = ?',
-      [id]
+      "DELETE FROM produto_venda_itens WHERE produto_venda_id = ?",
+      [id],
     );
 
     await inserirComposicaoProdutoVenda(database, id, produto);
@@ -3304,7 +3315,7 @@ export async function excluirProdutoVenda(id: number): Promise<void> {
   const database = await getDatabase();
 
   if (!id) {
-    throw new Error('Produto para venda inválido.');
+    throw new Error("Produto para venda inválido.");
   }
 
   const usoEmDocumento = await database.getFirstAsync<{ total: number }>(
@@ -3313,26 +3324,26 @@ export async function excluirProdutoVenda(id: number): Promise<void> {
     FROM documentos_comerciais_itens
     WHERE produto_venda_id = ?
     `,
-    [id]
+    [id],
   );
 
   if ((usoEmDocumento?.total ?? 0) > 0) {
     throw new Error(
-      'Este produto está sendo utilizado em um orçamento ou venda e não pode ser excluído.'
+      "Este produto está sendo utilizado em um orçamento ou venda e não pode ser excluído.",
     );
   }
 
-  await database.runAsync('DELETE FROM produtos_venda WHERE id = ?', [id]);
+  await database.runAsync("DELETE FROM produtos_venda WHERE id = ?", [id]);
 }
 
 export async function alterarStatusProdutoVenda(
   id: number,
-  ativo: boolean
+  ativo: boolean,
 ): Promise<void> {
   const database = await getDatabase();
 
   if (!id) {
-    throw new Error('Produto para venda inválido.');
+    throw new Error("Produto para venda inválido.");
   }
 
   await database.runAsync(
@@ -3341,7 +3352,7 @@ export async function alterarStatusProdutoVenda(
     SET ativo = ?, updated_at = datetime('now','localtime')
     WHERE id = ?
     `,
-    [ativo ? 1 : 0, id]
+    [ativo ? 1 : 0, id],
   );
 }
 
@@ -3362,67 +3373,65 @@ function arredondarValorMonetario(valor: number): number {
 }
 
 function obterStatusInicialDocumento(
-  tipo: TipoDocumentoComercial
+  tipo: TipoDocumentoComercial,
 ): StatusDocumentoComercial {
-  return tipo === 'ORCAMENTO' ? 'PENDENTE' : 'CONCLUIDA';
+  return tipo === "ORCAMENTO" ? "PENDENTE" : "CONCLUIDA";
 }
 
 function validarStatusDocumento(
   tipo: TipoDocumentoComercial,
-  status: StatusDocumentoComercial
+  status: StatusDocumentoComercial,
 ): void {
   const statusOrcamento: StatusDocumentoComercial[] = [
-    'PENDENTE',
-    'CONVERTIDO',
-    'CANCELADA',
+    "PENDENTE",
+    "CONVERTIDO",
+    "CANCELADA",
   ];
 
-  const statusVenda: StatusDocumentoComercial[] = [
-    'CONCLUIDA',
-    'CANCELADA',
-  ];
+  const statusVenda: StatusDocumentoComercial[] = ["CONCLUIDA", "CANCELADA"];
 
   const permitido =
-    tipo === 'ORCAMENTO'
+    tipo === "ORCAMENTO"
       ? statusOrcamento.includes(status)
       : statusVenda.includes(status);
 
   if (!permitido) {
-    throw new Error('O status informado não é válido para este documento.');
+    throw new Error("O status informado não é válido para este documento.");
   }
 }
 
 async function prepararDocumentoComercial(
   database: SQLite.SQLiteDatabase,
-  documento: NovoDocumentoComercial
+  documento: NovoDocumentoComercial,
 ): Promise<{
   clienteNome: string;
   status: StatusDocumentoComercial;
   itens: ItemDocumentoPreparado[];
   valorTotal: number;
 }> {
-  if (documento.tipo !== 'ORCAMENTO' && documento.tipo !== 'VENDA') {
-    throw new Error('Tipo de documento comercial inválido.');
+  if (documento.tipo !== "ORCAMENTO" && documento.tipo !== "VENDA") {
+    throw new Error("Tipo de documento comercial inválido.");
   }
 
   if (!documento.cliente_id) {
-    throw new Error('Selecione um cliente.');
+    throw new Error("Selecione um cliente.");
   }
 
   if (!documento.itens.length) {
-    throw new Error('Adicione pelo menos um produto.');
+    throw new Error("Adicione pelo menos um produto.");
   }
 
   const cliente = await database.getFirstAsync<{ id: number; nome: string }>(
     `SELECT id, nome FROM clientes WHERE id = ?`,
-    [documento.cliente_id]
+    [documento.cliente_id],
   );
 
   if (!cliente) {
-    throw new Error('Cliente não encontrado.');
+    throw new Error("Cliente não encontrado.");
   }
 
-  const status = documento.status ?? obterStatusInicialDocumento(documento.tipo);
+  const status =
+    documento.status ?? obterStatusInicialDocumento(documento.tipo);
   validarStatusDocumento(documento.tipo, status);
 
   const produtosAdicionados = new Set<number>();
@@ -3430,17 +3439,17 @@ async function prepararDocumentoComercial(
 
   for (const item of documento.itens) {
     if (!item.produto_venda_id) {
-      throw new Error('Existe um produto inválido no documento.');
+      throw new Error("Existe um produto inválido no documento.");
     }
 
     if (produtosAdicionados.has(item.produto_venda_id)) {
       throw new Error(
-        'O mesmo produto foi adicionado mais de uma vez. Altere a quantidade do item existente.'
+        "O mesmo produto foi adicionado mais de uma vez. Altere a quantidade do item existente.",
       );
     }
 
     if (!Number.isFinite(item.quantidade) || item.quantidade <= 0) {
-      throw new Error('A quantidade dos produtos deve ser maior que zero.');
+      throw new Error("A quantidade dos produtos deve ser maior que zero.");
     }
 
     const produto = await database.getFirstAsync<ProdutoVendaParaDocumento>(
@@ -3449,18 +3458,18 @@ async function prepararDocumentoComercial(
       FROM produtos_venda
       WHERE id = ? AND ativo = 1
       `,
-      [item.produto_venda_id]
+      [item.produto_venda_id],
     );
 
     if (!produto) {
-      throw new Error('Um dos produtos não foi encontrado ou está inativo.');
+      throw new Error("Um dos produtos não foi encontrado ou está inativo.");
     }
 
     const valorUnitario = item.valor_unitario ?? produto.preco_venda;
 
     if (!Number.isFinite(valorUnitario) || valorUnitario <= 0) {
       throw new Error(
-        `Informe um valor unitário válido para o produto ${produto.nome}.`
+        `Informe um valor unitário válido para o produto ${produto.nome}.`,
       );
     }
 
@@ -3479,7 +3488,7 @@ async function prepararDocumentoComercial(
   }
 
   const valorTotal = arredondarValorMonetario(
-    itens.reduce((total, item) => total + item.subtotal, 0)
+    itens.reduce((total, item) => total + item.subtotal, 0),
   );
 
   return {
@@ -3493,7 +3502,7 @@ async function prepararDocumentoComercial(
 async function inserirItensDocumentoComercial(
   database: SQLite.SQLiteDatabase,
   documentoId: number,
-  itens: ItemDocumentoPreparado[]
+  itens: ItemDocumentoPreparado[],
 ): Promise<void> {
   for (const item of itens) {
     await database.runAsync(
@@ -3514,18 +3523,18 @@ async function inserirItensDocumentoComercial(
         item.quantidade,
         item.valor_unitario,
         item.subtotal,
-      ]
+      ],
     );
   }
 }
 
 export async function buscarProdutosVendaParaDocumento(
-  filtro: string = ''
+  filtro: string = "",
 ): Promise<ProdutoVendaParaDocumento[]> {
   const database = await getDatabase();
   const busca = filtro.trim();
   const parametros: (string | number)[] = [];
-  let condicaoBusca = '';
+  let condicaoBusca = "";
 
   if (busca) {
     const buscaNumerica = Number(busca);
@@ -3552,33 +3561,33 @@ export async function buscarProdutosVendaParaDocumento(
     ORDER BY nome COLLATE NOCASE ASC
     LIMIT 30
     `,
-    parametros
+    parametros,
   );
 }
 
 export async function listarDocumentosComerciais(
-  tipo: TipoDocumentoComercial | 'TODOS' = 'TODOS',
-  filtro: string = '',
-  ordenarPor: OrdenarDocumentoComercialPor = 'created_at',
-  direcao: DirecaoOrdenacao = 'DESC'
+  tipo: TipoDocumentoComercial | "TODOS" = "TODOS",
+  filtro: string = "",
+  ordenarPor: OrdenarDocumentoComercialPor = "created_at",
+  direcao: DirecaoOrdenacao = "DESC",
 ): Promise<DocumentoComercialDatabase[]> {
   const database = await getDatabase();
 
   const colunasPermitidas: Record<OrdenarDocumentoComercialPor, string> = {
-    id: 'dc.id',
-    cliente_nome: 'dc.cliente_nome',
-    valor_total: 'dc.valor_total',
-    created_at: 'dc.created_at',
+    id: "dc.id",
+    cliente_nome: "dc.cliente_nome",
+    valor_total: "dc.valor_total",
+    created_at: "dc.created_at",
   };
 
-  const colunaOrdenacao = colunasPermitidas[ordenarPor] ?? 'dc.created_at';
+  const colunaOrdenacao = colunasPermitidas[ordenarPor] ?? "dc.created_at";
   const direcaoOrdenacao = validarDirecaoOrdenacao(direcao);
   const condicoes: string[] = [];
   const parametros: (string | number)[] = [];
   const busca = filtro.trim();
 
-  if (tipo !== 'TODOS') {
-    condicoes.push('dc.tipo = ?');
+  if (tipo !== "TODOS") {
+    condicoes.push("dc.tipo = ?");
     parametros.push(tipo);
   }
 
@@ -3586,15 +3595,15 @@ export async function listarDocumentosComerciais(
     const buscaNumerica = Number(busca);
 
     if (!Number.isNaN(buscaNumerica)) {
-      condicoes.push('(dc.id = ? OR dc.cliente_nome LIKE ?)');
+      condicoes.push("(dc.id = ? OR dc.cliente_nome LIKE ?)");
       parametros.push(buscaNumerica, `%${busca}%`);
     } else {
-      condicoes.push('dc.cliente_nome LIKE ?');
+      condicoes.push("dc.cliente_nome LIKE ?");
       parametros.push(`%${busca}%`);
     }
   }
 
-  const where = condicoes.length ? `WHERE ${condicoes.join(' AND ')}` : '';
+  const where = condicoes.length ? `WHERE ${condicoes.join(" AND ")}` : "";
 
   return database.getAllAsync<DocumentoComercialDatabase>(
     `
@@ -3615,38 +3624,33 @@ export async function listarDocumentosComerciais(
     ${where}
     ORDER BY ${colunaOrdenacao} ${direcaoOrdenacao}, dc.id ${direcaoOrdenacao}
     `,
-    parametros
+    parametros,
   );
 }
 
 export async function listarOrcamentos(
-  filtro: string = '',
-  ordenarPor: OrdenarDocumentoComercialPor = 'created_at',
-  direcao: DirecaoOrdenacao = 'DESC'
+  filtro: string = "",
+  ordenarPor: OrdenarDocumentoComercialPor = "created_at",
+  direcao: DirecaoOrdenacao = "DESC",
 ): Promise<DocumentoComercialDatabase[]> {
-  return listarDocumentosComerciais(
-    'ORCAMENTO',
-    filtro,
-    ordenarPor,
-    direcao
-  );
+  return listarDocumentosComerciais("ORCAMENTO", filtro, ordenarPor, direcao);
 }
 
 export async function listarVendas(
-  filtro: string = '',
-  ordenarPor: OrdenarDocumentoComercialPor = 'created_at',
-  direcao: DirecaoOrdenacao = 'DESC'
+  filtro: string = "",
+  ordenarPor: OrdenarDocumentoComercialPor = "created_at",
+  direcao: DirecaoOrdenacao = "DESC",
 ): Promise<DocumentoComercialDatabase[]> {
-  return listarDocumentosComerciais('VENDA', filtro, ordenarPor, direcao);
+  return listarDocumentosComerciais("VENDA", filtro, ordenarPor, direcao);
 }
 
 export async function listarItensDocumentoComercial(
-  documentoId: number
+  documentoId: number,
 ): Promise<DocumentoComercialItemDatabase[]> {
   const database = await getDatabase();
 
   if (!documentoId) {
-    throw new Error('Documento comercial inválido.');
+    throw new Error("Documento comercial inválido.");
   }
 
   return database.getAllAsync<DocumentoComercialItemDatabase>(
@@ -3663,38 +3667,43 @@ export async function listarItensDocumentoComercial(
     WHERE documento_id = ?
     ORDER BY id ASC
     `,
-    [documentoId]
+    [documentoId],
   );
 }
 
 export async function buscarDocumentoComercialPorId(
-  id: number
+  id: number,
 ): Promise<DocumentoComercialDetalhado | null> {
   const database = await getDatabase();
 
   if (!id) {
-    throw new Error('Documento comercial inválido.');
+    throw new Error("Documento comercial inválido.");
   }
 
-  const documento = await database.getFirstAsync<DocumentoComercialDatabase>(
+  const documento = await database.getFirstAsync<
+    Omit<DocumentoComercialDetalhado, "itens">
+  >(
     `
     SELECT
-      id,
-      tipo,
-      cliente_id,
-      cliente_nome,
-      status,
-      valor_total,
-      observacoes,
-      forma_pagamento,
-      data_validade,
-      orcamento_origem_id,
-      created_at,
-      updated_at
-    FROM documentos_comerciais
-    WHERE id = ?
+      dc.id,
+      dc.tipo,
+      dc.cliente_id,
+      dc.cliente_nome,
+      COALESCE(c.telefone, '') AS cliente_telefone,
+      COALESCE(c.endereco, '') AS cliente_endereco,
+      dc.status,
+      dc.valor_total,
+      dc.observacoes,
+      dc.forma_pagamento,
+      dc.data_validade,
+      dc.orcamento_origem_id,
+      dc.created_at,
+      dc.updated_at
+    FROM documentos_comerciais dc
+    LEFT JOIN clientes c ON c.id = dc.cliente_id
+    WHERE dc.id = ?
     `,
-    [id]
+    [id],
   );
 
   if (!documento) {
@@ -3710,7 +3719,7 @@ export async function buscarDocumentoComercialPorId(
 }
 
 export async function salvarDocumentoComercialCompleto(
-  documento: NovoDocumentoComercial
+  documento: NovoDocumentoComercial,
 ): Promise<number> {
   const database = await getDatabase();
   const preparado = await prepararDocumentoComercial(database, documento);
@@ -3737,21 +3746,21 @@ export async function salvarDocumentoComercialCompleto(
         preparado.clienteNome,
         preparado.status,
         preparado.valorTotal,
-        documento.observacoes?.trim() ?? '',
-        documento.forma_pagamento?.trim() ?? '',
-        documento.data_validade?.trim() ?? '',
+        documento.observacoes?.trim() ?? "",
+        documento.forma_pagamento?.trim() ?? "",
+        documento.data_validade?.trim() ?? "",
         documento.orcamento_origem_id ?? null,
-      ]
+      ],
     );
 
     documentoId = resultado.lastInsertRowId;
     await inserirItensDocumentoComercial(
       database,
       documentoId,
-      preparado.itens
+      preparado.itens,
     );
 
-    if (documento.tipo === 'VENDA') {
+    if (documento.tipo === "VENDA") {
       await database.runAsync(
         `
         UPDATE clientes
@@ -3764,7 +3773,7 @@ export async function salvarDocumentoComercialCompleto(
         )
         WHERE id = ?
         `,
-        [documento.cliente_id, documento.cliente_id]
+        [documento.cliente_id, documento.cliente_id],
       );
     }
   });
@@ -3772,15 +3781,14 @@ export async function salvarDocumentoComercialCompleto(
   return documentoId;
 }
 
-
 export async function converterOrcamentoEmVenda(
   orcamentoId: number,
-  venda: NovoDocumentoComercial
+  venda: NovoDocumentoComercial,
 ): Promise<number> {
   const database = await getDatabase();
 
   if (!orcamentoId) {
-    throw new Error('Orçamento inválido.');
+    throw new Error("Orçamento inválido.");
   }
 
   const orcamento = await database.getFirstAsync<{
@@ -3793,15 +3801,17 @@ export async function converterOrcamentoEmVenda(
     FROM documentos_comerciais
     WHERE id = ?
     `,
-    [orcamentoId]
+    [orcamentoId],
   );
 
-  if (!orcamento || orcamento.tipo !== 'ORCAMENTO') {
-    throw new Error('Orçamento não encontrado.');
+  if (!orcamento || orcamento.tipo !== "ORCAMENTO") {
+    throw new Error("Orçamento não encontrado.");
   }
 
-  if (orcamento.status !== 'PENDENTE') {
-    throw new Error('Somente orçamentos pendentes podem ser transformados em venda.');
+  if (orcamento.status !== "PENDENTE") {
+    throw new Error(
+      "Somente orçamentos pendentes podem ser transformados em venda.",
+    );
   }
 
   const vendaExistente = await database.getFirstAsync<{ id: number }>(
@@ -3812,24 +3822,24 @@ export async function converterOrcamentoEmVenda(
       AND orcamento_origem_id = ?
     LIMIT 1
     `,
-    [orcamentoId]
+    [orcamentoId],
   );
 
   if (vendaExistente) {
-    throw new Error('Este orçamento já foi transformado em venda.');
+    throw new Error("Este orçamento já foi transformado em venda.");
   }
 
-  const formaPagamento = venda.forma_pagamento?.trim() ?? '';
+  const formaPagamento = venda.forma_pagamento?.trim() ?? "";
 
   if (!formaPagamento) {
-    throw new Error('Selecione a forma de pagamento.');
+    throw new Error("Selecione a forma de pagamento.");
   }
 
   const documentoVenda: NovoDocumentoComercial = {
     ...venda,
-    tipo: 'VENDA',
-    status: 'CONCLUIDA',
-    data_validade: '',
+    tipo: "VENDA",
+    status: "CONCLUIDA",
+    data_validade: "",
     forma_pagamento: formaPagamento,
     orcamento_origem_id: orcamentoId,
   };
@@ -3856,19 +3866,15 @@ export async function converterOrcamentoEmVenda(
         documentoVenda.cliente_id,
         preparado.clienteNome,
         preparado.valorTotal,
-        documentoVenda.observacoes?.trim() ?? '',
+        documentoVenda.observacoes?.trim() ?? "",
         formaPagamento,
         orcamentoId,
-      ]
+      ],
     );
 
     vendaId = resultado.lastInsertRowId;
 
-    await inserirItensDocumentoComercial(
-      database,
-      vendaId,
-      preparado.itens
-    );
+    await inserirItensDocumentoComercial(database, vendaId, preparado.itens);
 
     await database.runAsync(
       `
@@ -3880,7 +3886,7 @@ export async function converterOrcamentoEmVenda(
         AND tipo = 'ORCAMENTO'
         AND status = 'PENDENTE'
       `,
-      [orcamentoId]
+      [orcamentoId],
     );
 
     await database.runAsync(
@@ -3895,7 +3901,7 @@ export async function converterOrcamentoEmVenda(
       )
       WHERE id = ?
       `,
-      [documentoVenda.cliente_id, documentoVenda.cliente_id]
+      [documentoVenda.cliente_id, documentoVenda.cliente_id],
     );
   });
 
@@ -3904,12 +3910,12 @@ export async function converterOrcamentoEmVenda(
 
 export async function atualizarDocumentoComercialCompleto(
   id: number,
-  documento: NovoDocumentoComercial
+  documento: NovoDocumentoComercial,
 ): Promise<void> {
   const database = await getDatabase();
 
   if (!id) {
-    throw new Error('Documento comercial inválido.');
+    throw new Error("Documento comercial inválido.");
   }
 
   const atual = await database.getFirstAsync<{
@@ -3923,16 +3929,16 @@ export async function atualizarDocumentoComercialCompleto(
     FROM documentos_comerciais
     WHERE id = ?
     `,
-    [id]
+    [id],
   );
 
   if (!atual) {
-    throw new Error('Documento comercial não encontrado.');
+    throw new Error("Documento comercial não encontrado.");
   }
 
   if (atual.tipo !== documento.tipo) {
     throw new Error(
-      'Não é permitido alterar o tipo do documento. A conversão de orçamento em venda será feita em uma operação própria.'
+      "Não é permitido alterar o tipo do documento. A conversão de orçamento em venda será feita em uma operação própria.",
     );
   }
 
@@ -3947,7 +3953,7 @@ export async function atualizarDocumentoComercialCompleto(
 
   const preparado = await prepararDocumentoComercial(
     database,
-    documentoAtualizado
+    documentoAtualizado,
   );
 
   await database.withTransactionAsync(async () => {
@@ -3971,17 +3977,17 @@ export async function atualizarDocumentoComercialCompleto(
         preparado.clienteNome,
         preparado.status,
         preparado.valorTotal,
-        documento.observacoes?.trim() ?? '',
-        documento.forma_pagamento?.trim() ?? '',
-        documento.data_validade?.trim() ?? '',
+        documento.observacoes?.trim() ?? "",
+        documento.forma_pagamento?.trim() ?? "",
+        documento.data_validade?.trim() ?? "",
         documentoAtualizado.orcamento_origem_id ?? null,
         id,
-      ]
+      ],
     );
 
     await database.runAsync(
-      'DELETE FROM documentos_comerciais_itens WHERE documento_id = ?',
-      [id]
+      "DELETE FROM documentos_comerciais_itens WHERE documento_id = ?",
+      [id],
     );
 
     await inserirItensDocumentoComercial(database, id, preparado.itens);
@@ -3992,62 +3998,57 @@ export async function excluirDocumentoComercial(id: number): Promise<void> {
   const database = await getDatabase();
 
   if (!id) {
-    throw new Error('Documento comercial inválido.');
+    throw new Error("Documento comercial inválido.");
   }
 
   const documento = await database.getFirstAsync<{
     id: number;
     tipo: TipoDocumentoComercial;
     status: StatusDocumentoComercial;
-  }>(
-    `SELECT id, tipo, status FROM documentos_comerciais WHERE id = ?`,
-    [id]
-  );
+  }>(`SELECT id, tipo, status FROM documentos_comerciais WHERE id = ?`, [id]);
 
   if (!documento) {
-    throw new Error('Documento comercial não encontrado.');
+    throw new Error("Documento comercial não encontrado.");
   }
 
-  const documentosRelacionados = await database.getFirstAsync<{ total: number }>(
+  const documentosRelacionados = await database.getFirstAsync<{
+    total: number;
+  }>(
     `
     SELECT COUNT(*) AS total
     FROM documentos_comerciais
     WHERE orcamento_origem_id = ?
     `,
-    [id]
+    [id],
   );
 
   if ((documentosRelacionados?.total ?? 0) > 0) {
     throw new Error(
-      'Este orçamento já possui uma venda vinculada e não pode ser excluído.'
+      "Este orçamento já possui uma venda vinculada e não pode ser excluído.",
     );
   }
 
-  await database.runAsync(
-    'DELETE FROM documentos_comerciais WHERE id = ?',
-    [id]
-  );
+  await database.runAsync("DELETE FROM documentos_comerciais WHERE id = ?", [
+    id,
+  ]);
 }
 
 export async function atualizarStatusDocumentoComercial(
   id: number,
-  status: StatusDocumentoComercial
+  status: StatusDocumentoComercial,
 ): Promise<void> {
   const database = await getDatabase();
 
   if (!id) {
-    throw new Error('Documento comercial inválido.');
+    throw new Error("Documento comercial inválido.");
   }
 
   const documento = await database.getFirstAsync<{
     tipo: TipoDocumentoComercial;
-  }>(
-    `SELECT tipo FROM documentos_comerciais WHERE id = ?`,
-    [id]
-  );
+  }>(`SELECT tipo FROM documentos_comerciais WHERE id = ?`, [id]);
 
   if (!documento) {
-    throw new Error('Documento comercial não encontrado.');
+    throw new Error("Documento comercial não encontrado.");
   }
 
   validarStatusDocumento(documento.tipo, status);
@@ -4058,7 +4059,7 @@ export async function atualizarStatusDocumentoComercial(
     SET status = ?, updated_at = datetime('now','localtime')
     WHERE id = ?
     `,
-    [status, id]
+    [status, id],
   );
 }
 
@@ -4079,80 +4080,82 @@ function normalizarUnidade(unidade: string): string {
   const unidadeTratada = unidade
     .trim()
     .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '');
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
 
   if (
-    unidadeTratada === 'unidade' ||
-    unidadeTratada === 'unidades' ||
-    unidadeTratada === 'und'
+    unidadeTratada === "unidade" ||
+    unidadeTratada === "unidades" ||
+    unidadeTratada === "und"
   ) {
-    return 'un';
+    return "un";
   }
 
-  if (unidadeTratada === 'litro' || unidadeTratada === 'litros') {
-    return 'l';
+  if (unidadeTratada === "litro" || unidadeTratada === "litros") {
+    return "l";
   }
 
-  if (unidadeTratada === 'caixas') {
-    return 'caixa';
+  if (unidadeTratada === "caixas") {
+    return "caixa";
   }
 
-  if (unidadeTratada === 'pacotes') {
-    return 'pacote';
+  if (unidadeTratada === "pacotes") {
+    return "pacote";
   }
 
-  if (unidadeTratada === 'duzias') {
-    return 'duzia';
+  if (unidadeTratada === "duzias") {
+    return "duzia";
   }
 
   return unidadeTratada;
 }
 
-function obterGrupoUnidade(unidade: string): 'peso' | 'volume' | 'unidade' | 'desconhecida' {
+function obterGrupoUnidade(
+  unidade: string,
+): "peso" | "volume" | "unidade" | "desconhecida" {
   const unidadeNormalizada = normalizarUnidade(unidade);
 
-  if (unidadeNormalizada === 'g' || unidadeNormalizada === 'kg') {
-    return 'peso';
+  if (unidadeNormalizada === "g" || unidadeNormalizada === "kg") {
+    return "peso";
   }
 
-  if (unidadeNormalizada === 'ml' || unidadeNormalizada === 'l') {
-    return 'volume';
+  if (unidadeNormalizada === "ml" || unidadeNormalizada === "l") {
+    return "volume";
   }
 
   if (
-    unidadeNormalizada === 'un' ||
-    unidadeNormalizada === 'caixa' ||
-    unidadeNormalizada === 'pacote' ||
-    unidadeNormalizada === 'duzia'
+    unidadeNormalizada === "un" ||
+    unidadeNormalizada === "caixa" ||
+    unidadeNormalizada === "pacote" ||
+    unidadeNormalizada === "duzia"
   ) {
-    return 'unidade';
+    return "unidade";
   }
 
-  return 'desconhecida';
+  return "desconhecida";
 }
 
 function obterUnidadeBase(unidade: string): string {
   const grupo = obterGrupoUnidade(unidade);
 
-  if (grupo === 'peso') {
-    return 'g';
+  if (grupo === "peso") {
+    return "g";
   }
 
-  if (grupo === 'volume') {
-    return 'ml';
+  if (grupo === "volume") {
+    return "ml";
   }
 
-  if (grupo === 'unidade') {
-    return 'un';
+  if (grupo === "unidade") {
+    return "un";
   }
 
-  return '';
+  return "";
 }
 
 export function converterParaUnidadeBase(
   quantidade: number,
-  unidade: string
+  unidade: string,
 ): number {
   const unidadeNormalizada = normalizarUnidade(unidade);
 
@@ -4161,24 +4164,24 @@ export function converterParaUnidadeBase(
   }
 
   switch (unidadeNormalizada) {
-    case 'kg':
+    case "kg":
       return quantidade * 1000;
 
-    case 'g':
+    case "g":
       return quantidade;
 
-    case 'l':
+    case "l":
       return quantidade * 1000;
 
-    case 'ml':
+    case "ml":
       return quantidade;
 
-    case 'duzia':
+    case "duzia":
       return quantidade * 12;
 
-    case 'un':
-    case 'caixa':
-    case 'pacote':
+    case "un":
+    case "caixa":
+    case "pacote":
       return quantidade;
 
     default:
@@ -4188,12 +4191,12 @@ export function converterParaUnidadeBase(
 
 export function unidadesSaoCompativeis(
   unidadeProduto: string,
-  unidadeReceita: string
+  unidadeReceita: string,
 ): boolean {
   const grupoProduto = obterGrupoUnidade(unidadeProduto);
   const grupoReceita = obterGrupoUnidade(unidadeReceita);
 
-  if (grupoProduto === 'desconhecida' || grupoReceita === 'desconhecida') {
+  if (grupoProduto === "desconhecida" || grupoReceita === "desconhecida") {
     return false;
   }
 
@@ -4205,7 +4208,7 @@ export function calcularCustoIngrediente(
   quantidadeEmbalagem: number,
   unidadeProduto: string,
   quantidadeUsada: number,
-  unidadeReceita: string
+  unidadeReceita: string,
 ): ResultadoCalculoIngrediente {
   if (!precoMedio || precoMedio <= 0) {
     return {
@@ -4213,8 +4216,8 @@ export function calcularCustoIngrediente(
       unidadeCompativel: false,
       quantidadeEmbalagemBase: 0,
       quantidadeUsadaBase: 0,
-      unidadeBase: '',
-      mensagem: 'Produto sem preço médio cadastrado.',
+      unidadeBase: "",
+      mensagem: "Produto sem preço médio cadastrado.",
     };
   }
 
@@ -4224,8 +4227,8 @@ export function calcularCustoIngrediente(
       unidadeCompativel: false,
       quantidadeEmbalagemBase: 0,
       quantidadeUsadaBase: 0,
-      unidadeBase: '',
-      mensagem: 'Produto sem quantidade da embalagem cadastrada.',
+      unidadeBase: "",
+      mensagem: "Produto sem quantidade da embalagem cadastrada.",
     };
   }
 
@@ -4235,8 +4238,8 @@ export function calcularCustoIngrediente(
       unidadeCompativel: false,
       quantidadeEmbalagemBase: 0,
       quantidadeUsadaBase: 0,
-      unidadeBase: '',
-      mensagem: 'Quantidade usada inválida.',
+      unidadeBase: "",
+      mensagem: "Quantidade usada inválida.",
     };
   }
 
@@ -4246,19 +4249,19 @@ export function calcularCustoIngrediente(
       unidadeCompativel: false,
       quantidadeEmbalagemBase: 0,
       quantidadeUsadaBase: 0,
-      unidadeBase: '',
+      unidadeBase: "",
       mensagem: `Unidades incompatíveis: produto em ${unidadeProduto} e receita em ${unidadeReceita}.`,
     };
   }
 
   const quantidadeEmbalagemBase = converterParaUnidadeBase(
     quantidadeEmbalagem,
-    unidadeProduto
+    unidadeProduto,
   );
 
   const quantidadeUsadaBase = converterParaUnidadeBase(
     quantidadeUsada,
-    unidadeReceita
+    unidadeReceita,
   );
 
   const unidadeBase = obterUnidadeBase(unidadeProduto);
@@ -4270,7 +4273,7 @@ export function calcularCustoIngrediente(
       quantidadeEmbalagemBase,
       quantidadeUsadaBase,
       unidadeBase,
-      mensagem: 'Não foi possível converter as unidades.',
+      mensagem: "Não foi possível converter as unidades.",
     };
   }
 
@@ -4287,7 +4290,7 @@ export function calcularCustoIngrediente(
 
 export function calcularValorHora(
   salarioDesejado: number,
-  horasTrabalhadasMes: number
+  horasTrabalhadasMes: number,
 ): number {
   if (salarioDesejado < 0 || horasTrabalhadasMes <= 0) return 0;
   return salarioDesejado / horasTrabalhadasMes;
@@ -4296,7 +4299,7 @@ export function calcularValorHora(
 export function calcularCustoMaoDeObra(
   salarioDesejado: number,
   horasTrabalhadasMes: number,
-  minutosGastosNoProduto: number
+  minutosGastosNoProduto: number,
 ): number {
   if (minutosGastosNoProduto <= 0) return 0;
   const valorHora = calcularValorHora(salarioDesejado, horasTrabalhadasMes);
@@ -4307,7 +4310,7 @@ export function calcularCustoOperacionalRateado(
   custosFixosTotais: number,
   custosVariaveisTotais: number,
   horasTrabalhadasMes: number,
-  minutosGastosNoProduto: number
+  minutosGastosNoProduto: number,
 ): number {
   if (horasTrabalhadasMes <= 0 || minutosGastosNoProduto <= 0) return 0;
 
@@ -4321,15 +4324,269 @@ export function calcularCustoOperacionalRateado(
 
 export function calcularPrecoSugerido(
   custoTotal: number,
-  margemLucro: number
+  margemLucro: number,
 ): number {
   if (custoTotal < 0 || margemLucro < 0 || margemLucro >= 100) return 0;
   return custoTotal / (1 - margemLucro / 100);
 }
 
+function arredondarQuantidadeNecessidade(valor: number): number {
+  return Math.round((valor + Number.EPSILON) * 1_000_000) / 1_000_000;
+}
+
+function converterQuantidadeNecessidade(
+  quantidade: number,
+  unidadeOrigem: string,
+  unidadeDestino: string,
+): number {
+  const origem = normalizarUnidade(unidadeOrigem);
+  const destino = normalizarUnidade(unidadeDestino);
+
+  if (!Number.isFinite(quantidade) || quantidade < 0) {
+    throw new Error("Foi encontrada uma quantidade inválida na composição.");
+  }
+
+  if (origem === destino) {
+    return quantidade;
+  }
+
+  const unidades: Record<string, { grupo: string; fator: number }> = {
+    g: { grupo: "peso", fator: 1 },
+    kg: { grupo: "peso", fator: 1000 },
+    ml: { grupo: "volume", fator: 1 },
+    l: { grupo: "volume", fator: 1000 },
+    un: { grupo: "contagem", fator: 1 },
+    duzia: { grupo: "contagem", fator: 12 },
+    caixa: { grupo: "caixa", fator: 1 },
+    pacote: { grupo: "pacote", fator: 1 },
+  };
+
+  const configuracaoOrigem = unidades[origem];
+  const configuracaoDestino = unidades[destino];
+
+  if (
+    !configuracaoOrigem ||
+    !configuracaoDestino ||
+    configuracaoOrigem.grupo !== configuracaoDestino.grupo
+  ) {
+    throw new Error(
+      `Não é possível converter a necessidade de ${unidadeOrigem} para ${unidadeDestino}.`,
+    );
+  }
+
+  return (quantidade * configuracaoOrigem.fator) / configuracaoDestino.fator;
+}
+
+export async function calcularNecessidadesOrcamento(
+  orcamentoId: number,
+): Promise<NecessidadeOrcamento[]> {
+  const database = await getDatabase();
+
+  if (!orcamentoId) {
+    throw new Error("Orçamento inválido.");
+  }
+
+  const orcamento = await database.getFirstAsync<{
+    id: number;
+    tipo: TipoDocumentoComercial;
+  }>(
+    `
+    SELECT id, tipo
+    FROM documentos_comerciais
+    WHERE id = ?
+    `,
+    [orcamentoId],
+  );
+
+  if (!orcamento || orcamento.tipo !== "ORCAMENTO") {
+    throw new Error("Orçamento não encontrado.");
+  }
+
+  type LinhaNecessidadeDireta = {
+    produto_id: number;
+    produto_nome: string;
+    quantidade_estoque: number;
+    unidade_estoque: string;
+    quantidade_usada: number;
+    unidade_origem: string;
+    quantidade_produto_venda: number;
+  };
+
+  type LinhaNecessidadeReceita = {
+    produto_id: number;
+    produto_nome: string;
+    quantidade_estoque: number;
+    unidade_estoque: string;
+    quantidade_ingrediente: number;
+    unidade_origem: string;
+    quantidade_unidades_receita: number;
+    rendimento: string;
+    quantidade_produto_venda: number;
+  };
+
+  const itensDiretos = await database.getAllAsync<LinhaNecessidadeDireta>(
+    `
+    SELECT
+      p.id AS produto_id,
+      p.nome AS produto_nome,
+      p.quantidade AS quantidade_estoque,
+      p.unidade_medida AS unidade_estoque,
+      pvi.quantidade_usada,
+      pvi.unidade_medida AS unidade_origem,
+      dci.quantidade AS quantidade_produto_venda
+    FROM documentos_comerciais_itens dci
+    INNER JOIN produto_venda_itens pvi
+      ON pvi.produto_venda_id = dci.produto_venda_id
+    INNER JOIN produtos p
+      ON p.id = pvi.produto_estoque_id
+    WHERE dci.documento_id = ?
+    `,
+    [orcamentoId],
+  );
+
+  const ingredientesReceitas =
+    await database.getAllAsync<LinhaNecessidadeReceita>(
+      `
+      SELECT
+        p.id AS produto_id,
+        p.nome AS produto_nome,
+        p.quantidade AS quantidade_estoque,
+        p.unidade_medida AS unidade_estoque,
+        ri.quantidade_numero AS quantidade_ingrediente,
+        ri.unidade_medida AS unidade_origem,
+        pvr.quantidade_unidades AS quantidade_unidades_receita,
+        r.rendimento,
+        dci.quantidade AS quantidade_produto_venda
+      FROM documentos_comerciais_itens dci
+      INNER JOIN produto_venda_receitas pvr
+        ON pvr.produto_venda_id = dci.produto_venda_id
+      INNER JOIN receitas r
+        ON r.id = pvr.receita_id
+      INNER JOIN receita_itens ri
+        ON ri.receita_id = r.id
+      INNER JOIN produtos p
+        ON p.id = ri.produto_id
+      WHERE dci.documento_id = ?
+      `,
+      [orcamentoId],
+    );
+
+  const acumulado = new Map<
+    number,
+    {
+      produto_id: number;
+      produto_nome: string;
+      quantidade_necessaria: number;
+      quantidade_estoque: number;
+      unidade_medida: string;
+    }
+  >();
+
+  const adicionarNecessidade = (
+    produtoId: number,
+    produtoNome: string,
+    quantidadeEstoque: number,
+    unidadeEstoque: string,
+    quantidadeOrigem: number,
+    unidadeOrigem: string,
+  ) => {
+    const quantidadeConvertida = converterQuantidadeNecessidade(
+      quantidadeOrigem,
+      unidadeOrigem,
+      unidadeEstoque,
+    );
+
+    const itemAtual = acumulado.get(produtoId);
+
+    if (itemAtual) {
+      itemAtual.quantidade_necessaria += quantidadeConvertida;
+      return;
+    }
+
+    acumulado.set(produtoId, {
+      produto_id: produtoId,
+      produto_nome: produtoNome,
+      quantidade_necessaria: quantidadeConvertida,
+      quantidade_estoque: Number(quantidadeEstoque || 0),
+      unidade_medida: normalizarUnidade(unidadeEstoque),
+    });
+  };
+
+  // Inclui embalagens e outros itens cadastrados diretamente na composição.
+  for (const item of itensDiretos) {
+    const quantidadeNecessaria =
+      Number(item.quantidade_usada || 0) *
+      Number(item.quantidade_produto_venda || 0);
+
+    adicionarNecessidade(
+      item.produto_id,
+      item.produto_nome,
+      item.quantidade_estoque,
+      item.unidade_estoque,
+      quantidadeNecessaria,
+      item.unidade_origem,
+    );
+  }
+
+  for (const item of ingredientesReceitas) {
+    const rendimento = extrairNumeroRendimento(item.rendimento);
+
+    if (rendimento <= 0) {
+      throw new Error(
+        `A receita que utiliza ${item.produto_nome} possui rendimento inválido.`,
+      );
+    }
+
+    const quantidadeReceitasNecessaria =
+      (Number(item.quantidade_unidades_receita || 0) *
+        Number(item.quantidade_produto_venda || 0)) /
+      rendimento;
+
+    const quantidadeIngredienteNecessaria =
+      Number(item.quantidade_ingrediente || 0) * quantidadeReceitasNecessaria;
+
+    adicionarNecessidade(
+      item.produto_id,
+      item.produto_nome,
+      item.quantidade_estoque,
+      item.unidade_estoque,
+      quantidadeIngredienteNecessaria,
+      item.unidade_origem,
+    );
+  }
+
+  return Array.from(acumulado.values())
+    .map((item) => {
+      const quantidadeNecessaria = arredondarQuantidadeNecessidade(
+        item.quantidade_necessaria,
+      );
+      const quantidadeEstoque = arredondarQuantidadeNecessidade(
+        item.quantidade_estoque,
+      );
+      const quantidadeFaltante = arredondarQuantidadeNecessidade(
+        Math.max(0, quantidadeNecessaria - quantidadeEstoque),
+      );
+
+      return {
+        produto_id: item.produto_id,
+        produto_nome: item.produto_nome,
+        quantidade_necessaria: quantidadeNecessaria,
+        quantidade_estoque: quantidadeEstoque,
+        quantidade_faltante: quantidadeFaltante,
+        unidade_medida: item.unidade_medida,
+        estoque_suficiente: quantidadeFaltante <= 0.000001,
+      };
+    })
+    .sort((a, b) =>
+      a.produto_nome.localeCompare(b.produto_nome, "pt-BR", {
+        sensitivity: "base",
+      }),
+    );
+}
+
 export function formatarMoeda(valor: number): string {
-  return valor.toLocaleString('pt-BR', {
-    style: 'currency',
-    currency: 'BRL',
+  return valor.toLocaleString("pt-BR", {
+    style: "currency",
+    currency: "BRL",
   });
 }

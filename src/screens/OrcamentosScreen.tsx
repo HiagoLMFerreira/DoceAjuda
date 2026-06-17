@@ -17,12 +17,15 @@ import { Ionicons } from "@expo/vector-icons";
 import DocumentoComercialFormModal from "../components/DocumentoComercialFormModal";
 import {
   buscarDocumentoComercialPorId,
+  calcularNecessidadesOrcamento,
   DocumentoComercialDatabase,
   DocumentoComercialDetalhado,
   excluirDocumentoComercial,
   formatarMoeda,
   listarOrcamentos,
+  NecessidadeOrcamento,
 } from "../database/database";
+import { compartilharPdfOrcamento } from "../services/orcamentoPdf";
 
 type Props = {
   navigation: {
@@ -66,6 +69,13 @@ function obterTimestamp(data: string): number {
   return Number.isNaN(timestamp) ? 0 : timestamp;
 }
 
+function formatarQuantidade(valor: number): string {
+  return Number(valor || 0).toLocaleString("pt-BR", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 3,
+  });
+}
+
 function obterTextoStatus(
   status: DocumentoComercialDatabase["status"],
 ): string {
@@ -103,6 +113,10 @@ export default function OrcamentosScreen({ navigation }: Props) {
   const [orcamentoConversao, setOrcamentoConversao] =
     useState<DocumentoComercialDetalhado | null>(null);
   const [carregandoDetalhes, setCarregandoDetalhes] = useState(false);
+  const [modalNecessidades, setModalNecessidades] = useState(false);
+  const [necessidades, setNecessidades] = useState<NecessidadeOrcamento[]>([]);
+  const [carregandoNecessidades, setCarregandoNecessidades] = useState(false);
+  const [gerandoPdf, setGerandoPdf] = useState(false);
 
   const carregarOrcamentos = useCallback(async () => {
     try {
@@ -267,6 +281,53 @@ export default function OrcamentosScreen({ navigation }: Props) {
     setOrcamentoConversao(orcamentoSelecionado);
     setModalDetalhes(false);
     setModalConversao(true);
+  }
+
+  async function abrirNecessidades() {
+    if (!orcamentoSelecionado) return;
+
+    try {
+      setCarregandoNecessidades(true);
+      const resultado = await calcularNecessidadesOrcamento(
+        orcamentoSelecionado.id,
+      );
+
+      setNecessidades(resultado);
+      setModalDetalhes(false);
+      setModalNecessidades(true);
+    } catch (error) {
+      Alert.alert(
+        "Erro",
+        error instanceof Error
+          ? error.message
+          : "Não foi possível calcular as necessidades do orçamento.",
+      );
+    } finally {
+      setCarregandoNecessidades(false);
+    }
+  }
+
+  function fecharNecessidades() {
+    setModalNecessidades(false);
+    setModalDetalhes(true);
+  }
+
+  async function compartilharPdf() {
+    if (!orcamentoSelecionado || gerandoPdf) return;
+
+    try {
+      setGerandoPdf(true);
+      await compartilharPdfOrcamento(orcamentoSelecionado);
+    } catch (error) {
+      Alert.alert(
+        "Erro",
+        error instanceof Error
+          ? error.message
+          : "Não foi possível gerar ou compartilhar o PDF.",
+      );
+    } finally {
+      setGerandoPdf(false);
+    }
   }
 
   function confirmarExclusao() {
@@ -444,7 +505,7 @@ export default function OrcamentosScreen({ navigation }: Props) {
         ) : (
           <FlatList
             data={orcamentosOrdenados}
-            keyExtractor={(item) => String(item.id)}
+            keyExtractor={(item: DocumentoComercialDatabase) => String(item.id)}
             showsVerticalScrollIndicator={false}
             contentContainerStyle={styles.listaContent}
             ListEmptyComponent={
@@ -458,7 +519,7 @@ export default function OrcamentosScreen({ navigation }: Props) {
                 </Text>
               </View>
             }
-            renderItem={({ item }) => (
+            renderItem={({ item }: { item: DocumentoComercialDatabase }) => (
               <Pressable
                 style={styles.card}
                 onPress={() => void abrirDetalhes(item.id)}
@@ -616,39 +677,229 @@ export default function OrcamentosScreen({ navigation }: Props) {
               </ScrollView>
             )}
 
-            {orcamentoSelecionado?.status === "PENDENTE" && (
+            {!!orcamentoSelecionado && (
               <View style={styles.detalhesAcoes}>
-                <Pressable
-                  style={[styles.detalhesBotao, styles.botaoRealizarVenda]}
-                  onPress={abrirConversaoVenda}
-                >
-                  <Ionicons
-                    name="checkmark-circle-outline"
-                    size={21}
-                    color="#fff"
-                  />
-                  <Text style={styles.detalhesBotaoTexto}>Realizar Venda</Text>
-                </Pressable>
-
                 <View style={styles.detalhesAcoesLinha}>
                   <Pressable
-                    style={[styles.detalhesBotao, styles.botaoExcluir]}
-                    onPress={confirmarExclusao}
+                    style={[styles.detalhesBotao, styles.botaoPdf]}
+                    onPress={() => void compartilharPdf()}
+                    disabled={gerandoPdf}
                   >
-                    <Ionicons name="trash-outline" size={20} color="#fff" />
-                    <Text style={styles.detalhesBotaoTexto}>Excluir</Text>
+                    {gerandoPdf ? (
+                      <ActivityIndicator size="small" color="#fff" />
+                    ) : (
+                      <Ionicons
+                        name="share-social-outline"
+                        size={19}
+                        color="#fff"
+                      />
+                    )}
+                    <Text style={styles.detalhesBotaoTexto}>
+                      {gerandoPdf ? "Gerando..." : "Compartilhar PDF"}
+                    </Text>
                   </Pressable>
 
                   <Pressable
-                    style={[styles.detalhesBotao, styles.botaoEditar]}
-                    onPress={abrirEdicao}
+                    style={[styles.detalhesBotao, styles.botaoNecessidades]}
+                    onPress={() => void abrirNecessidades()}
+                    disabled={carregandoNecessidades}
                   >
-                    <Ionicons name="create-outline" size={20} color="#fff" />
-                    <Text style={styles.detalhesBotaoTexto}>Editar</Text>
+                    {carregandoNecessidades ? (
+                      <ActivityIndicator size="small" color="#fff" />
+                    ) : (
+                      <Ionicons name="list-outline" size={20} color="#fff" />
+                    )}
+                    <Text style={styles.detalhesBotaoTexto}>Necessidades</Text>
                   </Pressable>
                 </View>
+
+                {orcamentoSelecionado.status === "PENDENTE" && (
+                  <>
+                    <Pressable
+                      style={[styles.detalhesBotao, styles.botaoRealizarVenda]}
+                      onPress={abrirConversaoVenda}
+                    >
+                      <Ionicons
+                        name="checkmark-circle-outline"
+                        size={21}
+                        color="#fff"
+                      />
+                      <Text style={styles.detalhesBotaoTexto}>
+                        Realizar Venda
+                      </Text>
+                    </Pressable>
+
+                    <View style={styles.detalhesAcoesLinha}>
+                      <Pressable
+                        style={[styles.detalhesBotao, styles.botaoExcluir]}
+                        onPress={confirmarExclusao}
+                      >
+                        <Ionicons name="trash-outline" size={20} color="#fff" />
+                        <Text style={styles.detalhesBotaoTexto}>Excluir</Text>
+                      </Pressable>
+
+                      <Pressable
+                        style={[styles.detalhesBotao, styles.botaoEditar]}
+                        onPress={abrirEdicao}
+                      >
+                        <Ionicons
+                          name="create-outline"
+                          size={20}
+                          color="#fff"
+                        />
+                        <Text style={styles.detalhesBotaoTexto}>Editar</Text>
+                      </Pressable>
+                    </View>
+                  </>
+                )}
               </View>
             )}
+          </View>
+        </View>
+      </Modal>
+
+      <Modal
+        visible={modalNecessidades}
+        transparent
+        animationType="fade"
+        onRequestClose={fecharNecessidades}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalNecessidades}>
+            <View style={styles.detalhesHeader}>
+              <Text style={styles.modalTitulo}>LISTA DE NECESSIDADES</Text>
+              <Pressable
+                style={styles.botaoFechar}
+                onPress={fecharNecessidades}
+              >
+                <Ionicons name="close" size={23} color="#111" />
+              </Pressable>
+            </View>
+
+            <View style={styles.necessidadesResumo}>
+              <View style={styles.necessidadeResumoItem}>
+                <Text style={styles.necessidadeResumoValor}>
+                  {necessidades.length}
+                </Text>
+                <Text style={styles.necessidadeResumoLabel}>Itens</Text>
+              </View>
+
+              <View style={styles.necessidadeResumoDivisor} />
+
+              <View style={styles.necessidadeResumoItem}>
+                <Text
+                  style={[styles.necessidadeResumoValor, styles.textoFaltante]}
+                >
+                  {
+                    necessidades.filter((item) => !item.estoque_suficiente)
+                      .length
+                  }
+                </Text>
+                <Text style={styles.necessidadeResumoLabel}>Em falta</Text>
+              </View>
+            </View>
+
+            <Text style={styles.necessidadesAviso}>
+              Esta consulta não movimenta o estoque.
+            </Text>
+
+            <FlatList
+              data={necessidades}
+              keyExtractor={(item: NecessidadeOrcamento) =>
+                String(item.produto_id)
+              }
+              style={styles.necessidadesLista}
+              contentContainerStyle={styles.necessidadesListaContent}
+              showsVerticalScrollIndicator
+              ListEmptyComponent={
+                <View style={styles.necessidadesVazio}>
+                  <Ionicons
+                    name="checkmark-circle-outline"
+                    size={42}
+                    color="#2e7d32"
+                  />
+                  <Text style={styles.necessidadesVazioTitulo}>
+                    Nenhuma necessidade encontrada
+                  </Text>
+                  <Text style={styles.necessidadesVazioTexto}>
+                    Verifique se os produtos do orçamento possuem composição
+                    cadastrada.
+                  </Text>
+                </View>
+              }
+              renderItem={({ item }: { item: NecessidadeOrcamento }) => (
+                <View
+                  style={[
+                    styles.necessidadeCard,
+                    !item.estoque_suficiente && styles.necessidadeCardFaltante,
+                  ]}
+                >
+                  <View style={styles.necessidadeCardHeader}>
+                    <Text style={styles.necessidadeNome} numberOfLines={2}>
+                      {item.produto_nome}
+                    </Text>
+                    <View
+                      style={[
+                        styles.necessidadeBadge,
+                        item.estoque_suficiente
+                          ? styles.necessidadeBadgeOk
+                          : styles.necessidadeBadgeFalta,
+                      ]}
+                    >
+                      <Text style={styles.necessidadeBadgeTexto}>
+                        {item.estoque_suficiente ? "SUFICIENTE" : "EM FALTA"}
+                      </Text>
+                    </View>
+                  </View>
+
+                  <View style={styles.necessidadeGrid}>
+                    <View style={styles.necessidadeDado}>
+                      <Text style={styles.necessidadeDadoLabel}>
+                        Necessário
+                      </Text>
+                      <Text style={styles.necessidadeDadoValor}>
+                        {formatarQuantidade(item.quantidade_necessaria)}{" "}
+                        {item.unidade_medida}
+                      </Text>
+                    </View>
+
+                    <View style={styles.necessidadeDado}>
+                      <Text style={styles.necessidadeDadoLabel}>
+                        Em estoque
+                      </Text>
+                      <Text style={styles.necessidadeDadoValor}>
+                        {formatarQuantidade(item.quantidade_estoque)}{" "}
+                        {item.unidade_medida}
+                      </Text>
+                    </View>
+
+                    <View style={styles.necessidadeDado}>
+                      <Text style={styles.necessidadeDadoLabel}>Faltante</Text>
+                      <Text
+                        style={[
+                          styles.necessidadeDadoValor,
+                          !item.estoque_suficiente && styles.textoFaltante,
+                        ]}
+                      >
+                        {formatarQuantidade(item.quantidade_faltante)}{" "}
+                        {item.unidade_medida}
+                      </Text>
+                    </View>
+                  </View>
+                </View>
+              )}
+            />
+
+            <View style={styles.necessidadesRodape}>
+              <Pressable
+                style={styles.botaoFecharNecessidades}
+                onPress={fecharNecessidades}
+              >
+                <Text style={styles.botaoFecharNecessidadesTexto}>
+                  Voltar ao orçamento
+                </Text>
+              </Pressable>
+            </View>
           </View>
         </View>
       </Modal>
@@ -915,7 +1166,7 @@ const styles = StyleSheet.create({
   detalhesScroll: {
     flex: 1,
     minHeight: 0,
-    maxHeight: "70%",
+    maxHeight:'62%',
   },
   botaoFechar: {
     width: 38,
@@ -1046,6 +1297,12 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     gap: 7,
   },
+  botaoPdf: {
+    backgroundColor: "#444",
+  },
+  botaoNecessidades: {
+    backgroundColor: "#1565c0",
+  },
   botaoRealizarVenda: {
     backgroundColor: "#2e7d32",
   },
@@ -1058,6 +1315,165 @@ const styles = StyleSheet.create({
   detalhesBotaoTexto: {
     color: "#fff",
     fontWeight: "800",
+  },
+  modalNecessidades: {
+    width: "100%",
+    height: "88%",
+    maxHeight: 720,
+    backgroundColor: "#ebebeb",
+    borderRadius: 22,
+    overflow: "hidden",
+  },
+  necessidadesResumo: {
+    minHeight: 70,
+    marginHorizontal: 15,
+    marginBottom: 8,
+    paddingHorizontal: 18,
+    borderRadius: 14,
+    backgroundColor: "#fff",
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  necessidadeResumoItem: {
+    flex: 1,
+    alignItems: "center",
+  },
+  necessidadeResumoDivisor: {
+    width: 1,
+    height: 38,
+    backgroundColor: "#dddddd",
+  },
+  necessidadeResumoValor: {
+    fontSize: 21,
+    fontWeight: "900",
+    color: "#111",
+  },
+  necessidadeResumoLabel: {
+    marginTop: 2,
+    fontSize: 11,
+    fontWeight: "700",
+    color: "#666",
+  },
+  necessidadesAviso: {
+    marginHorizontal: 17,
+    marginBottom: 10,
+    textAlign: "center",
+    fontSize: 11,
+    fontWeight: "700",
+    color: "#666",
+  },
+  necessidadesLista: {
+    flex: 1,
+    minHeight: 0,
+  },
+  necessidadesListaContent: {
+    paddingHorizontal: 15,
+    paddingBottom: 14,
+  },
+  necessidadeCard: {
+    padding: 13,
+    marginBottom: 9,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "#dddddd",
+    backgroundColor: "#fff",
+  },
+  necessidadeCardFaltante: {
+    borderColor: "#ef9a9a",
+  },
+  necessidadeCardHeader: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 10,
+    marginBottom: 12,
+  },
+  necessidadeNome: {
+    flex: 1,
+    fontSize: 15,
+    fontWeight: "900",
+    color: "#111",
+  },
+  necessidadeBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+    borderRadius: 999,
+  },
+  necessidadeBadgeOk: {
+    backgroundColor: "#d9ead3",
+  },
+  necessidadeBadgeFalta: {
+    backgroundColor: "#f4cccc",
+  },
+  necessidadeBadgeTexto: {
+    fontSize: 9,
+    fontWeight: "900",
+    color: "#333",
+  },
+  necessidadeGrid: {
+    flexDirection: "row",
+    gap: 7,
+  },
+  necessidadeDado: {
+    flex: 1,
+    minWidth: 0,
+    paddingVertical: 9,
+    paddingHorizontal: 6,
+    borderRadius: 9,
+    backgroundColor: "#f3f3f3",
+    alignItems: "center",
+  },
+  necessidadeDadoLabel: {
+    fontSize: 9,
+    fontWeight: "800",
+    color: "#777",
+    textTransform: "uppercase",
+  },
+  necessidadeDadoValor: {
+    marginTop: 4,
+    fontSize: 11,
+    fontWeight: "900",
+    color: "#111",
+    textAlign: "center",
+  },
+  textoFaltante: {
+    color: "#c62828",
+  },
+  necessidadesVazio: {
+    minHeight: 220,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 24,
+  },
+  necessidadesVazioTitulo: {
+    marginTop: 9,
+    fontSize: 15,
+    fontWeight: "900",
+    color: "#222",
+    textAlign: "center",
+  },
+  necessidadesVazioTexto: {
+    marginTop: 5,
+    color: "#666",
+    textAlign: "center",
+  },
+  necessidadesRodape: {
+    flexShrink: 0,
+    paddingHorizontal: 14,
+    paddingTop: 11,
+    paddingBottom: 15,
+    borderTopWidth: 1,
+    borderTopColor: "#d1d1d1",
+  },
+  botaoFecharNecessidades: {
+    minHeight: 47,
+    borderRadius: 13,
+    backgroundColor: "#111",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  botaoFecharNecessidadesTexto: {
+    color: "#fff",
+    fontWeight: "900",
   },
   loadingDetalhesContainer: {
     minHeight: 180,
