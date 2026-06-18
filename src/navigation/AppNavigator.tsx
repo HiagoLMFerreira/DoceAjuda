@@ -19,6 +19,7 @@ import ProdutosVendaScreen  from '../screens/ProdutosVendaScreen';
 import Compras from '../screens/ComprasScreen';
 import { ProviderId } from 'firebase/auth';
 import ComprasScreen from '../screens/ComprasScreen';
+import RelatoriosScreen from '../screens/RelatoriosScreen';
 
 const Stack = createStackNavigator<RootStackParamList>();
 
@@ -52,6 +53,7 @@ function AppNavigatorContent() {
         <Stack.Screen name="Vendas" component={VendasScreen} />
         <Stack.Screen name="Clientes" component={ClientesScreen} />
         <Stack.Screen name="ProdutosVenda" component={ProdutosVendaScreen} />
+        <Stack.Screen name="Relatorios" component={RelatoriosScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

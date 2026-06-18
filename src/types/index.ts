@@ -25,4 +25,7 @@ export type RootStackParamList = {
   Clientes: undefined;
   ProdutosVenda: undefined;
   Compras: undefined;
+  Relatorios: undefined;
 };
+
+export * from './relatorios';

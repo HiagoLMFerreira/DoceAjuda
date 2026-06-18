@@ -45,6 +45,7 @@ export default function MenuScreen({ navigation }: Props) {
     {titulo: 'ORÇAMENTOS', rota: 'Orcamentos', icone: 'document-text-outline',},
     {titulo: 'VENDAS', rota: 'Vendas', icone: 'cash-outline',},
     {titulo: 'CLIENTES', rota: 'Clientes',icone: 'people-outline',},
+    {titulo: 'RELATÓRIOS', rota: 'Relatorios', icone: 'bar-chart-outline',},
   ];
 
   return (
