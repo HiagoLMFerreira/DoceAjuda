@@ -16,6 +16,7 @@ import { Ionicons } from '@expo/vector-icons';
 import DocumentoComercialFormModal from '../components/DocumentoComercialFormModal';
 import {
   buscarDocumentoComercialPorId,
+  cancelarVenda,
   DirecaoOrdenacao,
   DocumentoComercialDatabase,
   DocumentoComercialDetalhado,
@@ -30,23 +31,6 @@ type Props = {
     addListener?: (evento: string, callback: () => void) => () => void;
   };
 };
-
-type OpcaoOrdenacao = {
-  label: string;
-  campo: OrdenarDocumentoComercialPor;
-  direcao: DirecaoOrdenacao;
-};
-
-const OPCOES_ORDENACAO: OpcaoOrdenacao[] = [
-  { label: 'Mais recentes', campo: 'created_at', direcao: 'DESC' },
-  { label: 'Mais antigas', campo: 'created_at', direcao: 'ASC' },
-  { label: 'Cliente A–Z', campo: 'cliente_nome', direcao: 'ASC' },
-  { label: 'Cliente Z–A', campo: 'cliente_nome', direcao: 'DESC' },
-  { label: 'Maior valor', campo: 'valor_total', direcao: 'DESC' },
-  { label: 'Menor valor', campo: 'valor_total', direcao: 'ASC' },
-  { label: 'Maior ID', campo: 'id', direcao: 'DESC' },
-  { label: 'Menor ID', campo: 'id', direcao: 'ASC' },
-];
 
 function formatarData(data: string): string {
   if (!data) return '-';
@@ -75,16 +59,17 @@ function obterTextoStatus(status: DocumentoComercialDatabase['status']): string 
 export default function VendasScreen({ navigation }: Props) {
   const [vendas, setVendas] = useState<DocumentoComercialDatabase[]>([]);
   const [busca, setBusca] = useState('');
-  const [ordenacao, setOrdenacao] = useState<OpcaoOrdenacao>(
-    OPCOES_ORDENACAO[0]
-  );
+  const [ordenacao, setOrdenacao] = useState<{
+    campo: OrdenarDocumentoComercialPor;
+    direcao: DirecaoOrdenacao;
+  }>({ campo: 'created_at', direcao: 'DESC' });
   const [carregando, setCarregando] = useState(true);
-  const [modalOrdenacao, setModalOrdenacao] = useState(false);
   const [modalFormulario, setModalFormulario] = useState(false);
   const [modalDetalhes, setModalDetalhes] = useState(false);
   const [vendaSelecionada, setVendaSelecionada] =
     useState<DocumentoComercialDetalhado | null>(null);
   const [carregandoDetalhes, setCarregandoDetalhes] = useState(false);
+  const [cancelandoVenda, setCancelandoVenda] = useState(false);
 
   const carregarVendas = useCallback(async () => {
     try {
@@ -125,6 +110,32 @@ export default function VendasScreen({ navigation }: Props) {
     return removerListener;
   }, [navigation, carregarVendas]);
 
+  function alternarOrdenacao(campo: OrdenarDocumentoComercialPor) {
+    setOrdenacao((atual) => {
+      if (atual.campo === campo) {
+        return {
+          campo,
+          direcao: atual.direcao === 'ASC' ? 'DESC' : 'ASC',
+        };
+      }
+
+      return {
+        campo,
+        direcao: campo === 'cliente_nome' ? 'ASC' : 'DESC',
+      };
+    });
+  }
+
+  function iconeOrdenacao(campo: OrdenarDocumentoComercialPor) {
+    if (ordenacao.campo !== campo) {
+      return 'swap-vertical-outline' as const;
+    }
+
+    return ordenacao.direcao === 'ASC'
+      ? ('arrow-up-outline' as const)
+      : ('arrow-down-outline' as const);
+  }
+
   async function abrirDetalhes(id: number) {
     try {
       setCarregandoDetalhes(true);
@@ -149,7 +160,61 @@ export default function VendasScreen({ navigation }: Props) {
     }
   }
 
+  function solicitarCancelamento() {
+    if (!vendaSelecionada || vendaSelecionada.status !== 'CONCLUIDA') {
+      return;
+    }
+
+    Alert.alert(
+      'Cancelar venda',
+      `Deseja cancelar a venda #${vendaSelecionada.id}? As quantidades descontadas serão devolvidas ao estoque.`,
+      [
+        { text: 'Não', style: 'cancel' },
+        {
+          text: 'Sim, cancelar',
+          style: 'destructive',
+          onPress: () => void confirmarCancelamento(),
+        },
+      ]
+    );
+  }
+
+  async function confirmarCancelamento() {
+    if (!vendaSelecionada || cancelandoVenda) {
+      return;
+    }
+
+    try {
+      setCancelandoVenda(true);
+      await cancelarVenda(vendaSelecionada.id);
+
+      const vendaAtualizada = await buscarDocumentoComercialPorId(
+        vendaSelecionada.id
+      );
+
+      if (vendaAtualizada?.tipo === 'VENDA') {
+        setVendaSelecionada(vendaAtualizada);
+      }
+
+      await carregarVendas();
+      Alert.alert(
+        'Venda cancelada',
+        'A venda foi cancelada e as quantidades foram devolvidas ao estoque.'
+      );
+    } catch (error) {
+      Alert.alert(
+        'Não foi possível cancelar',
+        error instanceof Error
+          ? error.message
+          : 'Ocorreu um erro ao cancelar a venda.'
+      );
+    } finally {
+      setCancelandoVenda(false);
+    }
+  }
+
   async function aposSalvar() {
+    setModalFormulario(false);
     setVendaSelecionada(null);
     await carregarVendas();
     Alert.alert('Venda concluída', 'A venda foi registrada com sucesso.');
@@ -171,7 +236,7 @@ export default function VendasScreen({ navigation }: Props) {
             <Ionicons name="search" size={20} color="#666" />
             <TextInput
               style={styles.buscaInput}
-              placeholder="Buscar por cliente ou ID"
+              placeholder="Buscar por cliente, ID, status ou pagamento"
               placeholderTextColor="#888"
               value={busca}
               onChangeText={setBusca}
@@ -182,13 +247,6 @@ export default function VendasScreen({ navigation }: Props) {
               </Pressable>
             )}
           </View>
-
-          <Pressable
-            style={styles.botaoFiltro}
-            onPress={() => setModalOrdenacao(true)}
-          >
-            <Ionicons name="options-outline" size={23} color="#111" />
-          </Pressable>
         </View>
 
         <Pressable
@@ -200,9 +258,49 @@ export default function VendasScreen({ navigation }: Props) {
         </Pressable>
 
         <View style={styles.cabecalhoLista}>
-          <Text style={[styles.cabecalhoTexto, styles.colunaCliente]}>CLIENTE</Text>
-          <Text style={[styles.cabecalhoTexto, styles.colunaData]}>DATA</Text>
-          <Text style={[styles.cabecalhoTexto, styles.colunaTotal]}>TOTAL</Text>
+          <Pressable
+            style={[styles.cabecalhoBotao, styles.colunaCliente]}
+            onPress={() => alternarOrdenacao('cliente_nome')}
+          >
+            <Text style={styles.cabecalhoTexto}>CLIENTE</Text>
+            <Ionicons
+              name={iconeOrdenacao('cliente_nome')}
+              size={14}
+              color={ordenacao.campo === 'cliente_nome' ? '#111' : '#777'}
+            />
+          </Pressable>
+
+          <Pressable
+            style={[
+              styles.cabecalhoBotao,
+              styles.cabecalhoBotaoCentralizado,
+              styles.colunaData,
+            ]}
+            onPress={() => alternarOrdenacao('created_at')}
+          >
+            <Text style={styles.cabecalhoTexto}>DATA</Text>
+            <Ionicons
+              name={iconeOrdenacao('created_at')}
+              size={14}
+              color={ordenacao.campo === 'created_at' ? '#111' : '#777'}
+            />
+          </Pressable>
+
+          <Pressable
+            style={[
+              styles.cabecalhoBotao,
+              styles.cabecalhoBotaoDireita,
+              styles.colunaTotal,
+            ]}
+            onPress={() => alternarOrdenacao('valor_total')}
+          >
+            <Text style={styles.cabecalhoTexto}>TOTAL</Text>
+            <Ionicons
+              name={iconeOrdenacao('valor_total')}
+              size={14}
+              color={ordenacao.campo === 'valor_total' ? '#111' : '#777'}
+            />
+          </Pressable>
         </View>
 
         {carregando ? (
@@ -274,54 +372,6 @@ export default function VendasScreen({ navigation }: Props) {
       </View>
 
       <Modal
-        visible={modalOrdenacao}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setModalOrdenacao(false)}
-      >
-        <Pressable
-          style={styles.modalOverlay}
-          onPress={() => setModalOrdenacao(false)}
-        >
-          <Pressable style={styles.modalOrdenacao} onPress={() => undefined}>
-            <Text style={styles.modalTitulo}>ORDENAR VENDAS</Text>
-
-            {OPCOES_ORDENACAO.map((opcao) => {
-              const selecionada =
-                opcao.campo === ordenacao.campo &&
-                opcao.direcao === ordenacao.direcao;
-
-              return (
-                <Pressable
-                  key={`${opcao.campo}-${opcao.direcao}`}
-                  style={[
-                    styles.opcaoOrdenacao,
-                    selecionada && styles.opcaoOrdenacaoSelecionada,
-                  ]}
-                  onPress={() => {
-                    setOrdenacao(opcao);
-                    setModalOrdenacao(false);
-                  }}
-                >
-                  <Text
-                    style={[
-                      styles.opcaoOrdenacaoTexto,
-                      selecionada && styles.opcaoOrdenacaoTextoSelecionado,
-                    ]}
-                  >
-                    {opcao.label}
-                  </Text>
-                  {selecionada && (
-                    <Ionicons name="checkmark-circle" size={22} color="#111" />
-                  )}
-                </Pressable>
-              );
-            })}
-          </Pressable>
-        </Pressable>
-      </Modal>
-
-      <Modal
         visible={modalDetalhes}
         transparent
         animationType="fade"
@@ -378,12 +428,27 @@ export default function VendasScreen({ navigation }: Props) {
                           </Text>
                         </View>
                       )}
-                      <View style={styles.infoLinhaSemBorda}>
+                      <View
+                        style={
+                          vendaSelecionada.canceled_at
+                            ? styles.infoLinha
+                            : styles.infoLinhaSemBorda
+                        }
+                      >
                         <Text style={styles.infoLabel}>Status</Text>
                         <Text style={styles.infoValor}>
                           {obterTextoStatus(vendaSelecionada.status)}
                         </Text>
                       </View>
+
+                      {!!vendaSelecionada.canceled_at && (
+                        <View style={styles.infoLinhaSemBorda}>
+                          <Text style={styles.infoLabel}>Cancelada em</Text>
+                          <Text style={styles.infoValor}>
+                            {formatarData(vendaSelecionada.canceled_at)}
+                          </Text>
+                        </View>
+                      )}
                     </View>
 
                     <Text style={styles.detalhesSecaoTitulo}>ITENS</Text>
@@ -419,6 +484,43 @@ export default function VendasScreen({ navigation }: Props) {
                         {formatarMoeda(vendaSelecionada.valor_total)}
                       </Text>
                     </View>
+
+                    {vendaSelecionada.status === 'CONCLUIDA' && (
+                      <Pressable
+                        style={[
+                          styles.botaoCancelarVenda,
+                          cancelandoVenda && styles.botaoDesabilitado,
+                        ]}
+                        onPress={solicitarCancelamento}
+                        disabled={cancelandoVenda}
+                      >
+                        {cancelandoVenda ? (
+                          <ActivityIndicator size="small" color="#fff" />
+                        ) : (
+                          <Ionicons
+                            name="close-circle-outline"
+                            size={21}
+                            color="#fff"
+                          />
+                        )}
+                        <Text style={styles.botaoCancelarVendaTexto}>
+                          {cancelandoVenda ? 'Cancelando...' : 'Cancelar Venda'}
+                        </Text>
+                      </Pressable>
+                    )}
+
+                    {vendaSelecionada.status === 'CANCELADA' && (
+                      <View style={styles.avisoVendaCancelada}>
+                        <Ionicons
+                          name="information-circle-outline"
+                          size={21}
+                          color="#7a1d1d"
+                        />
+                        <Text style={styles.avisoVendaCanceladaTexto}>
+                          Esta venda permanece disponível apenas para consulta.
+                        </Text>
+                      </View>
+                    )}
                   </View>
                 }
               />
@@ -495,14 +597,6 @@ const styles = StyleSheet.create({
     color: '#111',
     fontSize: 15,
   },
-  botaoFiltro: {
-    width: 49,
-    height: 49,
-    borderRadius: 14,
-    backgroundColor: '#d7d7d7',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   botaoNovo: {
     height: 50,
     borderRadius: 14,
@@ -527,6 +621,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: 13,
     marginBottom: 8,
   },
+  cabecalhoBotao: {
+    minHeight: 40,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+  },
+  cabecalhoBotaoCentralizado: {
+    justifyContent: 'center',
+  },
+  cabecalhoBotaoDireita: {
+    justifyContent: 'flex-end',
+  },
   cabecalhoTexto: {
     fontSize: 11,
     fontWeight: '900',
@@ -537,11 +643,9 @@ const styles = StyleSheet.create({
   },
   colunaData: {
     flex: 0.8,
-    textAlign: 'center',
   },
   colunaTotal: {
     flex: 1,
-    textAlign: 'right',
   },
   listaContent: {
     paddingBottom: 35,
@@ -571,11 +675,13 @@ const styles = StyleSheet.create({
   cardTexto: {
     fontSize: 12,
     color: '#555',
+    textAlign: 'center',
   },
   cardTotal: {
     fontSize: 13,
     fontWeight: '800',
     color: '#111',
+    textAlign: 'right',
   },
   cardRodape: {
     flexDirection: 'row',
@@ -641,11 +747,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     padding: 18,
   },
-  modalOrdenacao: {
-    backgroundColor: '#ebebeb',
-    borderRadius: 20,
-    padding: 16,
-  },
   modalTitulo: {
     flex: 1,
     textAlign: 'center',
@@ -653,28 +754,6 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     color: '#111',
     marginBottom: 13,
-  },
-  opcaoOrdenacao: {
-    minHeight: 49,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: '#fff',
-    borderRadius: 13,
-    paddingHorizontal: 14,
-    marginBottom: 8,
-  },
-  opcaoOrdenacaoSelecionada: {
-    borderWidth: 2,
-    borderColor: '#111',
-  },
-  opcaoOrdenacaoTexto: {
-    color: '#333',
-    fontWeight: '600',
-  },
-  opcaoOrdenacaoTextoSelecionado: {
-    color: '#111',
-    fontWeight: '900',
   },
   modalDetalhes: {
     maxHeight: '90%',
@@ -793,6 +872,40 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: '900',
     fontSize: 21,
+  },
+  botaoCancelarVenda: {
+    minHeight: 50,
+    borderRadius: 14,
+    backgroundColor: '#b3261e',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    marginTop: 11,
+  },
+  botaoCancelarVendaTexto: {
+    color: '#fff',
+    fontSize: 15,
+    fontWeight: '900',
+  },
+  botaoDesabilitado: {
+    opacity: 0.65,
+  },
+  avisoVendaCancelada: {
+    minHeight: 54,
+    borderRadius: 14,
+    backgroundColor: '#f4cccc',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 13,
+    marginTop: 11,
+  },
+  avisoVendaCanceladaTexto: {
+    flex: 1,
+    color: '#7a1d1d',
+    fontWeight: '700',
+    lineHeight: 18,
   },
   loadingDetalhes: {
     marginVertical: 45,

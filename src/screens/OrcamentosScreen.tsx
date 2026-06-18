@@ -380,6 +380,7 @@ export default function OrcamentosScreen({ navigation }: Props) {
   }
 
   async function aposConverterVenda() {
+    setModalConversao(false);
     setOrcamentoSelecionado(null);
     setOrcamentoConversao(null);
     await carregarOrcamentos();
@@ -1149,6 +1150,7 @@ const styles = StyleSheet.create({
     marginBottom: 13,
   },
   modalDetalhes: {
+    display: "flex",
     width: "100%",
     height: "94%",
     maxHeight: 700,
