@@ -15,6 +15,11 @@ import ReceitasScreen from '../screens/ReceitasScreen';
 import OrcamentosScreen from '../screens/OrcamentosScreen';
 import VendasScreen from '../screens/VendasScreen';
 import ClientesScreen from '../screens/ClientesScreen';
+import ProdutosVendaScreen  from '../screens/ProdutosVendaScreen';
+import Compras from '../screens/ComprasScreen';
+import { ProviderId } from 'firebase/auth';
+import ComprasScreen from '../screens/ComprasScreen';
+import RelatoriosScreen from '../screens/RelatoriosScreen';
 
 const Stack = createStackNavigator<RootStackParamList>();
 
@@ -42,10 +47,13 @@ function AppNavigatorContent() {
         <Stack.Screen name="Login" component={LoginScreen} />
         <Stack.Screen name="Menu" component={MenuScreen} />
         <Stack.Screen name="Estoque" component={EstoqueScreen} />
+        <Stack.Screen name="Compras" component={ComprasScreen} />
         <Stack.Screen name="Receitas" component={ReceitasScreen} />
         <Stack.Screen name="Orcamentos" component={OrcamentosScreen} />
         <Stack.Screen name="Vendas" component={VendasScreen} />
         <Stack.Screen name="Clientes" component={ClientesScreen} />
+        <Stack.Screen name="ProdutosVenda" component={ProdutosVendaScreen} />
+        <Stack.Screen name="Relatorios" component={RelatoriosScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );
