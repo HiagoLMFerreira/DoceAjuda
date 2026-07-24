@@ -1,13 +1,16 @@
 import React from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { AuthProvider } from './src/contexts/AuthContext';
-import AppNavigator from './src/navigation/AppNavigator';
+import AppProviders from './src/app/providers/AppProviders';
+import AppNavigator from './src/app/navigation/AppNavigator';
 
 export default function App() {
   return (
-    <AuthProvider>
-      <StatusBar style="dark" backgroundColor="#ebebeb" />
+    <AppProviders>
+      <StatusBar
+        style="dark"
+        backgroundColor="#ebebeb"
+      />
       <AppNavigator />
-    </AuthProvider>
+    </AppProviders>
   );
 }

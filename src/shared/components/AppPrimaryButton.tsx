@@ -8,56 +8,62 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 
 type Props = {
-  carregando: boolean;
-  desabilitado?: boolean;
+  title: string;
   onPress: () => void;
+  icon?: keyof typeof Ionicons.glyphMap;
+  loading?: boolean;
+  disabled?: boolean;
 };
 
-export default function BotaoGerarPdf({
-  carregando,
-  desabilitado = false,
+export default function AppPrimaryButton({
+  title,
   onPress,
+  icon,
+  loading = false,
+  disabled = false,
 }: Props) {
-  const bloqueado = carregando || desabilitado;
-
   return (
     <TouchableOpacity
-      style={[styles.botao, bloqueado && styles.botaoDesabilitado]}
+      style={[
+        styles.button,
+        (disabled || loading) && styles.disabled,
+      ]}
       onPress={onPress}
-      disabled={bloqueado}
+      disabled={disabled || loading}
       activeOpacity={0.85}
     >
-      {carregando ? (
+      {loading ? (
         <ActivityIndicator size="small" color="#fff" />
       ) : (
-        <Ionicons name="document-text-outline" size={20} color="#fff" />
+        <>
+          {icon && (
+            <Ionicons
+              name={icon}
+              size={20}
+              color="#fff"
+            />
+          )}
+          <Text style={styles.text}>{title}</Text>
+        </>
       )}
-
-      <Text style={styles.texto}>
-        {carregando ? 'GERANDO DOCUMENTO...' : 'GERAR E COMPARTILHAR PDF'}
-      </Text>
     </TouchableOpacity>
   );
 }
 
 const styles = StyleSheet.create({
-  botao: {
-    minHeight: 49,
-    borderRadius: 12,
+  button: {
+    minHeight: 48,
+    borderRadius: 11,
     backgroundColor: '#111',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    marginTop: 12,
-    marginBottom: 24,
   },
-
-  botaoDesabilitado: {
+  disabled: {
     opacity: 0.55,
   },
-
-  texto: {
+  text: {
     color: '#fff',
     fontWeight: '800',
   },

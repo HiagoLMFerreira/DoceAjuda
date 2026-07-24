@@ -1,3 +1,6 @@
+export type { RootStackParamList } from '../app/navigation/types';
+export * from './relatorios';
+
 export interface Produto {
   id: number;
   descricao: string;
@@ -14,18 +17,3 @@ export type Cliente = {
   endereco: string;
   total_compras: number;
 };
-
-export type RootStackParamList = {
-  Login: undefined;
-  Menu: undefined;
-  Estoque: undefined;
-  Receitas: undefined;
-  Orcamentos: undefined;
-  Vendas: undefined;
-  Clientes: undefined;
-  ProdutosVenda: undefined;
-  Compras: undefined;
-  Relatorios: undefined;
-};
-
-export * from './relatorios';
