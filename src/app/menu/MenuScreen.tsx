@@ -1,26 +1,36 @@
 import React from 'react';
 import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
   Alert,
   ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
-import { StackNavigationProp } from '@react-navigation/stack';
 import { Ionicons } from '@expo/vector-icons';
-import { RootStackParamList } from '../app/navigation/types';
-import { useAuth } from '../modules/auth/presentation/useAuth';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
-type Props = {
-  navigation: StackNavigationProp<RootStackParamList, 'Menu'>;
-};
+import type { RootStackParamList } from '../navigation/types';
+import { useAuth } from '../../modules/auth/presentation/useAuth';
+
+type Props = NativeStackScreenProps<RootStackParamList, 'Menu'>;
 
 type MenuItem = {
   titulo: string;
-  rota: keyof RootStackParamList;
+  rota: Exclude<keyof RootStackParamList, 'Login' | 'Menu'>;
   icone: keyof typeof Ionicons.glyphMap;
 };
+
+const MENU_ITEMS: MenuItem[] = [
+  { titulo: 'ESTOQUE', rota: 'Estoque', icone: 'cube-outline' },
+  { titulo: 'COMPRAS', rota: 'Compras', icone: 'cart-outline' },
+  { titulo: 'RECEITAS', rota: 'Receitas', icone: 'restaurant-outline' },
+  { titulo: 'PRODUTOS', rota: 'ProdutosVenda', icone: 'pricetags-outline' },
+  { titulo: 'ORÇAMENTOS', rota: 'Orcamentos', icone: 'document-text-outline' },
+  { titulo: 'VENDAS', rota: 'Vendas', icone: 'cash-outline' },
+  { titulo: 'CLIENTES', rota: 'Clientes', icone: 'people-outline' },
+  { titulo: 'RELATÓRIOS', rota: 'Relatorios', icone: 'bar-chart-outline' },
+];
 
 export default function MenuScreen({ navigation }: Props) {
   const { logout } = useAuth();
@@ -29,24 +39,10 @@ export default function MenuScreen({ navigation }: Props) {
     try {
       await logout();
       navigation.replace('Login');
-    } catch (err) {
-      Alert.alert(
-        'Erro',
-        'Não foi possível sair da conta. Tente novamente.'
-      );
+    } catch {
+      Alert.alert('Erro', 'Não foi possível sair da conta. Tente novamente.');
     }
   };
-
-  const menuItems: MenuItem[] = [
-    {titulo: 'ESTOQUE', rota: 'Estoque', icone: 'cube-outline',},
-    {titulo: 'COMPRAS', rota: 'Compras', icone: 'cart-outline',},
-    {titulo: 'RECEITAS', rota: 'Receitas',icone: 'restaurant-outline',},
-    {titulo: 'PRODUTOS', rota: 'ProdutosVenda', icone: 'pricetags-outline', },
-    {titulo: 'ORÇAMENTOS', rota: 'Orcamentos', icone: 'document-text-outline',},
-    {titulo: 'VENDAS', rota: 'Vendas', icone: 'cash-outline',},
-    {titulo: 'CLIENTES', rota: 'Clientes',icone: 'people-outline',},
-    {titulo: 'RELATÓRIOS', rota: 'Relatorios', icone: 'bar-chart-outline',},
-  ];
 
   return (
     <View style={styles.container}>
@@ -61,46 +57,29 @@ export default function MenuScreen({ navigation }: Props) {
           onPress={handleLogout}
           activeOpacity={0.8}
         >
-          <Ionicons
-            name="log-out-outline"
-            size={18}
-            color="#fff"
-          />
-
-          <Text style={styles.logoutText}>
-            SAIR
-          </Text>
+          <Ionicons name="log-out-outline" size={18} color="#fff" />
+          <Text style={styles.logoutText}>SAIR</Text>
         </TouchableOpacity>
 
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>
-            DOCE AJUDA
-          </Text>
-
+          <Text style={styles.headerTitle}>DOCE AJUDA</Text>
           <Text style={styles.headerSubtitle}>
             Escolha uma opção para continuar
           </Text>
         </View>
 
         <View style={styles.grid}>
-          {menuItems.map((item) => (
+          {MENU_ITEMS.map((item) => (
             <TouchableOpacity
               key={item.titulo}
               style={styles.card}
-              onPress={() => navigation.navigate(item.rota as any)}
+              onPress={() => navigation.navigate(item.rota)}
               activeOpacity={0.85}
             >
               <View style={styles.iconBox}>
-                <Ionicons
-                  name={item.icone}
-                  size={30}
-                  color="#000"
-                />
+                <Ionicons name={item.icone} size={30} color="#000" />
               </View>
-
-              <Text style={styles.cardText}>
-                {item.titulo}
-              </Text>
+              <Text style={styles.cardText}>{item.titulo}</Text>
             </TouchableOpacity>
           ))}
         </View>
@@ -114,17 +93,14 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#ebebeb',
   },
-
   scrollView: {
     flex: 1,
   },
-
   scrollContent: {
     paddingHorizontal: 24,
     paddingTop: 50,
     paddingBottom: 50,
   },
-
   logoutButton: {
     alignSelf: 'flex-end',
     backgroundColor: '#c40000',
@@ -135,20 +111,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 5,
   },
-
   logoutText: {
     color: '#fff',
     fontSize: 12,
     fontWeight: '900',
     letterSpacing: 0.5,
   },
-
   header: {
     alignItems: 'center',
     marginTop: 28,
     marginBottom: 30,
   },
-
   headerTitle: {
     fontSize: 31,
     fontWeight: '900',
@@ -156,7 +129,6 @@ const styles = StyleSheet.create({
     letterSpacing: 5,
     textAlign: 'center',
   },
-
   headerSubtitle: {
     fontSize: 14,
     color: '#555',
@@ -164,13 +136,11 @@ const styles = StyleSheet.create({
     marginTop: 10,
     textAlign: 'center',
   },
-
   grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
   },
-
   card: {
     width: '47%',
     backgroundColor: '#fff',
@@ -184,7 +154,6 @@ const styles = StyleSheet.create({
     borderColor: '#d6d6d6',
     minHeight: 130,
   },
-
   iconBox: {
     width: 58,
     height: 58,
@@ -194,7 +163,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: 14,
   },
-
   cardText: {
     color: '#000',
     fontSize: 14,

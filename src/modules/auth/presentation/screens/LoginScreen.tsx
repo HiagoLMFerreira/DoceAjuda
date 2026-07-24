@@ -1,23 +1,20 @@
 import React, { useState } from 'react';
 import {
-  View,
-  TextInput,
-  TouchableOpacity,
-  Text,
-  StyleSheet,
   Alert,
   KeyboardAvoidingView,
   Platform,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
-import { useAuth } from '../modules/auth/presentation/useAuth';
-import { StackNavigationProp } from '@react-navigation/stack';
-import { RootStackParamList } from '../app/navigation/types';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
-type LoginScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Login'>;
+import type { RootStackParamList } from '../../../../app/navigation/types';
+import { useAuth } from '../useAuth';
 
-type Props = {
-  navigation: LoginScreenNavigationProp;
-};
+type Props = NativeStackScreenProps<RootStackParamList, 'Login'>;
 
 export default function LoginScreen({ navigation }: Props) {
   const [email, setEmail] = useState('');
@@ -33,13 +30,14 @@ export default function LoginScreen({ navigation }: Props) {
     try {
       await login(email.trim(), senha);
       navigation.replace('Menu');
-    } catch (err: any) {
+    } catch {
       Alert.alert(
         'Erro no login',
         'Login ou senha inválidos. Verifique os dados e tente novamente.'
       );
     }
   };
+
   return (
     <KeyboardAvoidingView
       style={styles.container}
@@ -60,6 +58,7 @@ export default function LoginScreen({ navigation }: Props) {
             autoCapitalize="none"
             keyboardType="email-address"
           />
+
           <TextInput
             style={styles.input}
             placeholder="Senha"
@@ -69,7 +68,11 @@ export default function LoginScreen({ navigation }: Props) {
             onChangeText={setSenha}
           />
 
-          <TouchableOpacity style={styles.button} onPress={handleLogin} activeOpacity={0.8}>
+          <TouchableOpacity
+            style={styles.button}
+            onPress={handleLogin}
+            activeOpacity={0.8}
+          >
             <Text style={styles.buttonText}>ENTRAR</Text>
           </TouchableOpacity>
         </View>

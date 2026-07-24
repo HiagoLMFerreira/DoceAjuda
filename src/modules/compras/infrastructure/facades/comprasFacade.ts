@@ -36,5 +36,7 @@ export const cancelarCompra = (id: number) =>
 export const excluirCompra = (id: number) =>
   compraController.excluir(id);
 
-export const listarProdutos = () =>
-  compraController.listarProdutos();
+export const listarProdutos = (
+  _ordenarPor = 'nome',
+  _direcao = 'ASC'
+) => compraController.listarProdutos();

@@ -6,13 +6,12 @@ import {
   View,
 } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
-import { createStackNavigator } from '@react-navigation/stack';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useAuth } from '../../modules/auth/presentation/useAuth';
 import { APP_ROUTES } from './routes';
 import type { RootStackParamList } from './types';
 
-const Stack =
-  createStackNavigator<RootStackParamList>();
+const Stack = createNativeStackNavigator<RootStackParamList>();
 
 function AuthLoadingScreen() {
   return (
