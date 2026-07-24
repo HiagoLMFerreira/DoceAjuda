@@ -2,13 +2,13 @@ import { CalcularCompraService } from '../application/services/CalcularCompraSer
 import { CompraService } from '../application/services/CompraService';
 import { ListarProdutosCompraService } from '../application/services/ListarProdutosCompraService';
 import { ValidarCompraService } from '../application/services/ValidarCompraService';
-import { LegacyCompraRepository } from '../infrastructure/repositories/LegacyCompraRepository';
-import { LegacyProdutoCompraRepository } from '../infrastructure/repositories/LegacyProdutoCompraRepository';
+import { SQLiteCompraRepository } from '../infrastructure/repositories/SQLiteCompraRepository';
+import { SQLiteProdutoCompraRepository } from '../infrastructure/repositories/SQLiteProdutoCompraRepository';
 import { CompraController } from '../presentation/controllers/CompraController';
 
-const compraRepository = new LegacyCompraRepository();
+const compraRepository = new SQLiteCompraRepository();
 const produtoRepository =
-  new LegacyProdutoCompraRepository();
+  new SQLiteProdutoCompraRepository();
 
 export const compraController = new CompraController(
   new CompraService(

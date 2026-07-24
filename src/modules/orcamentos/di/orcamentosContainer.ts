@@ -3,10 +3,10 @@ import { CalcularNecessidadesOrcamentoService } from '../application/services/Ca
 import { ExcluirOrcamentoService } from '../application/services/ExcluirOrcamentoService';
 import { ListarOrcamentosService } from '../application/services/ListarOrcamentosService';
 import { ValidarOperacaoOrcamentoService } from '../application/services/ValidarOperacaoOrcamentoService';
-import { LegacyOrcamentoRepository } from '../infrastructure/repositories/LegacyOrcamentoRepository';
+import { SQLiteOrcamentoRepository } from '../infrastructure/repositories/SQLiteOrcamentoRepository';
 import { OrcamentoController } from '../presentation/controllers/OrcamentoController';
 
-const repository = new LegacyOrcamentoRepository();
+const repository = new SQLiteOrcamentoRepository();
 
 export const orcamentoController =
   new OrcamentoController(

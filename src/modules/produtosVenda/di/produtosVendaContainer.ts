@@ -1,13 +1,13 @@
 import { CalcularPrecificacaoService } from '../application/services/CalcularPrecificacaoService';
 import { ProdutoVendaService } from '../application/services/ProdutoVendaService';
 import { ValidarProdutoVendaService } from '../application/services/ValidarProdutoVendaService';
-import { LegacyProdutoVendaRepository } from '../infrastructure/repositories/LegacyProdutoVendaRepository';
-import { LegacyPrecificacaoRepository } from '../infrastructure/repositories/LegacyPrecificacaoRepository';
+import { SQLiteProdutoVendaRepository } from '../infrastructure/repositories/SQLiteProdutoVendaRepository';
+import { SQLitePrecificacaoRepository } from '../infrastructure/repositories/SQLitePrecificacaoRepository';
 import { ProdutoVendaController } from '../presentation/controllers/ProdutoVendaController';
 
-const produtoRepository = new LegacyProdutoVendaRepository();
+const produtoRepository = new SQLiteProdutoVendaRepository();
 export const precificacaoRepository =
-  new LegacyPrecificacaoRepository();
+  new SQLitePrecificacaoRepository();
 
 const calculadora = new CalcularPrecificacaoService();
 

@@ -1,17 +1,4 @@
-import {
-  adicionarCustoFixo,
-  adicionarCustoVariavel,
-  alterarStatusCustoFixo,
-  alterarStatusCustoVariavel,
-  atualizarCustoFixo,
-  atualizarCustoVariavel,
-  buscarParametrosPrecificacao,
-  excluirCustoFixo,
-  excluirCustoVariavel,
-  listarCustosFixos,
-  listarCustosVariaveis,
-  salvarParametrosPrecificacao,
-} from '../../../../database/database';
+import { adicionarCustoFixo, adicionarCustoVariavel, alterarStatusCustoFixo, alterarStatusCustoVariavel, atualizarCustoFixo, atualizarCustoVariavel, buscarParametrosPrecificacao, excluirCustoFixo, excluirCustoVariavel, listarCustosFixos, listarCustosVariaveis, salvarParametrosPrecificacao } from "../database/precificacaoDatabase";
 import type {
   CustoPrecificacao,
   ParametrosPrecificacao,
@@ -21,7 +8,7 @@ import type {
   TipoCustoPrecificacao,
 } from '../../domain/repositories/IPrecificacaoRepository';
 
-export class LegacyPrecificacaoRepository
+export class SQLitePrecificacaoRepository
   implements IPrecificacaoRepository
 {
   buscarParametros(): Promise<ParametrosPrecificacao> {

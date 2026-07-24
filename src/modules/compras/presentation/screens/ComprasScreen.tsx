@@ -25,7 +25,7 @@ import {
   listarProdutos,
   OrdenarCompraPor,
   ProdutoEstoque,
-} from '../../infrastructure/facades/comprasFacade';
+} from '../../application/comprasApi';
 
 type UnidadeConteudo = 'un' | 'duzia' | 'g' | 'kg' | 'ml' | 'l' | 'caixa' | 'pacote';
 

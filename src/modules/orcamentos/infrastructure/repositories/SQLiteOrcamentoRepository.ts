@@ -1,9 +1,4 @@
-import {
-  buscarDocumentoComercialPorId,
-  calcularNecessidadesOrcamento,
-  excluirDocumentoComercial,
-  listarOrcamentos,
-} from '../../../../database/database';
+import { buscarDocumentoComercialPorId, calcularNecessidadesOrcamento, excluirDocumentoComercial, listarOrcamentos } from "../../../documentosComerciais/infrastructure/database/documentosComerciaisDatabase";
 import type {
   NecessidadeOrcamento,
   Orcamento,
@@ -11,7 +6,7 @@ import type {
 } from '../../domain/models/Orcamento';
 import type { IOrcamentoRepository } from '../../domain/repositories/IOrcamentoRepository';
 
-export class LegacyOrcamentoRepository
+export class SQLiteOrcamentoRepository
   implements IOrcamentoRepository
 {
   listar(filtro = ''): Promise<Orcamento[]> {

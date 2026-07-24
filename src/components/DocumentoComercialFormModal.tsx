@@ -29,7 +29,7 @@ import {
   ProdutoVendaParaDocumento,
   salvarDocumentoComercialCompleto,
   TipoDocumentoComercial,
-} from '../modules/documentosComerciais/infrastructure/documentosComerciaisFacade';
+} from '../modules/documentosComerciais/application/documentosComerciaisApi';
 
 type Props = {
   visible: boolean;

@@ -23,7 +23,7 @@ import {
   formatarMoeda,
   listarVendas,
   OrdenarDocumentoComercialPor,
-} from '../../infrastructure/facades/vendasFacade';
+} from '../../application/vendasApi';
 
 type Props = {
   navigation: {

@@ -1,9 +1,9 @@
 import { RelatorioPdfService } from '../application/RelatorioPdfService';
 import { RelatorioService } from '../application/RelatorioService';
-import { LegacyRelatorioRepository } from '../infrastructure/LegacyRelatorioRepository';
+import { SQLiteRelatorioRepository } from '../infrastructure/SQLiteRelatorioRepository';
 
 const repository =
-  new LegacyRelatorioRepository();
+  new SQLiteRelatorioRepository();
 
 export const relatorioService =
   new RelatorioService(repository);

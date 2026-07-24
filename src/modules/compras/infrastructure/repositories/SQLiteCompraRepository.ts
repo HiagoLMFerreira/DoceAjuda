@@ -1,10 +1,4 @@
-import {
-  buscarCompraPorId,
-  cadastrarCompra,
-  cancelarCompra,
-  excluirCompra,
-  listarCompras,
-} from '../../../../database/database';
+import { buscarCompraPorId, cadastrarCompra, cancelarCompra, excluirCompra, listarCompras } from "../database/comprasDatabase";
 import type {
   Compra,
   CompraDetalhada,
@@ -13,7 +7,7 @@ import type {
 } from '../../domain/models/Compra';
 import type { ICompraRepository } from '../../domain/repositories/ICompraRepository';
 
-export class LegacyCompraRepository
+export class SQLiteCompraRepository
   implements ICompraRepository
 {
   listar(filtros: FiltrosCompra = {}): Promise<Compra[]> {

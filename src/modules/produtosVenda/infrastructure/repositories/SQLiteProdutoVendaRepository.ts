@@ -1,10 +1,4 @@
-import {
-  atualizarProdutoVendaCompleto,
-  buscarProdutoVendaDetalhado,
-  excluirProdutoVenda,
-  listarProdutosVenda,
-  salvarProdutoVendaCompleto,
-} from '../../../../database/database';
+import { atualizarProdutoVendaCompleto, buscarProdutoVendaDetalhado, excluirProdutoVenda, listarProdutosVenda, salvarProdutoVendaCompleto } from "../database/produtosVendaDatabase";
 import { getDatabaseConnection } from '../../../../core/database';
 import type {
   ProdutoVenda,
@@ -13,7 +7,7 @@ import type {
 } from '../../domain/models/ProdutoVenda';
 import type { IProdutoVendaRepository } from '../../domain/repositories/IProdutoVendaRepository';
 
-export class LegacyProdutoVendaRepository
+export class SQLiteProdutoVendaRepository
   implements IProdutoVendaRepository
 {
   listar(filtro = ''): Promise<ProdutoVenda[]> {

@@ -52,7 +52,7 @@ import {
   listarReceitas,
   salvarParametrosPrecificacao,
   salvarProdutoVendaCompleto,
-} from '../../infrastructure/facades/produtosVendaFacade';
+} from '../../application/produtosVendaApi';
 
 type ModoFormulario = 'cadastro' | 'edicao';
 type AbaParametros =

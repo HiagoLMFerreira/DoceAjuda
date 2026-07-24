@@ -1,14 +1,11 @@
-import {
-  gerarRelatorio,
-  listarFormasPagamentoRelatorio,
-} from '../../../database/database';
+import { gerarRelatorio, listarFormasPagamentoRelatorio } from "./database/relatoriosDatabase";
 import type {
   FiltrosRelatorio,
   ResultadoRelatorio,
 } from '../domain/models/Relatorio';
 import type { IRelatorioRepository } from '../domain/repositories/IRelatorioRepository';
 
-export class LegacyRelatorioRepository
+export class SQLiteRelatorioRepository
   implements IRelatorioRepository
 {
   gerar(

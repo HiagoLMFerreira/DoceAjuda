@@ -1,8 +1,4 @@
-import {
-  buscarDocumentoComercialPorId,
-  cancelarVenda,
-  listarVendas,
-} from '../../../../database/database';
+import { buscarDocumentoComercialPorId, cancelarVenda, listarVendas } from "../../../documentosComerciais/infrastructure/database/documentosComerciaisDatabase";
 import type {
   FiltrosVenda,
   Venda,
@@ -10,7 +6,7 @@ import type {
 } from '../../domain/models/Venda';
 import type { IVendaRepository } from '../../domain/repositories/IVendaRepository';
 
-export class LegacyVendaRepository
+export class SQLiteVendaRepository
   implements IVendaRepository
 {
   listar(filtros: FiltrosVenda = {}): Promise<Venda[]> {

@@ -1,4 +1,4 @@
-import type { DocumentoComercialDetalhado } from '../database/database';
+import type { DocumentoComercialDetalhado } from "../core/database/databaseManager";
 import { escapeHtml } from '../shared/formatters/html';
 import { pdfService } from '../shared/pdf/PdfService';
 
