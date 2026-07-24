@@ -11,7 +11,7 @@ import {
   View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import BarcodeScannerModal from '../../../../components/BarcodeScannerModal';
+import BarcodeScannerModal from '../../../../shared/scanner/presentation/BarcodeScannerModal';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import {
   buscarCompraPorId,

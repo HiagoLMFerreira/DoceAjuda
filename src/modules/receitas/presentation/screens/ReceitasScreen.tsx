@@ -2,7 +2,7 @@ import React, { useCallback } from 'react';
 import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
-import BarcodeScannerModal from '../../../../components/BarcodeScannerModal';
+import BarcodeScannerModal from '../../../../shared/scanner/presentation/BarcodeScannerModal';
 import { useReceitas } from '../hooks/useReceitas';
 import { ReceitaList } from '../components/ReceitaList';
 import { ReceitaDetailsModal } from '../components/ReceitaDetailsModal';

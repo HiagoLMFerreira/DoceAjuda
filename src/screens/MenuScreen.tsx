@@ -9,8 +9,8 @@ import {
 } from 'react-native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { Ionicons } from '@expo/vector-icons';
-import { RootStackParamList } from '../types';
-import { useAuth } from '../contexts/useAuth';
+import { RootStackParamList } from '../app/navigation/types';
+import { useAuth } from '../modules/auth/presentation/useAuth';
 
 type Props = {
   navigation: StackNavigationProp<RootStackParamList, 'Menu'>;

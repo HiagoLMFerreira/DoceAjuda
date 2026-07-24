@@ -2,7 +2,7 @@ import * as SQLite from "expo-sqlite";
 import type {
   FiltrosRelatorio,
   ResultadoRelatorio,
-} from "../types/relatorios";
+} from "../modules/relatorios/domain/models/Relatorio";
 
 let db: SQLite.SQLiteDatabase | null = null;
 let databaseInitialization: Promise<SQLite.SQLiteDatabase> | null = null;

@@ -10,7 +10,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 
-import BarcodeScannerModal from '../../../../components/BarcodeScannerModal';
+import BarcodeScannerModal from '../../../../shared/scanner/presentation/BarcodeScannerModal';
 import type {
   OrdenarProdutoEstoquePor,
   ProdutoEstoque,
