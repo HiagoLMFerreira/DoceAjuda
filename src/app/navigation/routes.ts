@@ -2,6 +2,7 @@ import type { ComponentType } from 'react';
 
 import LoginScreen from '../../modules/auth/presentation/screens/LoginScreen';
 import MenuScreen from '../menu/MenuScreen';
+import DashboardScreen from '../../modules/dashboard/presentation/screens/DashboardScreen';
 
 import ClientesScreen from '../../modules/clientes/presentation/screens/ClientesScreen';
 import ComprasScreen from '../../modules/compras/presentation/screens/ComprasScreen';
@@ -21,6 +22,7 @@ export type AppRoute = {
 
 export const APP_ROUTES: AppRoute[] = [
   { name: 'Login', component: LoginScreen },
+  { name: 'Dashboard', component: DashboardScreen },
   { name: 'Menu', component: MenuScreen },
   { name: 'Estoque', component: EstoqueScreen },
   { name: 'Compras', component: ComprasScreen },

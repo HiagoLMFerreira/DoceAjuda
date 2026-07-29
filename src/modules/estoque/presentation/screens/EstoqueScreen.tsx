@@ -1,4 +1,7 @@
-import React, { useCallback, useEffect } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+} from 'react';
 import {
   Alert,
   StyleSheet,
@@ -8,9 +11,17 @@ import {
   View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import {
+  useFocusEffect,
+  useNavigation,
+} from '@react-navigation/native';
+import {
+  SafeAreaView,
+} from 'react-native-safe-area-context';
 
+import AppBottomNavigation from '../../../../shared/components/AppBottomNavigation';
 import BarcodeScannerModal from '../../../../shared/scanner/presentation/BarcodeScannerModal';
+import { useAuth } from '../../../auth/presentation/useAuth';
 import type {
   OrdenarProdutoEstoquePor,
   ProdutoEstoque,
@@ -18,10 +29,24 @@ import type {
 import { ProdutoEstoqueDetailsModal } from '../components/ProdutoEstoqueDetailsModal';
 import { ProdutoEstoqueFormModal } from '../components/ProdutoEstoqueFormModal';
 import { ProdutoEstoqueList } from '../components/ProdutoEstoqueList';
-import { obterNomeProduto, useEstoque } from '../hooks/useEstoque';
+import {
+  obterNomeProduto,
+  useEstoque,
+} from '../hooks/useEstoque';
+
+const COLORS = {
+  primary: '#FF3B73',
+  primarySoft: '#FFF0F4',
+  background: '#FFFDFE',
+  surface: '#FFFFFF',
+  textPrimary: '#242329',
+  textSecondary: '#737178',
+  border: '#F1E7EA',
+};
 
 export default function EstoqueScreen() {
   const navigation = useNavigation<any>();
+  const { logout } = useAuth();
   const estoque = useEstoque();
 
   useFocusEffect(
@@ -35,7 +60,10 @@ export default function EstoqueScreen() {
           )
         );
       });
-    }, [estoque.carregar, estoque.mensagemErro])
+    }, [
+      estoque.carregar,
+      estoque.mensagemErro,
+    ])
   );
 
   useEffect(() => {
@@ -52,7 +80,11 @@ export default function EstoqueScreen() {
     }, 200);
 
     return () => clearTimeout(timeout);
-  }, [estoque.busca, estoque.ordenarPor, estoque.direcao]);
+  }, [
+    estoque.busca,
+    estoque.ordenarPor,
+    estoque.direcao,
+  ]);
 
   const salvar = async () => {
     try {
@@ -68,12 +100,19 @@ export default function EstoqueScreen() {
     }
   };
 
-  const confirmarExclusao = (produto: ProdutoEstoque) => {
+  const confirmarExclusao = (
+    produto: ProdutoEstoque
+  ) => {
     Alert.alert(
       'Excluir produto',
-      `Deseja realmente excluir "${obterNomeProduto(produto)}"?`,
+      `Deseja realmente excluir "${obterNomeProduto(
+        produto
+      )}"?`,
       [
-        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Cancelar',
+          style: 'cancel',
+        },
         {
           text: 'Excluir',
           style: 'destructive',
@@ -95,6 +134,34 @@ export default function EstoqueScreen() {
     );
   };
 
+  const confirmarLogout = () => {
+    Alert.alert(
+      'Sair',
+      'Deseja realmente sair da sua conta?',
+      [
+        {
+          text: 'Cancelar',
+          style: 'cancel',
+        },
+        {
+          text: 'Sair',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await logout();
+              navigation.replace('Login');
+            } catch {
+              Alert.alert(
+                'Erro',
+                'Não foi possível sair da conta.'
+              );
+            }
+          },
+        },
+      ]
+    );
+  };
+
   const renderCabecalho = (
     titulo: string,
     coluna: OrdenarProdutoEstoquePor,
@@ -102,10 +169,15 @@ export default function EstoqueScreen() {
   ) => (
     <TouchableOpacity
       style={[styles.headerCell, estilo]}
-      onPress={() => estoque.alternarOrdenacao(coluna)}
+      onPress={() =>
+        estoque.alternarOrdenacao(coluna)
+      }
       activeOpacity={0.7}
     >
-      <Text style={styles.headerCellText}>{titulo}</Text>
+      <Text style={styles.headerCellText}>
+        {titulo}
+      </Text>
+
       {estoque.ordenarPor === coluna && (
         <Ionicons
           name={
@@ -114,215 +186,371 @@ export default function EstoqueScreen() {
               : 'chevron-down'
           }
           size={13}
-          color="#1a1a1a"
+          color={COLORS.primary}
         />
       )}
     </TouchableOpacity>
   );
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-          activeOpacity={0.75}
-        >
-          <Ionicons name="arrow-back" size={22} color="#fff" />
-        </TouchableOpacity>
+    <SafeAreaView
+      style={styles.safeArea}
+      edges={['top', 'left', 'right']}
+    >
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
+            activeOpacity={0.75}
+          >
+            <Ionicons
+              name="arrow-back"
+              size={22}
+              color={COLORS.primary}
+            />
+          </TouchableOpacity>
 
-        <View style={styles.headerTextArea}>
-          <View style={styles.headerTitleRow}>
-            <Ionicons name="cube-outline" size={23} color="#1a1a1a" />
-            <Text style={styles.headerTitle}>ESTOQUE</Text>
+          <View style={styles.headerTextArea}>
+            <View style={styles.headerTitleRow}>
+              <View style={styles.headerIcon}>
+                <Ionicons
+                  name="cube-outline"
+                  size={24}
+                  color={COLORS.primary}
+                />
+              </View>
+
+              <View>
+                <Text style={styles.headerTitle}>
+                  Estoque
+                </Text>
+
+                <Text style={styles.headerSubtitle}>
+                  Produtos, insumos e embalagens
+                </Text>
+              </View>
+            </View>
           </View>
         </View>
-      </View>
 
-      <View style={styles.searchInputContainer}>
-        <TextInput
-          style={styles.searchInputComIcone}
-          placeholder="Buscar por nome, código de barras ou ID"
-          placeholderTextColor="#888"
-          value={estoque.busca}
-          onChangeText={estoque.setBusca}
-        />
+        <View style={styles.searchRow}>
+          <View style={styles.searchInputContainer}>
+            <Ionicons
+              name="search-outline"
+              size={21}
+              color={COLORS.primary}
+            />
 
-        {estoque.busca.length > 0 && (
-          <TouchableOpacity
-            style={styles.inputIconButton}
-            onPress={() => estoque.setBusca('')}
-          >
-            <Ionicons name="close-circle" size={21} color="#777" />
-          </TouchableOpacity>
-        )}
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Nome, ID ou código de barras"
+              placeholderTextColor="#96949A"
+              value={estoque.busca}
+              onChangeText={estoque.setBusca}
+            />
+
+            {estoque.busca.length > 0 && (
+              <TouchableOpacity
+                style={styles.inputIconButton}
+                onPress={() =>
+                  estoque.setBusca('')
+                }
+              >
+                <Ionicons
+                  name="close-circle"
+                  size={21}
+                  color="#99969D"
+                />
+              </TouchableOpacity>
+            )}
+
+            <TouchableOpacity
+              style={styles.inputIconButton}
+              onPress={() =>
+                estoque.abrirScanner('busca')
+              }
+            >
+              <Ionicons
+                name="barcode-outline"
+                size={24}
+                color={COLORS.primary}
+              />
+            </TouchableOpacity>
+          </View>
+        </View>
 
         <TouchableOpacity
-          style={styles.inputIconButton}
-          onPress={() => estoque.abrirScanner('busca')}
+          style={styles.primaryButton}
+          onPress={estoque.abrirCadastro}
+          activeOpacity={0.82}
         >
-          <Ionicons name="barcode-outline" size={24} color="#000" />
+          <Ionicons
+            name="add-circle-outline"
+            size={22}
+            color="#FFFFFF"
+          />
+
+          <Text style={styles.primaryButtonText}>
+            Novo produto
+          </Text>
         </TouchableOpacity>
-      </View>
 
-      <TouchableOpacity
-        style={styles.primaryButton}
-        onPress={estoque.abrirCadastro}
-        activeOpacity={0.8}
-      >
-        <Ionicons name="add-circle-outline" size={21} color="#fff" />
-        <Text style={styles.primaryButtonText}>Novo Produto</Text>
-      </TouchableOpacity>
+        <View style={styles.tableHeader}>
+          {renderCabecalho(
+            'NOME',
+            'nome',
+            styles.headerNome
+          )}
 
-      <View style={styles.tableHeader}>
-        {renderCabecalho('NOME', 'nome', styles.headerNome)}
-        {renderCabecalho('QTD', 'quantidade', styles.headerQuantidade)}
-        {renderCabecalho('UNID.', 'unidade_medida', styles.headerUnidade)}
-        {renderCabecalho('PREÇO MÉDIO', 'preco_medio', styles.headerPreco)}
-      </View>
+          {renderCabecalho(
+            'QTD',
+            'quantidade',
+            styles.headerQuantidade
+          )}
 
-      <ProdutoEstoqueList
-        produtos={estoque.produtos}
-        onSelecionar={estoque.abrirDetalhes}
-      />
+          {renderCabecalho(
+            'UNID.',
+            'unidade_medida',
+            styles.headerUnidade
+          )}
 
-      <ProdutoEstoqueDetailsModal
-        visible={estoque.modalDetalhes}
-        produto={estoque.produtoSelecionado}
-        excluindo={estoque.excluindo}
-        onEdit={estoque.abrirEdicao}
-        onDelete={() => {
-          if (estoque.produtoSelecionado) {
-            confirmarExclusao(estoque.produtoSelecionado);
+          {renderCabecalho(
+            'PREÇO',
+            'preco_medio',
+            styles.headerPreco
+          )}
+        </View>
+
+        <ProdutoEstoqueList
+          produtos={estoque.produtos}
+          onSelecionar={estoque.abrirDetalhes}
+        />
+
+        <ProdutoEstoqueDetailsModal
+          visible={estoque.modalDetalhes}
+          produto={estoque.produtoSelecionado}
+          excluindo={estoque.excluindo}
+          onEdit={estoque.abrirEdicao}
+          onDelete={() => {
+            if (estoque.produtoSelecionado) {
+              confirmarExclusao(
+                estoque.produtoSelecionado
+              );
+            }
+          }}
+          onClose={estoque.fecharDetalhes}
+        />
+
+        <ProdutoEstoqueFormModal
+          visible={estoque.modalFormulario}
+          modo={estoque.modoFormulario}
+          produto={estoque.produtoSelecionado}
+          formulario={estoque.formulario}
+          salvando={estoque.salvando}
+          onChange={estoque.alterarFormulario}
+          onOpenScanner={() =>
+            estoque.abrirScanner('formulario')
           }
-        }}
-        onClose={estoque.fecharDetalhes}
-      />
+          onClose={estoque.fecharFormulario}
+          onSave={salvar}
+        />
 
-      <ProdutoEstoqueFormModal
-        visible={estoque.modalFormulario}
-        modo={estoque.modoFormulario}
-        produto={estoque.produtoSelecionado}
-        formulario={estoque.formulario}
-        salvando={estoque.salvando}
-        onChange={estoque.alterarFormulario}
-        onOpenScanner={() => estoque.abrirScanner('formulario')}
-        onClose={estoque.fecharFormulario}
-        onSave={salvar}
-      />
+        <BarcodeScannerModal
+          visible={estoque.scannerVisivel}
+          onClose={estoque.fecharScanner}
+          onCodeScanned={estoque.receberCodigo}
+        />
+      </View>
 
-      <BarcodeScannerModal
-        visible={estoque.scannerVisivel}
-        onClose={estoque.fecharScanner}
-        onCodeScanned={estoque.receberCodigo}
+      <AppBottomNavigation
+        activeItem="menu"
+        onInicio={() =>
+          navigation.navigate('Dashboard')
+        }
+        onVendas={() =>
+          navigation.navigate('Vendas')
+        }
+        onMenu={() =>
+          navigation.navigate('Menu')
+        }
+        onRelatorios={() =>
+          navigation.navigate('Relatorios')
+        }
+        onSair={confirmarLogout}
       />
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: COLORS.background,
+  },
+
   container: {
     flex: 1,
-    backgroundColor: '#ebebeb',
+    backgroundColor: COLORS.background,
     paddingHorizontal: 16,
-    paddingTop: 50,
+    paddingTop: 12,
   },
+
   header: {
-    backgroundColor: '#d1d1d1',
-    borderRadius: 14,
-    minHeight: 58,
+    minHeight: 76,
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: COLORS.surface,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    paddingHorizontal: 12,
     marginBottom: 14,
-    position: 'relative',
+    shadowColor: '#5A3844',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.06,
+    shadowRadius: 9,
+    elevation: 2,
   },
+
   backButton: {
-    position: 'absolute',
-    left: 10,
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#111',
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: COLORS.primarySoft,
+    marginRight: 11,
   },
-  headerTextArea: { alignItems: 'center' },
+
+  headerTextArea: {
+    flex: 1,
+  },
+
   headerTitleRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 7,
   },
+
+  headerIcon: {
+    width: 43,
+    height: 43,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: COLORS.primarySoft,
+    marginRight: 10,
+  },
+
   headerTitle: {
+    color: COLORS.textPrimary,
     fontSize: 20,
     fontWeight: '900',
-    color: '#1a1a1a',
-    letterSpacing: 1,
   },
-  searchInputContainer: {
-    minHeight: 49,
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#ccc',
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 11,
+
+  headerSubtitle: {
+    color: COLORS.textSecondary,
+    fontSize: 11,
+    marginTop: 3,
+  },
+
+  searchRow: {
     marginBottom: 12,
   },
-  searchInputComIcone: {
+
+  searchInputContainer: {
+    minHeight: 54,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.surface,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    paddingHorizontal: 14,
+    gap: 9,
+  },
+
+  searchInput: {
     flex: 1,
-    color: '#1a1a1a',
+    minHeight: 52,
+    color: COLORS.textPrimary,
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: '500',
   },
+
   inputIconButton: {
-    padding: 5,
+    width: 34,
+    height: 42,
     alignItems: 'center',
     justifyContent: 'center',
   },
+
   primaryButton: {
-    minHeight: 49,
-    borderRadius: 12,
-    backgroundColor: '#111',
+    minHeight: 53,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 7,
+    backgroundColor: COLORS.primary,
+    borderRadius: 16,
+    gap: 8,
     marginBottom: 14,
+    shadowColor: COLORS.primary,
+    shadowOffset: {
+      width: 0,
+      height: 6,
+    },
+    shadowOpacity: 0.23,
+    shadowRadius: 10,
+    elevation: 5,
   },
+
   primaryButtonText: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: '800',
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '900',
   },
+
   tableHeader: {
-    minHeight: 42,
+    minHeight: 43,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#c8c8c8',
-    borderRadius: 8,
+    backgroundColor: '#FFF0F4',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#FFD5E0',
     paddingHorizontal: 10,
     marginBottom: 8,
   },
+
   headerCell: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 2,
   },
+
   headerCellText: {
-    color: '#1a1a1a',
+    color: COLORS.textPrimary,
     fontSize: 10,
     fontWeight: '900',
   },
-  headerNome: { flex: 2.1 },
+
+  headerNome: {
+    flex: 2.1,
+  },
+
   headerQuantidade: {
     flex: 0.8,
     justifyContent: 'center',
   },
+
   headerUnidade: {
     flex: 0.8,
     justifyContent: 'center',
   },
+
   headerPreco: {
     flex: 1.35,
     justifyContent: 'flex-end',

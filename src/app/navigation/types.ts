@@ -1,5 +1,6 @@
 export type RootStackParamList = {
   Login: undefined;
+  Dashboard: undefined;
   Menu: undefined;
   Estoque: undefined;
   Compras: undefined;

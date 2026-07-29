@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import BarcodeScannerModal from '../../../../shared/scanner/presentation/BarcodeScannerModal';
 import {
@@ -1047,7 +1048,7 @@ export default function ProdutosVendaScreen() {
         </Text>
       </View>
 
-      <Ionicons name="chevron-forward" size={20} color="#333" />
+      <Ionicons name="chevron-forward" size={20} color="#FF3B73" />
     </TouchableOpacity>
   );
 
@@ -1064,7 +1065,7 @@ export default function ProdutosVendaScreen() {
             setAbaParametros('menu');
           }}
         >
-          <Ionicons name="arrow-back" size={19} color="#111" />
+          <Ionicons name="arrow-back" size={19} color="#FF3B73" />
           <Text style={styles.voltarModuloText}>Voltar aos parâmetros</Text>
         </TouchableOpacity>
 
@@ -1153,7 +1154,7 @@ export default function ProdutosVendaScreen() {
                   style={styles.iconActionButton}
                   onPress={() => editarCusto(item)}
                 >
-                  <Ionicons name="create-outline" size={19} color="#111" />
+                  <Ionicons name="create-outline" size={19} color="#FF3B73" />
                 </TouchableOpacity>
 
                 <TouchableOpacity
@@ -1178,7 +1179,7 @@ export default function ProdutosVendaScreen() {
             style={styles.voltarModuloButton}
             onPress={() => setAbaParametros('menu')}
           >
-            <Ionicons name="arrow-back" size={19} color="#111" />
+            <Ionicons name="arrow-back" size={19} color="#FF3B73" />
             <Text style={styles.voltarModuloText}>Voltar aos parâmetros</Text>
           </TouchableOpacity>
 
@@ -1188,7 +1189,7 @@ export default function ProdutosVendaScreen() {
 
           <View style={styles.ajudaCard}>
             <View style={styles.ajudaTituloRow}>
-              <Ionicons name="business-outline" size={22} color="#111" />
+              <Ionicons name="business-outline" size={22} color="#FF3B73" />
               <Text style={styles.ajudaTitulo}>Custos fixos</Text>
             </View>
 
@@ -1200,7 +1201,7 @@ export default function ProdutosVendaScreen() {
 
           <View style={styles.ajudaCard}>
             <View style={styles.ajudaTituloRow}>
-              <Ionicons name="flash-outline" size={22} color="#111" />
+              <Ionicons name="flash-outline" size={22} color="#FF3B73" />
               <Text style={styles.ajudaTitulo}>Custos variáveis</Text>
             </View>
 
@@ -1212,7 +1213,7 @@ export default function ProdutosVendaScreen() {
 
           <View style={styles.ajudaCard}>
             <View style={styles.ajudaTituloRow}>
-              <Ionicons name="time-outline" size={22} color="#111" />
+              <Ionicons name="time-outline" size={22} color="#FF3B73" />
               <Text style={styles.ajudaTitulo}>Mão de obra</Text>
             </View>
 
@@ -1225,7 +1226,7 @@ export default function ProdutosVendaScreen() {
 
           <View style={styles.ajudaCard}>
             <View style={styles.ajudaTituloRow}>
-              <Ionicons name="calculator-outline" size={22} color="#111" />
+              <Ionicons name="calculator-outline" size={22} color="#FF3B73" />
               <Text style={styles.ajudaTitulo}>Rateio dos custos</Text>
             </View>
 
@@ -1243,7 +1244,7 @@ export default function ProdutosVendaScreen() {
 
           <View style={styles.ajudaCard}>
             <View style={styles.ajudaTituloRow}>
-              <Ionicons name="trending-up-outline" size={22} color="#111" />
+              <Ionicons name="trending-up-outline" size={22} color="#FF3B73" />
               <Text style={styles.ajudaTitulo}>Margem de lucro</Text>
             </View>
 
@@ -1262,7 +1263,7 @@ export default function ProdutosVendaScreen() {
 
           <View style={styles.ajudaCard}>
             <View style={styles.ajudaTituloRow}>
-              <Ionicons name="pricetag-outline" size={22} color="#111" />
+              <Ionicons name="pricetag-outline" size={22} color="#FF3B73" />
               <Text style={styles.ajudaTitulo}>
                 Preço sugerido e preço definitivo
               </Text>
@@ -1296,7 +1297,7 @@ export default function ProdutosVendaScreen() {
             style={styles.voltarModuloButton}
             onPress={() => setAbaParametros('menu')}
           >
-            <Ionicons name="arrow-back" size={19} color="#111" />
+            <Ionicons name="arrow-back" size={19} color="#FF3B73" />
             <Text style={styles.voltarModuloText}>Voltar aos parâmetros</Text>
           </TouchableOpacity>
 
@@ -1352,7 +1353,7 @@ export default function ProdutosVendaScreen() {
             style={styles.voltarModuloButton}
             onPress={() => setAbaParametros('menu')}
           >
-            <Ionicons name="arrow-back" size={19} color="#111" />
+            <Ionicons name="arrow-back" size={19} color="#FF3B73" />
             <Text style={styles.voltarModuloText}>Voltar aos parâmetros</Text>
           </TouchableOpacity>
 
@@ -1415,7 +1416,7 @@ export default function ProdutosVendaScreen() {
           }}
         >
           <View style={styles.parametroIconBox}>
-            <Ionicons name="business-outline" size={26} color="#111" />
+            <Ionicons name="business-outline" size={26} color="#FF3B73" />
           </View>
           <View style={styles.parametroCardInfo}>
             <Text style={styles.parametroCardTitle}>Custos Fixos</Text>
@@ -1423,7 +1424,7 @@ export default function ProdutosVendaScreen() {
               Total ativo: {formatarMoeda(totalCustosFixos)}
             </Text>
           </View>
-          <Ionicons name="chevron-forward" size={21} color="#333" />
+          <Ionicons name="chevron-forward" size={21} color="#FF3B73" />
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -1434,7 +1435,7 @@ export default function ProdutosVendaScreen() {
           }}
         >
           <View style={styles.parametroIconBox}>
-            <Ionicons name="flash-outline" size={26} color="#111" />
+            <Ionicons name="flash-outline" size={26} color="#FF3B73" />
           </View>
           <View style={styles.parametroCardInfo}>
             <Text style={styles.parametroCardTitle}>Custos Variáveis</Text>
@@ -1442,7 +1443,7 @@ export default function ProdutosVendaScreen() {
               Total ativo: {formatarMoeda(totalCustosVariaveis)}
             </Text>
           </View>
-          <Ionicons name="chevron-forward" size={21} color="#333" />
+          <Ionicons name="chevron-forward" size={21} color="#FF3B73" />
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -1450,7 +1451,7 @@ export default function ProdutosVendaScreen() {
           onPress={() => setAbaParametros('maoDeObra')}
         >
           <View style={styles.parametroIconBox}>
-            <Ionicons name="time-outline" size={26} color="#111" />
+            <Ionicons name="time-outline" size={26} color="#FF3B73" />
           </View>
           <View style={styles.parametroCardInfo}>
             <Text style={styles.parametroCardTitle}>Mão de Obra</Text>
@@ -1458,7 +1459,7 @@ export default function ProdutosVendaScreen() {
               Valor da hora: {formatarMoeda(parametros.valor_hora)}
             </Text>
           </View>
-          <Ionicons name="chevron-forward" size={21} color="#333" />
+          <Ionicons name="chevron-forward" size={21} color="#FF3B73" />
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -1466,7 +1467,7 @@ export default function ProdutosVendaScreen() {
           onPress={() => setAbaParametros('margem')}
         >
           <View style={styles.parametroIconBox}>
-            <Ionicons name="trending-up-outline" size={26} color="#111" />
+            <Ionicons name="trending-up-outline" size={26} color="#FF3B73" />
           </View>
           <View style={styles.parametroCardInfo}>
             <Text style={styles.parametroCardTitle}>Margem de Lucro</Text>
@@ -1474,7 +1475,7 @@ export default function ProdutosVendaScreen() {
               Margem atual: {parametros.margem_lucro}%
             </Text>
           </View>
-          <Ionicons name="chevron-forward" size={21} color="#333" />
+          <Ionicons name="chevron-forward" size={21} color="#FF3B73" />
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -1488,7 +1489,11 @@ export default function ProdutosVendaScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView
+      style={styles.safeArea}
+      edges={['top', 'left', 'right']}
+    >
+      <View style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity
           style={styles.backButton}
@@ -1498,7 +1503,7 @@ export default function ProdutosVendaScreen() {
         </TouchableOpacity>
 
         <View style={styles.headerTextArea}>
-          <Text style={styles.headerTitle}>PRODUTOS PARA VENDA</Text>
+          <Text style={styles.headerTitle}>Produtos para venda</Text>
         </View>
       </View>
 
@@ -1544,7 +1549,7 @@ export default function ProdutosVendaScreen() {
                   direcaoOrdenacaoProduto === 'asc' ? 'caret-up' : 'caret-down'
                 }
                 size={14}
-                color="#111"
+                color="#FF3B73"
               />
             )}
           </View>
@@ -1563,7 +1568,7 @@ export default function ProdutosVendaScreen() {
                   direcaoOrdenacaoProduto === 'asc' ? 'caret-up' : 'caret-down'
                 }
                 size={14}
-                color="#111"
+                color="#FF3B73"
               />
             )}
           </View>
@@ -1580,7 +1585,7 @@ export default function ProdutosVendaScreen() {
         contentContainerStyle={styles.listContent}
         ListEmptyComponent={
           <View style={styles.emptyBox}>
-            <Ionicons name="pricetags-outline" size={34} color="#777" />
+            <Ionicons name="pricetags-outline" size={34} color="#FF3B73" />
             <Text style={styles.emptyText}>Nenhum produto cadastrado.</Text>
           </View>
         }
@@ -1815,7 +1820,7 @@ export default function ProdutosVendaScreen() {
       <Modal visible={modalAdicionarReceita} transparent animationType="fade">
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>ADICIONAR RECEITA</Text>
+            <Text style={styles.modalTitle}>Adicionar receita</Text>
 
             {receitaSelecionada ? (
               <View style={styles.selecionadoBox}>
@@ -1903,7 +1908,7 @@ export default function ProdutosVendaScreen() {
               />
 
               <View style={styles.botaoScannerBusca}>
-                <Ionicons name="search-outline" size={23} color="#111" />
+                <Ionicons name="search-outline" size={23} color="#FF3B73" />
               </View>
             </View>
 
@@ -1979,7 +1984,7 @@ export default function ProdutosVendaScreen() {
                 onPress={abrirScanner}
                 activeOpacity={0.7}
               >
-                <Ionicons name="barcode-outline" size={23} color="#111" />
+                <Ionicons name="barcode-outline" size={23} color="#FF3B73" />
               </TouchableOpacity>
             </View>
 
@@ -2033,7 +2038,7 @@ export default function ProdutosVendaScreen() {
       <Modal visible={modalAdicionarItem} transparent animationType="fade">
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>ADICIONAR ITEM</Text>
+            <Text style={styles.modalTitle}>Adicionar item</Text>
 
             {itemSelecionado ? (
               <View style={styles.selecionadoBox}>
@@ -2121,7 +2126,7 @@ export default function ProdutosVendaScreen() {
           <View style={styles.modalContentLarge}>
             {produtoDetalhado && (
               <>
-                <Text style={styles.modalTitle}>DETALHES DO PRODUTO</Text>
+                <Text style={styles.modalTitle}>Detalhes do produto</Text>
                 <ScrollView showsVerticalScrollIndicator>
                   <View style={styles.detailsCard}>
                     <Text style={styles.detailsTitle}>
@@ -2281,1004 +2286,877 @@ export default function ProdutosVendaScreen() {
         onClose={() => setScannerVisivel(false)}
         onCodeScanned={aoReceberCodigo}
       />
-    </View>
+      </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#FFFDFE',
+  },
+
   container: {
     flex: 1,
-    backgroundColor: '#ebebeb',
+    backgroundColor: '#FFFDFE',
     paddingHorizontal: 16,
-    paddingTop: 50,
+    paddingTop: 12,
   },
+
   header: {
-    backgroundColor: '#e0e0e0',
-    borderRadius: 14,
-    paddingVertical: 16,
-    paddingHorizontal: 12,
+    minHeight: 76,
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 14,
-    position: 'relative',
-  },
-  backButton: {
-    position: 'absolute',
-    left: 12,
-    top: 10,
-    width: 36,
-    height: 36,
+    backgroundColor: '#FFFFFF',
     borderRadius: 18,
-    backgroundColor: '#000',
+    borderWidth: 1,
+    borderColor: '#F1E7EA',
+    paddingHorizontal: 12,
+    marginBottom: 14,
+    shadowColor: '#5A3844',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.06,
+    shadowRadius: 9,
+    elevation: 2,
+  },
+
+  backButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
-    zIndex: 2,
+    backgroundColor: '#FFF0F4',
+    marginRight: 11,
   },
+
   backButtonText: {
-    color: '#fff',
-    fontSize: 34,
+    color: '#FF3B73',
+    fontSize: 36,
+    lineHeight: 38,
     fontWeight: '500',
-    lineHeight: 36,
-    marginTop: -2,
+    marginTop: -3,
   },
+
   headerTextArea: {
-    paddingHorizontal: 42,
-    alignItems: 'center',
+    flex: 1,
+    justifyContent: 'center',
   },
+
   headerTitle: {
+    color: '#242329',
     fontSize: 20,
     fontWeight: '900',
-    color: '#1a1a1a',
-    letterSpacing: 1.5,
-    textAlign: 'center',
   },
+
   searchInput: {
-    backgroundColor: '#fff',
-    borderWidth: 1,
-    borderColor: '#d0d0d0',
-    borderRadius: 10,
-    paddingVertical: 12,
-    paddingHorizontal: 14,
+    minHeight: 54,
+    color: '#242329',
     fontSize: 14,
-    fontWeight: '600',
-    color: '#1a1a1a',
-    marginBottom: 10,
+    fontWeight: '500',
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#F1E7EA',
+    borderRadius: 16,
+    paddingHorizontal: 15,
+    marginBottom: 12,
   },
+
   topButtons: {
     flexDirection: 'row',
     gap: 10,
     marginBottom: 14,
   },
+
   topButton: {
     flex: 1,
-    minHeight: 48,
-    borderRadius: 10,
+    minHeight: 52,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 8,
-    gap: 6,
+    gap: 7,
+    borderRadius: 16,
   },
+
   parametrosButton: {
-    backgroundColor: '#555',
+    backgroundColor: '#FF779B',
   },
+
   novoProdutoButton: {
-    backgroundColor: '#000',
+    backgroundColor: '#FF3B73',
+    shadowColor: '#FF3B73',
+    shadowOffset: {
+      width: 0,
+      height: 5,
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
   },
+
   topButtonText: {
-    color: '#fff',
+    color: '#FFFFFF',
     fontSize: 13,
     fontWeight: '900',
-    textAlign: 'center',
   },
+
   tableHeader: {
+    minHeight: 43,
     flexDirection: 'row',
-    backgroundColor: '#c8c8c8',
-    borderRadius: 8,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    marginBottom: 5,
-  },
-  tableHeaderText: {
-    fontSize: 12,
-    fontWeight: '900',
-    color: '#1a1a1a',
-    textAlign: 'center',
-  },
-  tableHeaderButton: {
-    minHeight: 32,
     alignItems: 'center',
+    backgroundColor: '#FFF0F4',
+    borderWidth: 1,
+    borderColor: '#FFD5E0',
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    marginBottom: 8,
+  },
+
+  tableHeaderButton: {
+    height: 42,
     justifyContent: 'center',
   },
+
   tableHeaderContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: 5,
+    gap: 3,
   },
+
+  tableHeaderText: {
+    color: '#242329',
+    fontSize: 10,
+    fontWeight: '900',
+  },
+
   tableHeaderChevronSpace: {
-    width: 20,
+    width: 24,
   },
+
   list: {
     flex: 1,
   },
+
   listContent: {
-    paddingBottom: 28,
+    paddingBottom: 18,
   },
+
   row: {
-    backgroundColor: '#fff',
-    borderRadius: 9,
-    borderWidth: 1,
-    borderColor: '#ddd',
-    paddingVertical: 11,
-    paddingHorizontal: 12,
-    marginBottom: 7,
+    minHeight: 72,
     flexDirection: 'row',
     alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#F1E7EA',
+    borderRadius: 15,
+    paddingHorizontal: 12,
+    marginBottom: 8,
+    shadowColor: '#5A3844',
+    shadowOffset: {
+      width: 0,
+      height: 3,
+    },
+    shadowOpacity: 0.04,
+    shadowRadius: 7,
+    elevation: 2,
   },
+
   produtoNomeArea: {
     flex: 1.7,
+    paddingRight: 8,
   },
+
   produtoNome: {
-    fontSize: 14,
+    color: '#242329',
+    fontSize: 13,
     fontWeight: '900',
-    color: '#1a1a1a',
   },
+
   produtoCusto: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#666',
-    marginTop: 3,
+    color: '#737178',
+    fontSize: 10,
+    fontWeight: '600',
+    marginTop: 4,
   },
+
   produtoPrecoArea: {
     flex: 1,
-    alignItems: 'center',
-    paddingHorizontal: 6,
+    alignItems: 'flex-end',
+    paddingRight: 8,
   },
+
   produtoPrecoLabel: {
-    fontSize: 10,
+    color: '#9A979E',
+    fontSize: 8,
     fontWeight: '800',
-    color: '#666',
+    letterSpacing: 0.5,
   },
+
   produtoPreco: {
+    color: '#FF3B73',
     fontSize: 13,
     fontWeight: '900',
-    color: '#111',
-    marginTop: 2,
+    marginTop: 3,
   },
+
   emptyBox: {
-    backgroundColor: '#fff',
-    borderRadius: 9,
-    borderWidth: 1,
-    borderColor: '#ddd',
-    padding: 25,
     alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 55,
+    paddingHorizontal: 24,
   },
+
   emptyText: {
-    color: '#666',
-    fontSize: 14,
-    fontWeight: '700',
-    marginTop: 8,
-  },
-  emptySmall: {
-    color: '#666',
+    color: '#737178',
     fontSize: 13,
-    fontWeight: '700',
     textAlign: 'center',
-    paddingVertical: 10,
+    marginTop: 10,
   },
+
+  emptySmall: {
+    color: '#737178',
+    fontSize: 12,
+    lineHeight: 18,
+    textAlign: 'center',
+    paddingVertical: 14,
+  },
+
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.6)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 16,
+    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(24, 16, 20, 0.48)',
   },
+
   modalContent: {
     width: '100%',
-    maxHeight: '84%',
-    backgroundColor: '#fff',
-    borderRadius: 14,
-    padding: 18,
+    maxHeight: '86%',
+    backgroundColor: '#FFFDFE',
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    paddingHorizontal: 18,
+    paddingTop: 22,
+    paddingBottom: 18,
   },
+
   modalContentLarge: {
     width: '100%',
-    maxHeight: '90%',
-    backgroundColor: '#fff',
-    borderRadius: 14,
-    padding: 18,
+    maxHeight: '94%',
+    backgroundColor: '#FFFDFE',
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    paddingHorizontal: 18,
+    paddingTop: 22,
+    paddingBottom: 18,
   },
+
   modalTitle: {
-    fontSize: 18,
+    color: '#242329',
+    fontSize: 20,
     fontWeight: '900',
-    color: '#1a1a1a',
-    textAlign: 'center',
-    marginBottom: 16,
-    letterSpacing: 0.8,
+    marginBottom: 18,
   },
+
   inputLabel: {
+    color: '#242329',
     fontSize: 13,
-    fontWeight: '900',
-    color: '#1a1a1a',
-    marginBottom: 5,
-    marginLeft: 2,
+    fontWeight: '800',
+    marginBottom: 7,
+    marginTop: 4,
   },
+
   input: {
-    backgroundColor: '#fff',
-    borderWidth: 1.5,
-    borderColor: '#ccc',
-    borderRadius: 9,
-    paddingVertical: 12,
-    paddingHorizontal: 12,
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#1a1a1a',
-    marginBottom: 11,
+    minHeight: 54,
+    color: '#242329',
+    fontSize: 14,
+    fontWeight: '500',
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#F1E7EA',
+    borderRadius: 16,
+    paddingHorizontal: 14,
+    marginBottom: 14,
   },
+
   textAreaSmall: {
-    minHeight: 78,
-    backgroundColor: '#fff',
-    borderWidth: 1.5,
-    borderColor: '#ccc',
-    borderRadius: 9,
-    paddingVertical: 12,
-    paddingHorizontal: 12,
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#1a1a1a',
-    marginBottom: 11,
+    minHeight: 88,
+    color: '#242329',
+    fontSize: 14,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#F1E7EA',
+    borderRadius: 16,
+    paddingHorizontal: 14,
+    paddingTop: 13,
+    marginBottom: 14,
   },
+
   sectionTitle: {
-    fontSize: 15,
+    color: '#242329',
+    fontSize: 16,
     fontWeight: '900',
-    color: '#111',
-    marginTop: 5,
-    marginBottom: 8,
+    marginTop: 8,
+    marginBottom: 12,
   },
+
+  composicaoBox: {
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#F1E7EA',
+    borderRadius: 18,
+    padding: 13,
+    marginBottom: 12,
+  },
+
   composicaoBoxHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    gap: 8,
-    marginBottom: 5,
+    gap: 10,
+    marginBottom: 8,
   },
+
+  composicaoBoxTitle: {
+    flex: 1,
+    color: '#242329',
+    fontSize: 14,
+    fontWeight: '900',
+  },
+
   adicionarComponenteButton: {
-    minHeight: 34,
-    borderRadius: 8,
-    backgroundColor: '#000',
-    paddingHorizontal: 10,
+    minHeight: 38,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 4,
+    backgroundColor: '#FF3B73',
+    borderRadius: 12,
+    paddingHorizontal: 11,
   },
+
   adicionarComponenteButtonText: {
-    color: '#fff',
+    color: '#FFFFFF',
     fontSize: 11,
     fontWeight: '900',
-    width: 40,
-    textAlign: 'center',
   },
-  composicaoButtons: {
-    flexDirection: 'row',
-    gap: 8,
-    marginBottom: 10,
-  },
-  composicaoButton: {
-    flex: 1,
-    minHeight: 44,
-    borderRadius: 9,
-    backgroundColor: '#000',
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexDirection: 'row',
-    gap: 6,
-    paddingHorizontal: 7,
-  },
-  composicaoButtonText: {
-    color: '#fff',
-    fontSize: 12,
-    fontWeight: '900',
-    textAlign: 'center',
-  },
-  composicaoBox: {
-    backgroundColor: '#f6f6f6',
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: '#ddd',
-    padding: 10,
-    marginBottom: 11,
-  },
-  composicaoBoxTitle: {
-    fontSize: 13,
-    fontWeight: '900',
-    color: '#111',
-    marginBottom: 5,
-  },
+
   composicaoItem: {
+    minHeight: 60,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e1e1e1',
+    borderTopWidth: 1,
+    borderTopColor: '#F6EDF0',
+    paddingVertical: 9,
   },
+
   composicaoItemInfo: {
     flex: 1,
+    paddingRight: 8,
   },
+
   composicaoItemNome: {
-    fontSize: 13,
-    fontWeight: '900',
-    color: '#111',
+    color: '#242329',
+    fontSize: 12,
+    fontWeight: '800',
   },
+
   composicaoItemSubtexto: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#666',
-    marginTop: 2,
+    color: '#737178',
+    fontSize: 10,
+    marginTop: 4,
   },
+
   removeButton: {
-    width: 34,
-    height: 34,
-    borderRadius: 9,
-    backgroundColor: '#c90000',
+    width: 38,
+    height: 38,
+    borderRadius: 19,
     alignItems: 'center',
     justifyContent: 'center',
-    marginLeft: 8,
+    backgroundColor: '#D93C56',
   },
+
   resumoBox: {
-    backgroundColor: '#f6f6f6',
-    borderRadius: 10,
+    backgroundColor: '#FFF7F9',
     borderWidth: 1,
-    borderColor: '#ddd',
-    padding: 11,
-    marginBottom: 12,
+    borderColor: '#FFD1DD',
+    borderRadius: 18,
+    padding: 14,
+    marginTop: 4,
+    marginBottom: 16,
   },
+
   resumoTitle: {
-    fontSize: 14,
+    color: '#242329',
+    fontSize: 15,
     fontWeight: '900',
-    color: '#111',
-    marginBottom: 6,
+    marginBottom: 10,
   },
+
   resumoLinha: {
+    minHeight: 31,
     flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 6,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e4e4e4',
-    gap: 8,
   },
+
   resumoLabel: {
-    flex: 1,
-    fontSize: 12,
-    fontWeight: '800',
-    color: '#444',
-  },
-  resumoValor: {
-    fontSize: 12,
-    fontWeight: '900',
-    color: '#111',
-  },
-  resumoLinhaTotal: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: 8,
-    gap: 8,
-  },
-  resumoLabelTotal: {
-    flex: 1,
-    fontSize: 14,
-    fontWeight: '900',
-    color: '#000',
-  },
-  resumoValorTotal: {
-    fontSize: 14,
-    fontWeight: '900',
-    color: '#000',
-  },
-  resumoLinhaDestaque: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    backgroundColor: '#000',
-    borderRadius: 8,
-    paddingVertical: 10,
-    paddingHorizontal: 9,
-    gap: 8,
-  },
-  resumoLabelDestaque: {
-    flex: 1,
-    fontSize: 13,
-    fontWeight: '900',
-    color: '#fff',
-  },
-  resumoValorDestaque: {
-    fontSize: 13,
-    fontWeight: '900',
-    color: '#fff',
-  },
-  warningText: {
-    fontSize: 12,
-    fontWeight: '800',
-    color: '#c90000',
-    marginTop: -4,
-    marginBottom: 10,
-  },
-  modalButtons: {
-    flexDirection: 'row',
-    gap: 10,
-    marginTop: 3,
-  },
-  modalButton: {
-    flex: 1,
-    minHeight: 44,
-    borderRadius: 9,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  modalButtonText: {
-    color: '#fff',
-    fontWeight: '900',
-    fontSize: 14,
-  },
-  blackButton: {
-    backgroundColor: '#000',
-  },
-  grayButton: {
-    backgroundColor: '#888',
-  },
-  redButton: {
-    backgroundColor: '#c90000',
-  },
-  selectionList: {
-    maxHeight: 210,
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 9,
-    marginBottom: 11,
-  },
-  productSelectionList: {
-    height: 260,
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 9,
-    marginBottom: 2,
-  },
-  productSelectionListEmpty: {
-    flexGrow: 1,
-    justifyContent: 'center',
-  },
-  selectionItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 10,
-    paddingHorizontal: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-  },
-  selectionItemSelected: {
-    backgroundColor: '#e4e4e4',
-  },
-  selectionItemTitle: {
-    fontSize: 13,
-    fontWeight: '900',
-    color: '#111',
-  },
-  selectionItemSubtitle: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#666',
-    marginTop: 2,
-  },
-  inputComIconeContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    borderWidth: 1.5,
-    borderColor: '#ccc',
-    borderRadius: 9,
-    paddingLeft: 12,
-    paddingRight: 4,
-    height: 46,
-    marginBottom: 10,
-  },
-  inputComIcone: {
-    flex: 1,
-    height: '100%',
-    color: '#111',
-    fontSize: 14,
+    color: '#737178',
+    fontSize: 11,
     fontWeight: '600',
   },
-  scannerButton: {
-    width: 40,
-    height: 40,
+
+  resumoValor: {
+    color: '#242329',
+    fontSize: 11,
+    fontWeight: '800',
+  },
+
+  resumoLinhaTotal: {
+    minHeight: 40,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderTopWidth: 1,
+    borderTopColor: '#F0DDE3',
+    marginTop: 6,
+    paddingTop: 7,
+  },
+
+  resumoLabelTotal: {
+    color: '#242329',
+    fontSize: 13,
+    fontWeight: '900',
+  },
+
+  resumoValorTotal: {
+    color: '#242329',
+    fontSize: 14,
+    fontWeight: '900',
+  },
+
+  resumoLinhaDestaque: {
+    minHeight: 46,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#FFF0F4',
+    borderRadius: 13,
+    paddingHorizontal: 11,
+    marginTop: 8,
+  },
+
+  resumoLabelDestaque: {
+    flex: 1,
+    color: '#FF3B73',
+    fontSize: 11,
+    fontWeight: '900',
+    paddingRight: 8,
+  },
+
+  resumoValorDestaque: {
+    color: '#FF3B73',
+    fontSize: 15,
+    fontWeight: '900',
+  },
+
+  warningText: {
+    color: '#D93C56',
+    fontSize: 11,
+    lineHeight: 17,
+    fontWeight: '700',
+    backgroundColor: '#FFF0F3',
+    borderRadius: 12,
+    padding: 10,
+    marginBottom: 10,
+  },
+
+  modalButtons: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 10,
+    marginBottom: 2,
+  },
+
+  modalButton: {
+    flex: 1,
+    minHeight: 52,
     alignItems: 'center',
     justifyContent: 'center',
+    borderRadius: 16,
   },
+
+  modalButtonText: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '900',
+  },
+
+  grayButton: {
+    backgroundColor: '#737178',
+  },
+
+  blackButton: {
+    backgroundColor: '#FF3B73',
+  },
+
+  redButton: {
+    backgroundColor: '#D93C56',
+  },
+
+  selecionadoBox: {
+    backgroundColor: '#FFF7F9',
+    borderWidth: 1,
+    borderColor: '#FFD1DD',
+    borderRadius: 16,
+    padding: 13,
+    marginBottom: 12,
+  },
+
+  selecionadoLabel: {
+    color: '#737178',
+    fontSize: 10,
+    fontWeight: '700',
+  },
+
+  selecionadoValue: {
+    color: '#242329',
+    fontSize: 14,
+    fontWeight: '900',
+    marginTop: 4,
+  },
+
+  selectionItemSubtitle: {
+    color: '#737178',
+    fontSize: 11,
+    marginTop: 4,
+  },
+
   selectProductButton: {
-    minHeight: 43,
-    backgroundColor: '#000',
-    borderRadius: 9,
+    minHeight: 50,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 7,
-    marginBottom: 12,
+    backgroundColor: '#FF3B73',
+    borderRadius: 15,
+    marginBottom: 14,
   },
+
   selectProductButtonText: {
-    color: '#fff',
+    color: '#FFFFFF',
     fontSize: 13,
     fontWeight: '900',
   },
-  modalSelecaoProdutoContent: {
-    width: '100%',
-    maxHeight: '86%',
-    backgroundColor: '#f5f5f5',
-    borderRadius: 18,
-    padding: 18,
-  },
-  modalSelecaoProdutoTitulo: {
-    fontSize: 20,
-    fontWeight: '900',
-    color: '#111',
-    textAlign: 'center',
-    marginBottom: 18,
-    letterSpacing: 0.5,
-  },
-  buscaProdutoContainer: {
-    minHeight: 54,
-    backgroundColor: '#fff',
-    borderWidth: 1.5,
-    borderColor: '#c7c7c7',
-    borderRadius: 13,
-    paddingLeft: 13,
-    paddingRight: 7,
+
+  unidadesContainer: {
     flexDirection: 'row',
-    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 8,
     marginBottom: 14,
   },
+
+  unidadeButton: {
+    minWidth: 58,
+    minHeight: 41,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#F1E7EA',
+    borderRadius: 13,
+    paddingHorizontal: 11,
+  },
+
+  unidadeButtonSelected: {
+    backgroundColor: '#FF3B73',
+    borderColor: '#FF3B73',
+  },
+
+  unidadeButtonText: {
+    color: '#737178',
+    fontSize: 11,
+    fontWeight: '800',
+  },
+
+  unidadeButtonTextSelected: {
+    color: '#FFFFFF',
+  },
+
+  modalSelecaoProdutoContent: {
+    width: '100%',
+    height: '88%',
+    backgroundColor: '#FFFDFE',
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    paddingHorizontal: 18,
+    paddingTop: 22,
+    paddingBottom: 18,
+  },
+
+  modalSelecaoProdutoTitulo: {
+    color: '#242329',
+    fontSize: 20,
+    fontWeight: '900',
+    marginBottom: 14,
+  },
+
+  buscaProdutoContainer: {
+    minHeight: 54,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#F1E7EA',
+    borderRadius: 16,
+    paddingHorizontal: 13,
+    marginBottom: 12,
+  },
+
   buscaProdutoInput: {
     flex: 1,
     minHeight: 52,
-    color: '#111',
-    fontSize: 15,
-    fontWeight: '600',
+    color: '#242329',
+    fontSize: 14,
+    fontWeight: '500',
   },
+
   botaoScannerBusca: {
-    width: 44,
-    height: 44,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: '#FFF0F4',
   },
+
   listaSelecaoProdutos: {
-    maxHeight: 390,
-    marginBottom: 14,
+    flex: 1,
   },
+
   listaSelecaoProdutosConteudo: {
-    paddingBottom: 2,
+    paddingBottom: 12,
   },
-  produtoListaVazia: {
-    minHeight: 90,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  produtoListaVaziaText: {
-    color: '#666',
-    fontSize: 13,
-    fontWeight: '700',
-    textAlign: 'center',
-  },
+
   produtoOpcaoSelecao: {
-    minHeight: 72,
-    backgroundColor: '#fff',
-    borderRadius: 13,
-    paddingVertical: 12,
-    paddingHorizontal: 14,
-    marginBottom: 9,
+    minHeight: 70,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#F1E7EA',
+    borderRadius: 15,
+    paddingHorizontal: 13,
+    marginBottom: 8,
   },
+
   produtoOpcaoInfo: {
     flex: 1,
-    marginRight: 10,
+    paddingRight: 8,
   },
+
   produtoOpcaoNome: {
-    fontSize: 16,
+    color: '#242329',
+    fontSize: 13,
     fontWeight: '900',
-    color: '#111',
   },
+
   produtoOpcaoEstoque: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#666',
-    marginTop: 5,
-  },
-  botaoFecharSelecao: {
-    minHeight: 52,
-    backgroundColor: '#d1d1d1',
-    borderRadius: 13,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  botaoFecharSelecaoTexto: {
-    color: '#111',
-    fontSize: 15,
-    fontWeight: '900',
-    letterSpacing: 0.5,
-  },
-  selecionadoBox: {
-    backgroundColor: '#f1f1f1',
-    borderRadius: 9,
-    borderWidth: 1,
-    borderColor: '#ddd',
-    padding: 9,
-    marginBottom: 10,
-  },
-  selecionadoLabel: {
-    fontSize: 11,
-    fontWeight: '800',
-    color: '#666',
-  },
-  selecionadoValue: {
-    fontSize: 13,
-    fontWeight: '900',
-    color: '#111',
-    marginTop: 2,
-  },
-  unidadesContainer: {
-    flexDirection: 'row',
-    gap: 6,
-    marginBottom: 12,
-  },
-  unidadeButton: {
-    flex: 1,
-    minHeight: 39,
-    borderRadius: 8,
-    borderWidth: 1.5,
-    borderColor: '#bbb',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#fff',
-  },
-  unidadeButtonSelected: {
-    backgroundColor: '#000',
-    borderColor: '#000',
-  },
-  unidadeButtonText: {
-    fontSize: 12,
-    fontWeight: '900',
-    color: '#111',
-  },
-  unidadeButtonTextSelected: {
-    color: '#fff',
-  },
-  detailsCard: {
-    backgroundColor: '#f6f6f6',
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: '#ddd',
-    padding: 11,
-    marginBottom: 11,
-  },
-  detailsTitle: {
-    fontSize: 16,
-    fontWeight: '900',
-    color: '#111',
-  },
-  detailsDescription: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#555',
-    lineHeight: 19,
-    marginTop: 5,
-  },
-  detailsLine: {
-    fontSize: 13,
-    fontWeight: '800',
-    color: '#333',
-    marginTop: 7,
-  },
-  detailsSectionTitle: {
-    fontSize: 14,
-    fontWeight: '900',
-    color: '#111',
-    marginBottom: 5,
-  },
-  detailsItem: {
-    paddingVertical: 7,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e3e3e3',
-  },
-  detailsItemName: {
-    fontSize: 13,
-    fontWeight: '900',
-    color: '#111',
-  },
-  detailsItemValue: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#666',
-    marginTop: 2,
-  },
-  detailsPriceRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: 6,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e3e3e3',
-  },
-  detailsPriceLabel: {
-    fontSize: 12,
-    fontWeight: '800',
-    color: '#444',
-  },
-  detailsPriceValue: {
-    fontSize: 12,
-    fontWeight: '900',
-    color: '#111',
-  },
-  detailsPriceRowStrong: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: 8,
-  },
-  detailsPriceLabelStrong: {
-    fontSize: 14,
-    fontWeight: '900',
-    color: '#000',
-  },
-  detailsPriceValueStrong: {
-    fontSize: 14,
-    fontWeight: '900',
-    color: '#000',
-  },
-  detailsSalePrice: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    backgroundColor: '#000',
-    borderRadius: 8,
-    padding: 10,
+    color: '#737178',
+    fontSize: 10,
     marginTop: 4,
   },
-  detailsSaleLabel: {
-    fontSize: 14,
-    fontWeight: '900',
-    color: '#fff',
-  },
-  detailsSaleValue: {
-    fontSize: 14,
-    fontWeight: '900',
-    color: '#fff',
-  },
-  detailsButtonsRow: {
-    flexDirection: 'row',
-    gap: 10,
-    marginTop: 5,
-  },
-  detailsButton: {
-    flex: 1,
-    minHeight: 44,
-    borderRadius: 9,
-    flexDirection: 'row',
+
+  produtoListaVazia: {
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 6,
+    paddingVertical: 40,
   },
-  closeGrayButton: {
-    minHeight: 43,
-    backgroundColor: '#888',
-    borderRadius: 9,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 10,
-  },
-  closeGrayButtonText: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: '900',
-  },
-  parametroCard: {
-    backgroundColor: '#f6f6f6',
-    borderRadius: 11,
-    borderWidth: 1,
-    borderColor: '#ddd',
-    padding: 11,
-    marginBottom: 9,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  parametroIconBox: {
-    width: 47,
-    height: 47,
-    borderRadius: 12,
-    backgroundColor: '#e7e7e7',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 10,
-  },
-  parametroCardInfo: {
-    flex: 1,
-  },
-  parametroCardTitle: {
-    fontSize: 14,
-    fontWeight: '900',
-    color: '#111',
-  },
-  parametroCardSubtitle: {
+
+  produtoListaVaziaText: {
+    color: '#737178',
     fontSize: 12,
-    fontWeight: '700',
-    color: '#666',
-    marginTop: 2,
   },
-  voltarModuloButton: {
-    alignSelf: 'flex-start',
-    flexDirection: 'row',
+
+  botaoFecharSelecao: {
+    minHeight: 50,
     alignItems: 'center',
-    gap: 5,
-    marginBottom: 12,
+    justifyContent: 'center',
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#DCCFD4',
+    borderRadius: 15,
+    marginTop: 8,
   },
-  voltarModuloText: {
+
+  botaoFecharSelecaoTexto: {
+    color: '#242329',
     fontSize: 13,
-    fontWeight: '800',
-    color: '#111',
-  },
-  parametroModuloTitulo: {
-    fontSize: 18,
     fontWeight: '900',
-    color: '#111',
-    textAlign: 'center',
+  },
+
+  detailsTitle: {
+    color: '#242329',
+    fontSize: 20,
+    fontWeight: '900',
     marginBottom: 14,
   },
-  custoFormulario: {
-    backgroundColor: '#f6f6f6',
-    borderRadius: 10,
+
+  detailsCard: {
+    backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: '#ddd',
-    padding: 11,
-    marginBottom: 11,
+    borderColor: '#F1E7EA',
+    borderRadius: 18,
+    padding: 14,
+    marginBottom: 14,
   },
-  formCustoButtons: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  smallActionButton: {
-    flex: 1,
-    minHeight: 41,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexDirection: 'row',
-    gap: 5,
-    paddingHorizontal: 7,
-  },
-  smallActionText: {
-    color: '#fff',
+
+  detailsDescription: {
+    color: '#737178',
     fontSize: 12,
-    fontWeight: '900',
-    textAlign: 'center',
-  },
-  totalCustoBox: {
-    backgroundColor: '#000',
-    borderRadius: 9,
-    padding: 11,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 10,
-  },
-  totalCustoLabel: {
-    color: '#fff',
-    fontSize: 13,
-    fontWeight: '900',
-  },
-  totalCustoValor: {
-    color: '#fff',
-    fontSize: 13,
-    fontWeight: '900',
-  },
-  listaCustos: {
-    borderRadius: 9,
-    borderWidth: 1,
-    borderColor: '#ddd',
-    overflow: 'hidden',
-  },
-  custoItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 9,
-    paddingHorizontal: 9,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e5e5e5',
-    backgroundColor: '#fff',
-    gap: 7,
-  },
-  custoItemInativo: {
-    opacity: 0.5,
-  },
-  custoItemInfo: {
-    flex: 1,
-  },
-  custoItemNome: {
-    fontSize: 13,
-    fontWeight: '900',
-    color: '#111',
-  },
-  custoItemValor: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#666',
-    marginTop: 2,
-  },
-  iconActionButton: {
-    width: 34,
-    height: 34,
-    borderRadius: 8,
-    backgroundColor: '#e5e5e5',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  deleteIconButton: {
-    backgroundColor: '#c90000',
-  },
-  calculoDestaqueBox: {
-    backgroundColor: '#000',
-    borderRadius: 9,
-    padding: 12,
+    lineHeight: 18,
     marginBottom: 12,
-    alignItems: 'center',
   },
-  calculoDestaqueLabel: {
-    color: '#ddd',
+
+  detailsLine: {
+    minHeight: 48,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#F6EDF0',
+  },
+
+  detailsItem: {
+    color: '#737178',
+    fontSize: 11,
+    fontWeight: '700',
+  },
+
+  detailsItemName: {
+    flex: 1,
+    color: '#242329',
     fontSize: 12,
     fontWeight: '800',
   },
-  calculoDestaqueValor: {
-    color: '#fff',
+
+  detailsItemValue: {
+    color: '#242329',
+    fontSize: 12,
+    fontWeight: '900',
+    textAlign: 'right',
+  },
+
+  detailsSectionTitle: {
+    color: '#242329',
+    fontSize: 15,
+    fontWeight: '900',
+    marginTop: 8,
+    marginBottom: 9,
+  },
+
+  detailsPriceRow: {
+    minHeight: 42,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+
+  detailsPriceRowStrong: {
+    minHeight: 48,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderTopWidth: 1,
+    borderTopColor: '#F0DDE3',
+    marginTop: 5,
+    paddingTop: 7,
+  },
+
+  detailsPriceLabel: {
+    color: '#737178',
+    fontSize: 11,
+  },
+
+  detailsPriceValue: {
+    color: '#242329',
+    fontSize: 12,
+    fontWeight: '800',
+  },
+
+  detailsPriceLabelStrong: {
+    color: '#242329',
+    fontSize: 13,
+    fontWeight: '900',
+  },
+
+  detailsPriceValueStrong: {
+    color: '#242329',
+    fontSize: 14,
+    fontWeight: '900',
+  },
+
+  detailsSalePrice: {
+    backgroundColor: '#FFF0F4',
+    borderWidth: 1,
+    borderColor: '#FFD1DD',
+    borderRadius: 16,
+    padding: 14,
+    marginTop: 10,
+  },
+
+  detailsSaleLabel: {
+    color: '#FF3B73',
+    fontSize: 11,
+    fontWeight: '800',
+  },
+
+  detailsSaleValue: {
+    color: '#FF3B73',
     fontSize: 20,
     fontWeight: '900',
     marginTop: 4,
   },
-  fullBlackButton: {
-    minHeight: 45,
-    backgroundColor: '#000',
-    borderRadius: 9,
+
+  detailsButtonsRow: {
     flexDirection: 'row',
+    gap: 12,
+    marginTop: 12,
+  },
+
+  detailsButton: {
+    flex: 1,
+    minHeight: 52,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 7,
+    borderRadius: 16,
   },
-  fullBlackButtonText: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: '900',
-  },
-  simulacaoBox: {
-    backgroundColor: '#f6f6f6',
-    borderRadius: 9,
+
+  closeGrayButton: {
+    minHeight: 50,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: '#ddd',
-    padding: 12,
-    marginBottom: 12,
+    borderColor: '#DCCFD4',
+    borderRadius: 15,
+    marginTop: 10,
   },
-  simulacaoTitulo: {
-    fontSize: 14,
-    fontWeight: '900',
-    color: '#111',
-    marginBottom: 5,
-  },
-  simulacaoTexto: {
+
+  closeGrayButtonText: {
+    color: '#242329',
     fontSize: 13,
-    fontWeight: '700',
-    color: '#555',
-  },
-  simulacaoResultado: {
-    fontSize: 14,
     fontWeight: '900',
-    color: '#111',
-    marginTop: 5,
   },
+
   parametrosHeader: {
+    minHeight: 52,
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 14,
   },
 
   parametrosHeaderEspaco: {
@@ -3287,28 +3165,264 @@ const styles = StyleSheet.create({
 
   parametrosHeaderTitle: {
     flex: 1,
-    fontSize: 18,
+    color: '#242329',
+    fontSize: 16,
     fontWeight: '900',
-    color: '#1a1a1a',
     textAlign: 'center',
-    letterSpacing: 0.8,
   },
 
   ajudaButton: {
     width: 42,
     height: 42,
     borderRadius: 21,
-    backgroundColor: '#111',
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: '#FF3B73',
+  },
+
+  parametroCard: {
+    minHeight: 84,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#F1E7EA',
+    borderRadius: 18,
+    padding: 13,
+    marginBottom: 10,
+  },
+
+  parametroIconBox: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#FFF0F4',
+    marginRight: 11,
+  },
+
+  parametroCardInfo: {
+    flex: 1,
+  },
+
+  parametroCardTitle: {
+    color: '#242329',
+    fontSize: 14,
+    fontWeight: '900',
+  },
+
+  parametroCardSubtitle: {
+    color: '#737178',
+    fontSize: 11,
+    lineHeight: 16,
+    marginTop: 4,
+  },
+
+  voltarModuloButton: {
+    minHeight: 44,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 7,
+    alignSelf: 'flex-start',
+    backgroundColor: '#FFF0F4',
+    borderRadius: 13,
+    paddingHorizontal: 12,
+    marginBottom: 14,
+  },
+
+  voltarModuloText: {
+    color: '#FF3B73',
+    fontSize: 12,
+    fontWeight: '900',
+  },
+
+  parametroModuloTitulo: {
+    color: '#242329',
+    fontSize: 18,
+    fontWeight: '900',
+    marginBottom: 14,
+  },
+
+  custoFormulario: {
+    backgroundColor: '#FFF7F9',
+    borderWidth: 1,
+    borderColor: '#FFD1DD',
+    borderRadius: 18,
+    padding: 14,
+    marginBottom: 14,
+  },
+
+  formCustoButtons: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+
+  smallActionButton: {
+    flex: 1,
+    minHeight: 45,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    borderRadius: 14,
+  },
+
+  smallActionText: {
+    color: '#FFFFFF',
+    fontSize: 11,
+    fontWeight: '900',
+  },
+
+  totalCustoBox: {
+    minHeight: 70,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#FFF0F4',
+    borderWidth: 1,
+    borderColor: '#FFD1DD',
+    borderRadius: 17,
+    paddingHorizontal: 15,
+    marginBottom: 12,
+  },
+
+  totalCustoLabel: {
+    color: '#737178',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+
+  totalCustoValor: {
+    color: '#FF3B73',
+    fontSize: 18,
+    fontWeight: '900',
+  },
+
+  listaCustos: {
+    paddingBottom: 10,
+  },
+
+  custoItem: {
+    minHeight: 68,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#F1E7EA',
+    borderRadius: 15,
+    padding: 11,
+    marginBottom: 8,
+  },
+
+  custoItemInativo: {
+    opacity: 0.55,
+  },
+
+  custoItemInfo: {
+    flex: 1,
+    paddingRight: 8,
+  },
+
+  custoItemNome: {
+    color: '#242329',
+    fontSize: 12,
+    fontWeight: '900',
+  },
+
+  custoItemValor: {
+    color: '#737178',
+    fontSize: 11,
+    marginTop: 4,
+  },
+
+  iconActionButton: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#FFF0F4',
+    marginLeft: 6,
+  },
+
+  deleteIconButton: {
+    backgroundColor: '#D93C56',
+  },
+
+  calculoDestaqueBox: {
+    backgroundColor: '#FFF0F4',
+    borderWidth: 1,
+    borderColor: '#FFD1DD',
+    borderRadius: 17,
+    padding: 15,
+    marginBottom: 14,
+  },
+
+  calculoDestaqueLabel: {
+    color: '#737178',
+    fontSize: 11,
+    fontWeight: '700',
+  },
+
+  calculoDestaqueValor: {
+    color: '#FF3B73',
+    fontSize: 20,
+    fontWeight: '900',
+    marginTop: 5,
+  },
+
+  fullBlackButton: {
+    minHeight: 52,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 7,
+    backgroundColor: '#FF3B73',
+    borderRadius: 16,
+    marginTop: 6,
+  },
+
+  fullBlackButtonText: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '900',
+  },
+
+  simulacaoBox: {
+    backgroundColor: '#FFF7F9',
+    borderWidth: 1,
+    borderColor: '#FFD1DD',
+    borderRadius: 17,
+    padding: 15,
+    marginBottom: 14,
+  },
+
+  simulacaoTitulo: {
+    color: '#242329',
+    fontSize: 14,
+    fontWeight: '900',
+  },
+
+  simulacaoTexto: {
+    color: '#737178',
+    fontSize: 11,
+    marginTop: 8,
+  },
+
+  simulacaoResultado: {
+    color: '#FF3B73',
+    fontSize: 16,
+    fontWeight: '900',
+    marginTop: 5,
   },
 
   ajudaCard: {
-    backgroundColor: '#f6f6f6',
+    backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 10,
-    padding: 12,
+    borderColor: '#F1E7EA',
+    borderRadius: 18,
+    padding: 14,
     marginBottom: 10,
   },
 
@@ -3316,33 +3430,35 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    marginBottom: 7,
+    marginBottom: 8,
   },
 
   ajudaTitulo: {
+    color: '#242329',
     fontSize: 14,
     fontWeight: '900',
-    color: '#111',
   },
 
   ajudaTexto: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#444',
+    color: '#737178',
+    fontSize: 12,
     lineHeight: 19,
   },
 
   formulaBox: {
-    backgroundColor: '#e5e5e5',
-    borderRadius: 8,
-    padding: 9,
-    marginTop: 9,
+    backgroundColor: '#FFF0F4',
+    borderWidth: 1,
+    borderColor: '#FFD1DD',
+    borderRadius: 14,
+    padding: 11,
+    marginTop: 10,
   },
 
   formulaText: {
-    fontSize: 12,
-    fontWeight: '900',
-    color: '#222',
+    color: '#FF3B73',
+    fontSize: 11,
+    lineHeight: 17,
+    fontWeight: '800',
     textAlign: 'center',
   },
 });

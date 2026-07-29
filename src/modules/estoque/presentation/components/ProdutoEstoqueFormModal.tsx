@@ -1,7 +1,9 @@
 import React from 'react';
 import {
   ActivityIndicator,
+  KeyboardAvoidingView,
   Modal,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -11,6 +13,10 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import {
+  SafeAreaView,
+} from 'react-native-safe-area-context';
+
+import {
   UNIDADES_MEDIDA_ESTOQUE,
   type FormularioProdutoEstoque,
   type ModoFormularioProduto,
@@ -18,7 +24,22 @@ import {
   type UnidadeMedidaEstoque,
 } from '../../domain/models/ProdutoEstoque';
 
-const ROTULOS: Record<UnidadeMedidaEstoque, string> = {
+const COLORS = {
+  primary: '#FF3B73',
+  primarySoft: '#FFF0F4',
+  background: '#FFFDFE',
+  surface: '#FFFFFF',
+  textPrimary: '#242329',
+  textSecondary: '#737178',
+  placeholder: '#9A979E',
+  border: '#F1E7EA',
+  danger: '#D93C56',
+};
+
+const ROTULOS: Record<
+  UnidadeMedidaEstoque,
+  string
+> = {
   un: 'un',
   kg: 'kg',
   g: 'g',
@@ -55,291 +76,575 @@ export function ProdutoEstoqueFormModal({
   onClose,
   onSave,
 }: Props) {
+  const cadastro = modo === 'cadastro';
+
   return (
     <Modal
       visible={visible}
       transparent
-      animationType="fade"
+      animationType="slide"
       onRequestClose={onClose}
+      statusBarTranslucent
     >
-      <View style={styles.modalOverlay}>
-        <View style={styles.modalContent}>
-          <View style={styles.modalTitleRow}>
-            <Ionicons
-              name={modo === 'cadastro' ? 'add-circle-outline' : 'create-outline'}
-              size={22}
-              color="#1a1a1a"
-            />
-            <Text style={styles.modalTitle}>
-              {modo === 'cadastro' ? 'NOVO PRODUTO' : 'EDITAR PRODUTO'}
-            </Text>
-          </View>
+      <SafeAreaView
+        style={styles.safeArea}
+        edges={[
+          'top',
+          'right',
+          'bottom',
+          'left',
+        ]}
+      >
+        <KeyboardAvoidingView
+          style={styles.keyboardContainer}
+          behavior={
+            Platform.OS === 'ios'
+              ? 'padding'
+              : undefined
+          }
+        >
+          <View style={styles.overlay}>
+            <View style={styles.sheet}>
+              <View style={styles.handle} />
 
-          <ScrollView
-            showsVerticalScrollIndicator={false}
-            keyboardShouldPersistTaps="handled"
-            contentContainerStyle={styles.formScrollContent}
-          >
-            {modo === 'edicao' && produto && (
-              <>
-                <Text style={styles.inputLabel}>ID:</Text>
-                <TextInput
-                  style={[styles.input, styles.inputDisabled]}
-                  value={String(produto.id)}
-                  editable={false}
-                />
-              </>
-            )}
-
-            <Text style={styles.inputLabel}>Nome do produto:</Text>
-            <View style={styles.inputComIconeContainer}>
-              <Ionicons name="cube-outline" size={20} color="#666" />
-              <TextInput
-                style={styles.inputComIcone}
-                placeholder="Digite o nome do produto"
-                placeholderTextColor="#888"
-                value={formulario.nome}
-                onChangeText={(valor) => onChange('nome', valor)}
-                autoCapitalize="sentences"
-              />
-            </View>
-
-            <Text style={styles.inputLabel}>Código de barras:</Text>
-            <View style={styles.inputComIconeContainer}>
-              <TextInput
-                style={styles.inputComIcone}
-                placeholder="Digite ou leia o código de barras"
-                placeholderTextColor="#888"
-                value={formulario.codigoBarras}
-                onChangeText={(valor) => onChange('codigoBarras', valor)}
-                keyboardType="numeric"
-              />
-              <TouchableOpacity
-                style={styles.inputIconButton}
-                onPress={onOpenScanner}
-              >
-                <Ionicons name="barcode-outline" size={20} color="#666" />
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.labelComIcone}>
-              <Ionicons name="scale-outline" size={17} color="#1a1a1a" />
-              <Text style={styles.inputLabelSemMargem}>
-                Unidade de medida:
-              </Text>
-            </View>
-
-            <View style={styles.unidadeContainer}>
-              {UNIDADES_MEDIDA_ESTOQUE.map((unidade) => {
-                const selecionada =
-                  formulario.unidadeMedida === unidade;
-
-                return (
-                  <TouchableOpacity
-                    key={unidade}
-                    style={[
-                      styles.unidadeButton,
-                      selecionada && styles.unidadeButtonSelected,
-                    ]}
-                    onPress={() =>
-                      onChange('unidadeMedida', unidade)
+              <View style={styles.header}>
+                <View style={styles.headerIcon}>
+                  <Ionicons
+                    name={
+                      cadastro
+                        ? 'add-circle-outline'
+                        : 'create-outline'
                     }
-                  >
-                    <Text
+                    size={25}
+                    color={COLORS.primary}
+                  />
+                </View>
+
+                <View style={styles.headerText}>
+                  <Text style={styles.title}>
+                    {cadastro
+                      ? 'Novo produto'
+                      : 'Editar produto'}
+                  </Text>
+
+                  <Text style={styles.subtitle}>
+                    {cadastro
+                      ? 'Cadastre um novo item no estoque'
+                      : 'Atualize os dados do produto'}
+                  </Text>
+                </View>
+
+                <TouchableOpacity
+                  style={styles.closeButton}
+                  onPress={onClose}
+                  disabled={salvando}
+                  activeOpacity={0.75}
+                >
+                  <Ionicons
+                    name="close"
+                    size={23}
+                    color={COLORS.textSecondary}
+                  />
+                </TouchableOpacity>
+              </View>
+
+              <ScrollView
+                style={styles.scroll}
+                contentContainerStyle={
+                  styles.scrollContent
+                }
+                showsVerticalScrollIndicator={false}
+                keyboardShouldPersistTaps="handled"
+              >
+                {modo === 'edicao' && produto && (
+                  <View style={styles.fieldGroup}>
+                    <Text style={styles.label}>
+                      Identificador
+                    </Text>
+
+                    <View
                       style={[
-                        styles.unidadeButtonText,
-                        selecionada &&
-                          styles.unidadeButtonTextSelected,
+                        styles.inputContainer,
+                        styles.inputDisabled,
                       ]}
                     >
-                      {ROTULOS[unidade]}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
+                      <Ionicons
+                        name="key-outline"
+                        size={20}
+                        color={COLORS.textSecondary}
+                      />
 
-            <View style={styles.infoBox}>
-              <Ionicons
-                name="information-circle-outline"
-                size={21}
-                color="#444"
-              />
-              <Text style={styles.infoText}>
-                {modo === 'cadastro'
-                  ? 'O produto será criado com quantidade e preços zerados. As entradas serão registradas pelo módulo de Compras.'
-                  : 'A quantidade e os preços são atualizados por compras, vendas e cancelamentos.'}
-              </Text>
-            </View>
-
-            <View style={styles.modalButtons}>
-              <TouchableOpacity
-                style={[styles.modalButton, styles.cancelButton]}
-                onPress={onClose}
-                disabled={salvando}
-              >
-                <Text style={styles.buttonText}>Cancelar</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.modalButton, styles.saveButton]}
-                onPress={onSave}
-                disabled={salvando}
-              >
-                {salvando ? (
-                  <ActivityIndicator size="small" color="#fff" />
-                ) : (
-                  <>
-                    <Ionicons name="checkmark-circle-outline" size={19} color="#fff" />
-                    <Text style={styles.buttonText}>Salvar</Text>
-                  </>
+                      <TextInput
+                        style={[
+                          styles.input,
+                          styles.disabledText,
+                        ]}
+                        value={String(produto.id)}
+                        editable={false}
+                      />
+                    </View>
+                  </View>
                 )}
-              </TouchableOpacity>
+
+                <View style={styles.fieldGroup}>
+                  <Text style={styles.label}>
+                    Nome do produto
+                  </Text>
+
+                  <View style={styles.inputContainer}>
+                    <Ionicons
+                      name="cube-outline"
+                      size={21}
+                      color={COLORS.primary}
+                    />
+
+                    <TextInput
+                      style={styles.input}
+                      placeholder="Ex.: Leite condensado"
+                      placeholderTextColor={
+                        COLORS.placeholder
+                      }
+                      value={formulario.nome}
+                      onChangeText={(valor) =>
+                        onChange('nome', valor)
+                      }
+                      autoCapitalize="sentences"
+                      editable={!salvando}
+                    />
+                  </View>
+                </View>
+
+                <View style={styles.fieldGroup}>
+                  <Text style={styles.label}>
+                    Código de barras
+                  </Text>
+
+                  <View style={styles.inputContainer}>
+                    <Ionicons
+                      name="barcode-outline"
+                      size={22}
+                      color={COLORS.primary}
+                    />
+
+                    <TextInput
+                      style={styles.input}
+                      placeholder="Digite ou leia o código"
+                      placeholderTextColor={
+                        COLORS.placeholder
+                      }
+                      value={
+                        formulario.codigoBarras
+                      }
+                      onChangeText={(valor) =>
+                        onChange(
+                          'codigoBarras',
+                          valor
+                        )
+                      }
+                      keyboardType="numeric"
+                      editable={!salvando}
+                    />
+
+                    <TouchableOpacity
+                      style={styles.scannerButton}
+                      onPress={onOpenScanner}
+                      disabled={salvando}
+                      activeOpacity={0.75}
+                    >
+                      <Ionicons
+                        name="scan-outline"
+                        size={22}
+                        color={COLORS.primary}
+                      />
+                    </TouchableOpacity>
+                  </View>
+                </View>
+
+                <View style={styles.fieldGroup}>
+                  <View style={styles.labelRow}>
+                    <Ionicons
+                      name="scale-outline"
+                      size={18}
+                      color={COLORS.primary}
+                    />
+
+                    <Text style={styles.label}>
+                      Unidade de medida
+                    </Text>
+                  </View>
+
+                  <View style={styles.unitGrid}>
+                    {UNIDADES_MEDIDA_ESTOQUE.map(
+                      (unidade) => {
+                        const selecionada =
+                          formulario.unidadeMedida ===
+                          unidade;
+
+                        return (
+                          <TouchableOpacity
+                            key={unidade}
+                            style={[
+                              styles.unitButton,
+                              selecionada &&
+                                styles.unitButtonSelected,
+                            ]}
+                            onPress={() =>
+                              onChange(
+                                'unidadeMedida',
+                                unidade
+                              )
+                            }
+                            disabled={salvando}
+                            activeOpacity={0.75}
+                          >
+                            <Text
+                              style={[
+                                styles.unitButtonText,
+                                selecionada &&
+                                  styles.unitButtonTextSelected,
+                              ]}
+                            >
+                              {ROTULOS[unidade]}
+                            </Text>
+                          </TouchableOpacity>
+                        );
+                      }
+                    )}
+                  </View>
+                </View>
+
+                <View style={styles.infoBox}>
+                  <View style={styles.infoIcon}>
+                    <Ionicons
+                      name="information-circle-outline"
+                      size={22}
+                      color={COLORS.primary}
+                    />
+                  </View>
+
+                  <Text style={styles.infoText}>
+                    {cadastro
+                      ? 'O produto será criado com quantidade e preços zerados. As entradas serão registradas pelo módulo de Compras.'
+                      : 'A quantidade e os preços são atualizados por compras, vendas e cancelamentos.'}
+                  </Text>
+                </View>
+              </ScrollView>
+
+              <View style={styles.footer}>
+                <TouchableOpacity
+                  style={[
+                    styles.footerButton,
+                    styles.secondaryButton,
+                  ]}
+                  onPress={onClose}
+                  disabled={salvando}
+                  activeOpacity={0.8}
+                >
+                  <Text
+                    style={styles.secondaryButtonText}
+                  >
+                    Cancelar
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[
+                    styles.footerButton,
+                    styles.primaryButton,
+                    salvando &&
+                      styles.buttonDisabled,
+                  ]}
+                  onPress={onSave}
+                  disabled={salvando}
+                  activeOpacity={0.82}
+                >
+                  {salvando ? (
+                    <ActivityIndicator
+                      size="small"
+                      color="#FFFFFF"
+                    />
+                  ) : (
+                    <>
+                      <Ionicons
+                        name="checkmark-circle-outline"
+                        size={21}
+                        color="#FFFFFF"
+                      />
+
+                      <Text
+                        style={styles.primaryButtonText}
+                      >
+                        Salvar
+                      </Text>
+                    </>
+                  )}
+                </TouchableOpacity>
+              </View>
             </View>
-          </ScrollView>
-        </View>
-      </View>
+          </View>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
     </Modal>
   );
 }
 
 const styles = StyleSheet.create({
-  modalOverlay: {
+  safeArea: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: 'rgba(24, 16, 20, 0.48)',
   },
-  modalContent: {
-    width: '90%',
-    maxHeight: '90%',
-    backgroundColor: '#fff',
-    borderRadius: 14,
-    padding: 20,
+
+  keyboardContainer: {
+    flex: 1,
   },
-  modalTitleRow: {
+
+  overlay: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(24, 16, 20, 0.48)',
+  },
+
+  sheet: {
+    width: '100%',
+    maxHeight: '92%',
+    backgroundColor: COLORS.background,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    overflow: 'hidden',
+  },
+
+  handle: {
+    alignSelf: 'center',
+    width: 46,
+    height: 5,
+    borderRadius: 3,
+    backgroundColor: '#E8DDE1',
+    marginTop: 10,
+  },
+
+  header: {
+    minHeight: 86,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: 7,
-    marginBottom: 15,
+    paddingHorizontal: 18,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+    backgroundColor: COLORS.surface,
   },
-  modalTitle: {
-    fontSize: 18,
+
+  headerIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: COLORS.primarySoft,
+    marginRight: 12,
+  },
+
+  headerText: {
+    flex: 1,
+  },
+
+  title: {
+    color: COLORS.textPrimary,
+    fontSize: 20,
     fontWeight: '900',
-    color: '#1a1a1a',
-    letterSpacing: 1,
   },
-  formScrollContent: { paddingBottom: 2 },
-  inputLabel: {
-    color: '#1a1a1a',
-    fontSize: 13,
-    fontWeight: '800',
-    marginBottom: 6,
+
+  subtitle: {
+    color: COLORS.textSecondary,
+    fontSize: 12,
+    marginTop: 3,
   },
-  inputLabelSemMargem: {
-    color: '#1a1a1a',
-    fontSize: 13,
-    fontWeight: '800',
-  },
-  input: {
-    backgroundColor: '#f5f5f5',
-    borderRadius: 9,
-    borderWidth: 1,
-    borderColor: '#ccc',
-    padding: 12,
-    marginBottom: 14,
-    color: '#111',
-  },
-  inputDisabled: {
-    backgroundColor: '#e8e8e8',
-    color: '#777',
-  },
-  inputComIconeContainer: {
-    minHeight: 48,
-    backgroundColor: '#f5f5f5',
-    borderRadius: 9,
-    borderWidth: 1,
-    borderColor: '#ccc',
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 11,
-    marginBottom: 14,
-  },
-  inputComIcone: {
-    flex: 1,
-    color: '#111',
-    paddingHorizontal: 8,
-  },
-  inputIconButton: {
-    padding: 5,
+
+  closeButton: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: '#F7F1F3',
+    marginLeft: 10,
   },
-  labelComIcone: {
+
+  scroll: {
+    flexGrow: 0,
+  },
+
+  scrollContent: {
+    paddingHorizontal: 18,
+    paddingTop: 20,
+    paddingBottom: 22,
+  },
+
+  fieldGroup: {
+    marginBottom: 18,
+  },
+
+  labelRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
+    gap: 7,
     marginBottom: 8,
   },
-  unidadeContainer: {
+
+  label: {
+    color: COLORS.textPrimary,
+    fontSize: 13,
+    fontWeight: '800',
+    marginBottom: 8,
+  },
+
+  inputContainer: {
+    minHeight: 56,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.surface,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: 16,
+    paddingHorizontal: 14,
+    gap: 10,
+  },
+
+  inputDisabled: {
+    backgroundColor: '#F6F1F3',
+  },
+
+  input: {
+    flex: 1,
+    minHeight: 54,
+    color: COLORS.textPrimary,
+    fontSize: 14,
+    fontWeight: '500',
+  },
+
+  disabledText: {
+    color: COLORS.textSecondary,
+  },
+
+  scannerButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: COLORS.primarySoft,
+  },
+
+  unitGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 7,
-    marginBottom: 14,
+    gap: 9,
   },
-  unidadeButton: {
-    minWidth: 55,
-    paddingHorizontal: 11,
-    paddingVertical: 9,
-    borderRadius: 9,
-    borderWidth: 1,
-    borderColor: '#bbb',
-    backgroundColor: '#f5f5f5',
+
+  unitButton: {
+    minWidth: 68,
+    minHeight: 43,
     alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: COLORS.surface,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: 13,
+    paddingHorizontal: 13,
   },
-  unidadeButtonSelected: {
-    backgroundColor: '#111',
-    borderColor: '#111',
+
+  unitButtonSelected: {
+    backgroundColor: COLORS.primary,
+    borderColor: COLORS.primary,
   },
-  unidadeButtonText: {
-    color: '#333',
+
+  unitButtonText: {
+    color: COLORS.textSecondary,
     fontSize: 12,
     fontWeight: '800',
   },
-  unidadeButtonTextSelected: { color: '#fff' },
+
+  unitButtonTextSelected: {
+    color: '#FFFFFF',
+  },
+
   infoBox: {
     flexDirection: 'row',
-    gap: 8,
-    backgroundColor: '#ededed',
-    borderRadius: 9,
-    padding: 12,
-    marginBottom: 16,
+    alignItems: 'flex-start',
+    backgroundColor: '#FFF7F9',
+    borderWidth: 1,
+    borderColor: '#FFD1DD',
+    borderRadius: 16,
+    padding: 14,
   },
+
+  infoIcon: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: COLORS.primarySoft,
+    marginRight: 10,
+  },
+
   infoText: {
     flex: 1,
-    color: '#444',
+    color: COLORS.textSecondary,
     fontSize: 12,
-    lineHeight: 17,
+    lineHeight: 18,
   },
-  modalButtons: {
+
+  footer: {
     flexDirection: 'row',
-    gap: 10,
+    gap: 12,
+    paddingHorizontal: 18,
+    paddingTop: 14,
+    paddingBottom: 18,
+    backgroundColor: COLORS.surface,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.border,
   },
-  modalButton: {
+
+  footerButton: {
     flex: 1,
-    minHeight: 44,
-    borderRadius: 9,
+    minHeight: 52,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 6,
+    gap: 8,
+    borderRadius: 16,
   },
-  cancelButton: { backgroundColor: '#aaa' },
-  saveButton: { backgroundColor: '#111' },
-  buttonText: {
-    color: '#fff',
+
+  secondaryButton: {
+    backgroundColor: COLORS.surface,
+    borderWidth: 1,
+    borderColor: '#DCCFD4',
+  },
+
+  primaryButton: {
+    backgroundColor: COLORS.primary,
+    shadowColor: COLORS.primary,
+    shadowOffset: {
+      width: 0,
+      height: 5,
+    },
+    shadowOpacity: 0.22,
+    shadowRadius: 9,
+    elevation: 4,
+  },
+
+  secondaryButtonText: {
+    color: COLORS.textPrimary,
     fontSize: 14,
     fontWeight: '800',
+  },
+
+  primaryButtonText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '900',
+  },
+
+  buttonDisabled: {
+    opacity: 0.6,
   },
 });

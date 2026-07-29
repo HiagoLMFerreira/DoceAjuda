@@ -13,6 +13,9 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import BarcodeScannerModal from '../../../../shared/scanner/presentation/BarcodeScannerModal';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import AppBottomNavigation from '../../../../shared/components/AppBottomNavigation';
+import { useAuth } from '../../../auth/presentation/useAuth';
 import {
   buscarCompraPorId,
   cadastrarCompra,
@@ -75,6 +78,7 @@ function dataHoje(): string {
 
 export default function ComprasScreen() {
   const navigation = useNavigation<any>();
+  const { logout } = useAuth();
 
   const [compras, setCompras] = useState<CompraDatabase[]>([]);
   const [produtos, setProdutos] = useState<ProdutoEstoque[]>([]);
@@ -317,6 +321,34 @@ export default function ComprasScreen() {
     ]);
   };
 
+  const confirmarLogout = () => {
+    Alert.alert(
+      'Sair',
+      'Deseja realmente sair da sua conta?',
+      [
+        {
+          text: 'Cancelar',
+          style: 'cancel',
+        },
+        {
+          text: 'Sair',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await logout();
+              navigation.replace('Login');
+            } catch {
+              Alert.alert(
+                'Erro',
+                'Não foi possível sair da conta.'
+              );
+            }
+          },
+        },
+      ]
+    );
+  };
+
   const produtosFiltrados = useMemo(() => {
     const texto = buscaProduto.trim().toLowerCase();
     if (!texto) return produtos;
@@ -328,14 +360,18 @@ export default function ComprasScreen() {
   }, [produtos, buscaProduto]);
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView
+      style={styles.safeArea}
+      edges={['top', 'left', 'right']}
+    >
+      <View style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity style={styles.botaoVoltar} onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={22} color="#fff" />
+          <Ionicons name="arrow-back" size={22} color="#FF3B73" />
         </TouchableOpacity>
         <View style={styles.headerTituloLinha}>
           <Ionicons name="cart-outline" size={22} color="#111" />
-          <Text style={styles.headerTitulo}>COMPRAS</Text>
+          <Text style={styles.headerTitulo}>Compras</Text>
         </View>
         <View style={styles.espacoHeader} />
       </View>
@@ -355,7 +391,7 @@ export default function ComprasScreen() {
 
       <TouchableOpacity style={styles.botaoPrincipal} onPress={abrirNovaCompra}>
         <Ionicons name="add-circle-outline" size={21} color="#fff" />
-        <Text style={styles.botaoPrincipalTexto}>NOVA COMPRA</Text>
+        <Text style={styles.botaoPrincipalTexto}>Nova compra</Text>
       </TouchableOpacity>
 
       <View style={styles.cabecalhoGrid}>
@@ -384,7 +420,7 @@ export default function ComprasScreen() {
         <View style={styles.overlay}>
           <View style={styles.modalGrande}>
             <ScrollView showsVerticalScrollIndicator={false}>
-              <Text style={styles.modalTitulo}>NOVA COMPRA</Text>
+              <Text style={styles.modalTitulo}>Nova compra</Text>
               <Text style={styles.label}>Data da compra</Text>
               <TextInput style={styles.input} value={dataCompra} onChangeText={setDataCompra} placeholder="AAAA-MM-DD" />
               <Text style={styles.label}>Observações</Text>
@@ -392,7 +428,7 @@ export default function ComprasScreen() {
 
               <TouchableOpacity style={styles.botaoSecundario} onPress={abrirNovoItem}>
                 <Ionicons name="add" size={20} color="#111" />
-                <Text style={styles.botaoSecundarioTexto}>ADICIONAR ITEM</Text>
+                <Text style={styles.botaoSecundarioTexto}>Adicionar item</Text>
               </TouchableOpacity>
 
               {itens.map((item, indice) => (
@@ -413,13 +449,13 @@ export default function ComprasScreen() {
               ))}
 
               <View style={styles.totalBox}>
-                <Text style={styles.totalLabel}>TOTAL DA COMPRA</Text>
+                <Text style={styles.totalLabel}>Total da compra</Text>
                 <Text style={styles.totalValor}>{formatarMoeda(totalCompra)}</Text>
               </View>
 
               <View style={styles.botoesModal}>
                 <TouchableOpacity style={styles.botaoCancelar} onPress={() => setModalFormulario(false)}><Text style={styles.botaoCancelarTexto}>FECHAR</Text></TouchableOpacity>
-                <TouchableOpacity style={styles.botaoSalvar} onPress={confirmarCompra}><Ionicons name="checkmark-circle-outline" size={20} color="#fff" /><Text style={styles.botaoSalvarTexto}>CONFIRMAR</Text></TouchableOpacity>
+                <TouchableOpacity style={styles.botaoSalvar} onPress={confirmarCompra}><Ionicons name="checkmark-circle-outline" size={20} color="#fff" /><Text style={styles.botaoSalvarTexto}>Confirmar</Text></TouchableOpacity>
               </View>
             </ScrollView>
           </View>
@@ -456,7 +492,7 @@ export default function ComprasScreen() {
 
               <View style={styles.botoesModal}>
                 <TouchableOpacity style={styles.botaoCancelar} onPress={() => { setModalItem(false); limparItem(); }}><Text style={styles.botaoCancelarTexto}>CANCELAR</Text></TouchableOpacity>
-                <TouchableOpacity style={styles.botaoSalvar} onPress={salvarItem}><Text style={styles.botaoSalvarTexto}>SALVAR ITEM</Text></TouchableOpacity>
+                <TouchableOpacity style={styles.botaoSalvar} onPress={salvarItem}><Text style={styles.botaoSalvarTexto}>Salvar item</Text></TouchableOpacity>
               </View>
             </ScrollView>
           </View>
@@ -466,7 +502,7 @@ export default function ComprasScreen() {
       <Modal visible={modalProdutos} transparent animationType="fade" onRequestClose={() => setModalProdutos(false)}>
         <View style={styles.overlay}>
           <View style={styles.modalMedio}>
-            <Text style={styles.modalTitulo}>SELECIONAR PRODUTO</Text>
+            <Text style={styles.modalTitulo}>Selecionar produto</Text>
             <View style={styles.buscaContainer}>
               <TextInput
                 style={styles.buscaInput}
@@ -511,7 +547,7 @@ export default function ComprasScreen() {
         <View style={styles.overlay}>
           <View style={styles.modalGrande}>
             <ScrollView showsVerticalScrollIndicator={false}>
-              <Text style={styles.modalTitulo}>DETALHES DA COMPRA</Text>
+              <Text style={styles.modalTitulo}>Detalhes da compra</Text>
               {detalhes && (
                 <>
                   <Info rotulo="Compra" valor={`#${detalhes.id}`} />
@@ -532,10 +568,10 @@ export default function ComprasScreen() {
                   <View style={styles.totalBox}><Text style={styles.totalLabel}>TOTAL</Text><Text style={styles.totalValor}>{formatarMoeda(detalhes.valor_total)}</Text></View>
 
                   {detalhes.status === 'CONFIRMADA' && (
-                    <TouchableOpacity style={styles.botaoPerigo} onPress={confirmarCancelamento}><Ionicons name="close-circle-outline" size={20} color="#fff" /><Text style={styles.botaoPerigoTexto}>CANCELAR COMPRA</Text></TouchableOpacity>
+                    <TouchableOpacity style={styles.botaoPerigo} onPress={confirmarCancelamento}><Ionicons name="close-circle-outline" size={20} color="#fff" /><Text style={styles.botaoPerigoTexto}>Cancelar compra</Text></TouchableOpacity>
                   )}
                   {detalhes.status === 'CANCELADA' && (
-                    <TouchableOpacity style={styles.botaoPerigo} onPress={confirmarExclusao}><Ionicons name="trash-outline" size={20} color="#fff" /><Text style={styles.botaoPerigoTexto}>EXCLUIR COMPRA</Text></TouchableOpacity>
+                    <TouchableOpacity style={styles.botaoPerigo} onPress={confirmarExclusao}><Ionicons name="trash-outline" size={20} color="#fff" /><Text style={styles.botaoPerigoTexto}>Excluir compra</Text></TouchableOpacity>
                   )}
                   <TouchableOpacity style={styles.botaoCancelarInteiro} onPress={() => setModalDetalhes(false)}><Text style={styles.botaoCancelarTexto}>FECHAR</Text></TouchableOpacity>
                 </>
@@ -544,7 +580,25 @@ export default function ComprasScreen() {
           </View>
         </View>
       </Modal>
-    </View>
+      </View>
+
+      <AppBottomNavigation
+        activeItem="menu"
+        onInicio={() =>
+          navigation.navigate('Dashboard')
+        }
+        onVendas={() =>
+          navigation.navigate('Vendas')
+        }
+        onMenu={() =>
+          navigation.navigate('Menu')
+        }
+        onRelatorios={() =>
+          navigation.navigate('Relatorios')
+        }
+        onSair={confirmarLogout}
+      />
+    </SafeAreaView>
   );
 }
 
@@ -562,29 +616,44 @@ function Info({ rotulo, valor }: { rotulo: string; valor: string }) {
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#FFFDFE',
+  },
+
   container: {
     flex: 1,
-    backgroundColor: '#ebebeb',
+    backgroundColor: '#FFFDFE',
     paddingHorizontal: 16,
-    paddingTop: 50,
+    paddingTop: 12,
   },
 
   header: {
-    minHeight: 58,
-    borderRadius: 14,
-    backgroundColor: '#d1d1d1',
+    minHeight: 76,
+    borderRadius: 18,
+    backgroundColor: '#FFFFFF',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 10,
+    paddingHorizontal: 12,
     marginBottom: 14,
+    borderWidth: 1,
+    borderColor: '#F1E7EA',
+    shadowColor: '#5A3844',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.06,
+    shadowRadius: 9,
+    elevation: 2,
   },
 
   botaoVoltar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#111',
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#FFF0F4',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -592,70 +661,84 @@ const styles = StyleSheet.create({
   headerTituloLinha: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 7,
+    gap: 8,
   },
 
   headerTitulo: {
     fontSize: 20,
-    fontWeight: '800',
-    color: '#111',
+    fontWeight: '900',
+    color: '#242329',
   },
 
   espacoHeader: {
-    width: 40,
+    width: 44,
   },
 
   buscaContainer: {
-    minHeight: 48,
-    backgroundColor: '#fff',
-    borderRadius: 12,
+    minHeight: 54,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#ccc',
-    paddingHorizontal: 12,
+    borderColor: '#F1E7EA',
+    paddingHorizontal: 14,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 9,
     marginBottom: 12,
   },
 
   buscaInput: {
     flex: 1,
-    color: '#111',
+    minHeight: 52,
+    color: '#242329',
     fontSize: 14,
+    fontWeight: '500',
   },
 
   botaoScannerBusca: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: '#FFF0F4',
   },
 
   botaoPrincipal: {
-    minHeight: 48,
-    borderRadius: 12,
-    backgroundColor: '#111',
+    minHeight: 53,
+    borderRadius: 16,
+    backgroundColor: '#FF3B73',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    marginBottom: 12,
+    marginBottom: 14,
+    shadowColor: '#FF3B73',
+    shadowOffset: {
+      width: 0,
+      height: 6,
+    },
+    shadowOpacity: 0.23,
+    shadowRadius: 10,
+    elevation: 5,
   },
 
   botaoPrincipalTexto: {
-    color: '#fff',
-    fontWeight: '800',
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '900',
   },
 
   cabecalhoGrid: {
-    minHeight: 42,
-    backgroundColor: '#cfcfcf',
-    borderRadius: 10,
+    minHeight: 43,
+    backgroundColor: '#FFF0F4',
+    borderRadius: 12,
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 8,
-    marginBottom: 7,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: '#FFD5E0',
   },
 
   cabecalhoCelula: {
@@ -666,153 +749,151 @@ const styles = StyleSheet.create({
   },
 
   cabecalhoTexto: {
-    fontSize: 11,
-    fontWeight: '800',
-    color: '#222',
+    fontSize: 10,
+    fontWeight: '900',
+    color: '#242329',
   },
 
   lista: {
-    paddingBottom: 90,
+    paddingBottom: 18,
   },
 
   card: {
-    minHeight: 58,
-    backgroundColor: '#fff',
-    borderRadius: 12,
+    minHeight: 64,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 14,
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 8,
-    marginBottom: 7,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: '#F1E7EA',
+    shadowColor: '#5A3844',
+    shadowOffset: {
+      width: 0,
+      height: 3,
+    },
+    shadowOpacity: 0.04,
+    shadowRadius: 7,
+    elevation: 2,
   },
 
   celula: {
     textAlign: 'center',
-    fontSize: 12,
-    color: '#222',
+    fontSize: 11,
+    color: '#242329',
   },
 
   status: {
-    fontWeight: '800',
-    color: '#237a39',
+    fontWeight: '900',
+    color: '#2D9449',
   },
 
   statusCancelada: {
-    color: '#b00020',
+    color: '#D93C56',
   },
 
   valor: {
-    fontWeight: '700',
+    fontWeight: '900',
   },
 
   vazio: {
     textAlign: 'center',
-    marginTop: 35,
-    color: '#666',
+    marginTop: 45,
+    color: '#737178',
+    fontSize: 13,
   },
 
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.55)',
+    backgroundColor: 'rgba(24, 16, 20, 0.48)',
     alignItems: 'center',
-    justifyContent: 'center',
-    padding: 16,
+    justifyContent: 'flex-end',
   },
 
   modalGrande: {
     width: '100%',
-    maxHeight: '90%',
-    backgroundColor: '#f5f5f5',
-    borderRadius: 18,
-    padding: 18,
+    maxHeight: '92%',
+    backgroundColor: '#FFFDFE',
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    paddingHorizontal: 18,
+    paddingTop: 18,
+    paddingBottom: 18,
   },
 
   modalMedio: {
     width: '100%',
-    maxHeight: '84%',
-    backgroundColor: '#f5f5f5',
-    borderRadius: 18,
-    padding: 18,
+    maxHeight: '88%',
+    backgroundColor: '#FFFDFE',
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    paddingHorizontal: 18,
+    paddingTop: 18,
+    paddingBottom: 18,
   },
 
   modalTitulo: {
-    fontSize: 19,
+    fontSize: 20,
     fontWeight: '900',
-    textAlign: 'center',
-    color: '#111',
+    textAlign: 'left',
+    color: '#242329',
     marginBottom: 18,
   },
 
   label: {
-    fontWeight: '700',
-    color: '#333',
-    marginBottom: 6,
-    marginTop: 5,
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#242329',
+    marginBottom: 7,
+    marginTop: 6,
   },
 
   input: {
-    minHeight: 48,
-    backgroundColor: '#fff',
+    minHeight: 54,
+    backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: '#c7c7c7',
-    borderRadius: 11,
-    paddingHorizontal: 12,
-    color: '#111',
-    marginBottom: 12,
+    borderColor: '#F1E7EA',
+    borderRadius: 16,
+    paddingHorizontal: 14,
+    color: '#242329',
+    fontSize: 14,
+    marginBottom: 13,
   },
 
   inputMultilinha: {
-    minHeight: 80,
+    minHeight: 92,
+    paddingTop: 13,
     textAlignVertical: 'top',
-    paddingTop: 12,
-  },
-
-  seletor: {
-    minHeight: 48,
-    backgroundColor: '#fff',
-    borderWidth: 1,
-    borderColor: '#c7c7c7',
-    borderRadius: 11,
-    paddingHorizontal: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 12,
-  },
-
-  seletorTexto: {
-    color: '#111',
-    flex: 1,
-  },
-
-  placeholder: {
-    color: '#888',
-    flex: 1,
   },
 
   botaoSecundario: {
-    minHeight: 46,
-    borderWidth: 1.5,
-    borderColor: '#111',
-    borderRadius: 11,
+    minHeight: 50,
+    borderRadius: 15,
+    backgroundColor: '#FFF0F4',
+    borderWidth: 1,
+    borderColor: '#FFD1DD',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 7,
-    marginVertical: 8,
+    marginVertical: 10,
   },
 
   botaoSecundarioTexto: {
-    color: '#111',
-    fontWeight: '800',
+    color: '#FF3B73',
+    fontSize: 13,
+    fontWeight: '900',
   },
 
   itemCompra: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 12,
-    marginVertical: 5,
     flexDirection: 'row',
-    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#F1E7EA',
+    padding: 14,
+    marginBottom: 10,
   },
 
   itemTextoArea: {
@@ -820,194 +901,249 @@ const styles = StyleSheet.create({
   },
 
   itemNome: {
-    fontWeight: '800',
-    color: '#111',
-    marginBottom: 3,
+    color: '#242329',
+    fontSize: 14,
+    fontWeight: '900',
   },
 
   itemDescricao: {
-    color: '#666',
-    fontSize: 12,
-    marginTop: 2,
+    color: '#737178',
+    fontSize: 11,
+    lineHeight: 17,
+    marginTop: 3,
   },
 
   itemSubtotal: {
-    fontWeight: '800',
-    color: '#111',
-    marginTop: 5,
+    color: '#FF3B73',
+    fontSize: 13,
+    fontWeight: '900',
+    marginTop: 6,
   },
 
   acoesItem: {
-    flexDirection: 'row',
-    gap: 13,
-    paddingLeft: 10,
+    justifyContent: 'space-around',
+    alignItems: 'center',
+    paddingLeft: 12,
   },
 
   totalBox: {
-    marginTop: 12,
-    backgroundColor: '#dedede',
-    borderRadius: 12,
-    padding: 14,
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#FFF7F9',
+    borderWidth: 1,
+    borderColor: '#FFD1DD',
+    borderRadius: 17,
+    padding: 15,
+    marginTop: 8,
+    marginBottom: 14,
   },
 
   totalLabel: {
-    fontWeight: '900',
-    color: '#111',
+    color: '#737178',
+    fontSize: 12,
+    fontWeight: '800',
   },
 
   totalValor: {
-    fontSize: 18,
+    color: '#FF3B73',
+    fontSize: 19,
     fontWeight: '900',
-    color: '#111',
   },
 
   botoesModal: {
     flexDirection: 'row',
-    gap: 10,
-    marginTop: 18,
+    gap: 12,
+    marginTop: 12,
   },
 
   botaoCancelar: {
     flex: 1,
-    minHeight: 48,
-    borderRadius: 11,
-    backgroundColor: '#d4d4d4',
+    minHeight: 52,
+    borderRadius: 16,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#DCCFD4',
     alignItems: 'center',
     justifyContent: 'center',
   },
 
+  botaoCancelarInteiro: {
+    minHeight: 52,
+    borderRadius: 16,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#DCCFD4',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 12,
+  },
+
   botaoCancelarTexto: {
-    fontWeight: '800',
-    color: '#222',
+    color: '#242329',
+    fontSize: 13,
+    fontWeight: '900',
   },
 
   botaoSalvar: {
     flex: 1,
-    minHeight: 48,
-    borderRadius: 11,
-    backgroundColor: '#111',
+    minHeight: 52,
+    borderRadius: 16,
+    backgroundColor: '#FF3B73',
     flexDirection: 'row',
-    gap: 6,
     alignItems: 'center',
     justifyContent: 'center',
+    gap: 7,
   },
 
   botaoSalvarTexto: {
-    fontWeight: '800',
-    color: '#fff',
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '900',
+  },
+
+  seletor: {
+    minHeight: 54,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#F1E7EA',
+    borderRadius: 16,
+    paddingHorizontal: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 13,
+  },
+
+  seletorTexto: {
+    flex: 1,
+    color: '#242329',
+    fontSize: 14,
+    fontWeight: '700',
+  },
+
+  placeholder: {
+    flex: 1,
+    color: '#9A979E',
+    fontSize: 14,
   },
 
   opcoesUnidade: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 7,
-    marginBottom: 8,
+    gap: 8,
+    marginBottom: 9,
   },
 
   unidadeChip: {
-    paddingHorizontal: 13,
-    paddingVertical: 9,
-    borderRadius: 18,
+    minWidth: 62,
+    minHeight: 42,
+    borderRadius: 13,
     borderWidth: 1,
-    borderColor: '#aaa',
-    backgroundColor: '#fff',
+    borderColor: '#F1E7EA',
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 12,
   },
 
   unidadeChipAtiva: {
-    backgroundColor: '#111',
-    borderColor: '#111',
+    backgroundColor: '#FF3B73',
+    borderColor: '#FF3B73',
   },
 
   unidadeChipTexto: {
-    color: '#333',
-    fontWeight: '700',
+    color: '#737178',
+    fontSize: 12,
+    fontWeight: '800',
   },
 
   unidadeChipTextoAtivo: {
-    color: '#fff',
+    color: '#FFFFFF',
   },
 
   ajuda: {
-    color: '#666',
-    fontSize: 12,
-    marginBottom: 13,
+    color: '#737178',
+    fontSize: 11,
+    lineHeight: 17,
+    backgroundColor: '#FFF7F9',
+    borderRadius: 13,
+    padding: 12,
+    marginBottom: 10,
   },
 
   listaProdutos: {
-    maxHeight: 390,
+    maxHeight: 370,
   },
 
   produtoOpcao: {
-    minHeight: 58,
-    backgroundColor: '#fff',
-    borderRadius: 11,
-    paddingHorizontal: 12,
-    marginBottom: 7,
+    minHeight: 66,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-  },
-
-  botaoCancelarInteiro: {
-    minHeight: 48,
-    borderRadius: 11,
-    backgroundColor: '#d4d4d4',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 14,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#F1E7EA',
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    marginBottom: 8,
   },
 
   infoLinha: {
+    minHeight: 58,
     flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'space-between',
-    gap: 15,
-    paddingVertical: 8,
+    gap: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#ddd',
+    borderBottomColor: '#F6EDF0',
   },
 
   infoRotulo: {
-    color: '#555',
+    color: '#737178',
+    fontSize: 12,
     fontWeight: '700',
   },
 
   infoValor: {
     flex: 1,
+    color: '#242329',
+    fontSize: 12,
+    fontWeight: '900',
     textAlign: 'right',
-    color: '#111',
-    fontWeight: '600',
   },
 
   secaoTitulo: {
+    color: '#FF3B73',
+    fontSize: 13,
     fontWeight: '900',
-    color: '#111',
     marginTop: 18,
-    marginBottom: 8,
+    marginBottom: 10,
   },
 
   itemDetalhe: {
-    backgroundColor: '#fff',
-    borderRadius: 11,
-    padding: 12,
-    marginBottom: 8,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#F1E7EA',
+    borderRadius: 16,
+    padding: 14,
+    marginBottom: 10,
   },
 
   botaoPerigo: {
-    minHeight: 48,
-    borderRadius: 11,
-    backgroundColor: '#b00020',
+    minHeight: 52,
+    borderRadius: 16,
+    backgroundColor: '#D93C56',
     flexDirection: 'row',
-    gap: 7,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 14,
+    gap: 8,
+    marginTop: 12,
   },
 
   botaoPerigoTexto: {
-    color: '#fff',
-    fontWeight: '800',
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '900',
   },
 });

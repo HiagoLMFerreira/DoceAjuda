@@ -2,18 +2,40 @@ import React from 'react';
 import {
   ActivityIndicator,
   Modal,
+  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { formatCurrency, formatDecimal } from '../../../../core/formatters';
-import type { ProdutoEstoque } from '../../domain/models/ProdutoEstoque';
+import {
+  SafeAreaView,
+} from 'react-native-safe-area-context';
+
+import {
+  formatCurrency,
+  formatDecimal,
+} from '../../../../core/formatters';
+import type {
+  ProdutoEstoque,
+} from '../../domain/models/ProdutoEstoque';
 import {
   obterNomeProduto,
   obterRotuloUnidade,
 } from '../hooks/useEstoque';
+
+const COLORS = {
+  primary: '#FF3B73',
+  primarySoft: '#FFF0F4',
+  background: '#FFFDFE',
+  surface: '#FFFFFF',
+  textPrimary: '#242329',
+  textSecondary: '#737178',
+  border: '#F1E7EA',
+  danger: '#D93C56',
+  dangerSoft: '#FFF0F3',
+};
 
 type Props = {
   visible: boolean;
@@ -32,103 +54,272 @@ export function ProdutoEstoqueDetailsModal({
   onDelete,
   onClose,
 }: Props) {
+  const zerado =
+    Number(produto?.quantidade ?? 0) <= 0;
+
   return (
     <Modal
       visible={visible}
       transparent
-      animationType="fade"
+      animationType="slide"
       onRequestClose={onClose}
+      statusBarTranslucent
     >
-      <View style={styles.modalOverlay}>
-        <View style={styles.detailsModalContent}>
-          {produto && (
-            <>
-              <View style={styles.modalTitleRow}>
-                <Ionicons name="cube-outline" size={22} color="#1a1a1a" />
-                <Text style={styles.detailsModalTitle}>
-                  DADOS DO PRODUTO
-                </Text>
-              </View>
+      <SafeAreaView
+        style={styles.safeArea}
+        edges={[
+          'top',
+          'right',
+          'bottom',
+          'left',
+        ]}
+      >
+        <View style={styles.overlay}>
+          <View style={styles.sheet}>
+            <View style={styles.handle} />
 
-              <View style={styles.detailsCard}>
-                <Detail label="ID:" value={String(produto.id)} />
-                <Detail label="Nome:" value={obterNomeProduto(produto)} />
-                <Detail label="Código:" value={produto.codigo_barras || '-'} />
-                <Detail
-                  label="Unidade:"
-                  value={obterRotuloUnidade(produto.unidade_medida)}
-                />
-                <Detail
-                  label="Quantidade:"
-                  value={`${formatDecimal(produto.quantidade)} ${obterRotuloUnidade(produto.unidade_medida)}`}
-                  danger={produto.quantidade <= 0}
-                />
-                <Detail
-                  label="Última entrada:"
-                  value={formatCurrency(produto.preco_ultima_entrada)}
-                />
-                <Detail
-                  label="Preço médio:"
-                  value={formatCurrency(produto.preco_medio)}
-                  last
-                />
-              </View>
+            {produto && (
+              <>
+                <View style={styles.header}>
+                  <View style={styles.headerIcon}>
+                    <Ionicons
+                      name="cube-outline"
+                      size={25}
+                      color={COLORS.primary}
+                    />
+                  </View>
 
-              <View style={styles.detailsButtonsRow}>
-                <TouchableOpacity
-                  style={[styles.detailsButton, styles.editButton]}
-                  onPress={onEdit}
-                  disabled={excluindo}
+                  <View style={styles.headerText}>
+                    <Text style={styles.title}>
+                      Dados do produto
+                    </Text>
+
+                    <Text
+                      style={styles.subtitle}
+                      numberOfLines={1}
+                    >
+                      {obterNomeProduto(produto)}
+                    </Text>
+                  </View>
+
+                  <TouchableOpacity
+                    style={styles.closeButton}
+                    onPress={onClose}
+                    disabled={excluindo}
+                    activeOpacity={0.75}
+                  >
+                    <Ionicons
+                      name="close"
+                      size={23}
+                      color={COLORS.textSecondary}
+                    />
+                  </TouchableOpacity>
+                </View>
+
+                <ScrollView
+                  style={styles.scroll}
+                  contentContainerStyle={
+                    styles.scrollContent
+                  }
+                  showsVerticalScrollIndicator={false}
                 >
-                  <Ionicons name="create-outline" size={19} color="#fff" />
-                  <Text style={styles.detailsButtonText}>Editar</Text>
-                </TouchableOpacity>
+                  <View style={styles.productHero}>
+                    <View style={styles.productIcon}>
+                      <Ionicons
+                        name="cube"
+                        size={32}
+                        color={COLORS.primary}
+                      />
+                    </View>
 
-                <TouchableOpacity
-                  style={[styles.detailsButton, styles.deleteButton]}
-                  onPress={onDelete}
-                  disabled={excluindo}
-                >
-                  {excluindo ? (
-                    <ActivityIndicator size="small" color="#fff" />
-                  ) : (
-                    <Ionicons name="trash-outline" size={19} color="#fff" />
-                  )}
-                  <Text style={styles.detailsButtonText}>Excluir</Text>
-                </TouchableOpacity>
-              </View>
+                    <View style={styles.productHeroText}>
+                      <Text
+                        style={styles.productName}
+                        numberOfLines={2}
+                      >
+                        {obterNomeProduto(produto)}
+                      </Text>
 
-              <TouchableOpacity
-                style={[styles.detailsCloseButton, styles.cancelButton]}
-                onPress={onClose}
-                disabled={excluindo}
-              >
-                <Ionicons name="close-circle-outline" size={19} color="#fff" />
-                <Text style={styles.detailsButtonText}>Fechar</Text>
-              </TouchableOpacity>
-            </>
-          )}
+                      <View
+                        style={[
+                          styles.statusBadge,
+                          zerado
+                            ? styles.statusBadgeDanger
+                            : styles.statusBadgeSuccess,
+                        ]}
+                      >
+                        <Text
+                          style={[
+                            styles.statusText,
+                            zerado
+                              ? styles.statusTextDanger
+                              : styles.statusTextSuccess,
+                          ]}
+                        >
+                          {zerado
+                            ? 'Sem estoque'
+                            : 'Em estoque'}
+                        </Text>
+                      </View>
+                    </View>
+                  </View>
+
+                  <View style={styles.detailsCard}>
+                    <Detail
+                      icon="key-outline"
+                      label="Identificador"
+                      value={String(produto.id)}
+                    />
+
+                    <Detail
+                      icon="barcode-outline"
+                      label="Código de barras"
+                      value={
+                        produto.codigo_barras ||
+                        'Não informado'
+                      }
+                    />
+
+                    <Detail
+                      icon="scale-outline"
+                      label="Unidade"
+                      value={obterRotuloUnidade(
+                        produto.unidade_medida
+                      )}
+                    />
+
+                    <Detail
+                      icon="layers-outline"
+                      label="Quantidade"
+                      value={`${formatDecimal(
+                        produto.quantidade
+                      )} ${obterRotuloUnidade(
+                        produto.unidade_medida
+                      )}`}
+                      danger={zerado}
+                    />
+
+                    <Detail
+                      icon="receipt-outline"
+                      label="Última entrada"
+                      value={formatCurrency(
+                        produto.preco_ultima_entrada
+                      )}
+                    />
+
+                    <Detail
+                      icon="cash-outline"
+                      label="Preço médio"
+                      value={formatCurrency(
+                        produto.preco_medio
+                      )}
+                      last
+                    />
+                  </View>
+                </ScrollView>
+
+                <View style={styles.footer}>
+                  <TouchableOpacity
+                    style={[
+                      styles.footerButton,
+                      styles.secondaryButton,
+                    ]}
+                    onPress={onEdit}
+                    disabled={excluindo}
+                    activeOpacity={0.8}
+                  >
+                    <Ionicons
+                      name="create-outline"
+                      size={20}
+                      color={COLORS.primary}
+                    />
+
+                    <Text
+                      style={styles.secondaryButtonText}
+                    >
+                      Editar
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[
+                      styles.footerButton,
+                      styles.deleteButton,
+                    ]}
+                    onPress={onDelete}
+                    disabled={excluindo}
+                    activeOpacity={0.8}
+                  >
+                    {excluindo ? (
+                      <ActivityIndicator
+                        size="small"
+                        color="#FFFFFF"
+                      />
+                    ) : (
+                      <Ionicons
+                        name="trash-outline"
+                        size={20}
+                        color="#FFFFFF"
+                      />
+                    )}
+
+                    <Text
+                      style={styles.deleteButtonText}
+                    >
+                      Excluir
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </>
+            )}
+          </View>
         </View>
-      </View>
+      </SafeAreaView>
     </Modal>
   );
 }
 
 function Detail({
+  icon,
   label,
   value,
-  danger,
-  last,
+  danger = false,
+  last = false,
 }: {
+  icon: keyof typeof Ionicons.glyphMap;
   label: string;
   value: string;
   danger?: boolean;
   last?: boolean;
 }) {
   return (
-    <View style={[styles.detailRow, last && styles.detailRowLast]}>
-      <Text style={styles.detailLabel}>{label}</Text>
-      <Text style={[styles.detailValue, danger && styles.textoZerado]}>
+    <View
+      style={[
+        styles.detailRow,
+        last && styles.detailRowLast,
+      ]}
+    >
+      <View style={styles.detailLabelArea}>
+        <View style={styles.detailIcon}>
+          <Ionicons
+            name={icon}
+            size={18}
+            color={COLORS.primary}
+          />
+        </View>
+
+        <Text style={styles.detailLabel}>
+          {label}
+        </Text>
+      </View>
+
+      <Text
+        style={[
+          styles.detailValue,
+          danger && styles.detailValueDanger,
+        ]}
+        numberOfLines={2}
+      >
         {value}
       </Text>
     </View>
@@ -136,88 +327,248 @@ function Detail({
 }
 
 const styles = StyleSheet.create({
-  modalOverlay: {
+  safeArea: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: 'rgba(24, 16, 20, 0.48)',
   },
-  detailsModalContent: {
-    width: '88%',
-    backgroundColor: '#fff',
-    borderRadius: 14,
-    padding: 20,
+
+  overlay: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(24, 16, 20, 0.48)',
   },
-  modalTitleRow: {
+
+  sheet: {
+    width: '100%',
+    maxHeight: '90%',
+    backgroundColor: COLORS.background,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    overflow: 'hidden',
+  },
+
+  handle: {
+    alignSelf: 'center',
+    width: 46,
+    height: 5,
+    borderRadius: 3,
+    backgroundColor: '#E8DDE1',
+    marginTop: 10,
+  },
+
+  header: {
+    minHeight: 86,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: 7,
-    marginBottom: 15,
+    paddingHorizontal: 18,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+    backgroundColor: COLORS.surface,
   },
-  detailsModalTitle: {
-    fontSize: 18,
+
+  headerIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: COLORS.primarySoft,
+    marginRight: 12,
+  },
+
+  headerText: {
+    flex: 1,
+  },
+
+  title: {
+    color: COLORS.textPrimary,
+    fontSize: 20,
     fontWeight: '900',
-    color: '#1a1a1a',
-    letterSpacing: 1,
   },
-  detailsCard: {
-    backgroundColor: '#f5f5f5',
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    marginBottom: 15,
+
+  subtitle: {
+    color: COLORS.textSecondary,
+    fontSize: 12,
+    marginTop: 3,
   },
-  detailRow: {
+
+  closeButton: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#F7F1F3',
+    marginLeft: 10,
+  },
+
+  scroll: {
+    flexGrow: 0,
+  },
+
+  scrollContent: {
+    paddingHorizontal: 18,
+    paddingTop: 20,
+    paddingBottom: 22,
+  },
+
+  productHero: {
     flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFF7F9',
+    borderWidth: 1,
+    borderColor: '#FFD1DD',
+    borderRadius: 18,
+    padding: 15,
+    marginBottom: 16,
+  },
+
+  productIcon: {
+    width: 58,
+    height: 58,
+    borderRadius: 29,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: COLORS.primarySoft,
+    marginRight: 13,
+  },
+
+  productHeroText: {
+    flex: 1,
+    alignItems: 'flex-start',
+  },
+
+  productName: {
+    color: COLORS.textPrimary,
+    fontSize: 17,
+    fontWeight: '900',
+  },
+
+  statusBadge: {
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    marginTop: 7,
+  },
+
+  statusBadgeSuccess: {
+    backgroundColor: '#EDF8EE',
+  },
+
+  statusBadgeDanger: {
+    backgroundColor: COLORS.dangerSoft,
+  },
+
+  statusText: {
+    fontSize: 10,
+    fontWeight: '900',
+  },
+
+  statusTextSuccess: {
+    color: '#2D9449',
+  },
+
+  statusTextDanger: {
+    color: COLORS.danger,
+  },
+
+  detailsCard: {
+    backgroundColor: COLORS.surface,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: 18,
+    paddingHorizontal: 14,
+  },
+
+  detailRow: {
+    minHeight: 64,
+    flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'space-between',
     gap: 12,
-    paddingVertical: 11,
     borderBottomWidth: 1,
-    borderBottomColor: '#ddd',
+    borderBottomColor: '#F6EDF0',
+    paddingVertical: 11,
   },
-  detailRowLast: { borderBottomWidth: 0 },
-  detailLabel: {
+
+  detailRowLast: {
+    borderBottomWidth: 0,
+  },
+
+  detailLabelArea: {
     flex: 1,
-    color: '#333',
-    fontSize: 12,
-    fontWeight: '800',
+    flexDirection: 'row',
+    alignItems: 'center',
   },
-  detailValue: {
-    flex: 1.5,
-    color: '#1a1a1a',
+
+  detailIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: COLORS.primarySoft,
+    marginRight: 10,
+  },
+
+  detailLabel: {
+    color: COLORS.textSecondary,
     fontSize: 12,
     fontWeight: '700',
+  },
+
+  detailValue: {
+    flex: 1.2,
+    color: COLORS.textPrimary,
+    fontSize: 12,
+    fontWeight: '900',
     textAlign: 'right',
   },
-  textoZerado: { color: '#b00020' },
-  detailsButtonsRow: {
-    flexDirection: 'row',
-    gap: 10,
-    marginBottom: 10,
+
+  detailValueDanger: {
+    color: COLORS.danger,
   },
-  detailsButton: {
+
+  footer: {
+    flexDirection: 'row',
+    gap: 12,
+    paddingHorizontal: 18,
+    paddingTop: 14,
+    paddingBottom: 18,
+    backgroundColor: COLORS.surface,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.border,
+  },
+
+  footerButton: {
     flex: 1,
-    minHeight: 44,
-    borderRadius: 9,
+    minHeight: 52,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 6,
+    gap: 8,
+    borderRadius: 16,
   },
-  editButton: { backgroundColor: '#111' },
-  deleteButton: { backgroundColor: '#c90000' },
-  detailsCloseButton: {
-    minHeight: 44,
-    borderRadius: 9,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
+
+  secondaryButton: {
+    backgroundColor: COLORS.primarySoft,
+    borderWidth: 1,
+    borderColor: '#FFD1DD',
   },
-  cancelButton: { backgroundColor: '#aaa' },
-  detailsButtonText: {
-    color: '#fff',
+
+  deleteButton: {
+    backgroundColor: COLORS.danger,
+  },
+
+  secondaryButtonText: {
+    color: COLORS.primary,
     fontSize: 14,
-    fontWeight: '800',
+    fontWeight: '900',
+  },
+
+  deleteButtonText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '900',
   },
 });
