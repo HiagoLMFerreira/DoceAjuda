@@ -64,6 +64,7 @@ export default function ClientesScreen() {
     clientes.termoBusca,
     clientes.campoOrdenacao,
     clientes.direcaoOrdenacao,
+    clientes.situacao,
   ]);
 
   const salvarCliente = async () => {
@@ -82,27 +83,30 @@ export default function ClientesScreen() {
     }
   };
 
-  const confirmarExclusaoCliente = (cliente: Cliente) => {
+  const confirmarAlteracaoStatus = (cliente: Cliente) => {
+    const inativar = cliente.ativo === 1;
     Alert.alert(
-      'Excluir cliente',
-      `Deseja realmente excluir o cliente "${cliente.nome}"?`,
+      inativar ? 'Inativar cliente' : 'Reativar cliente',
+      inativar
+        ? `O cliente "${cliente.nome}" deixará de aparecer em novos lançamentos, mas todo o histórico será preservado.`
+        : `Deseja reativar o cliente "${cliente.nome}"?`,
       [
         {
           text: 'Cancelar',
           style: 'cancel',
         },
         {
-          text: 'Excluir',
-          style: 'destructive',
+          text: inativar ? 'Inativar' : 'Reativar',
+          style: inativar ? 'destructive' : 'default',
           onPress: async () => {
             try {
-              await clientes.excluirCliente();
+              await clientes.alterarStatusCliente();
             } catch (error) {
               Alert.alert(
                 'Erro',
                 clientes.mensagemErro(
                   error,
-                  'Não foi possível excluir o cliente.'
+                  'Não foi possível alterar o status do cliente.'
                 )
               );
             }
@@ -192,6 +196,23 @@ export default function ClientesScreen() {
           <Text style={styles.addButtonText}>Novo cliente</Text>
         </TouchableOpacity>
 
+        <View style={styles.statusFilter}>
+          {(['ATIVOS', 'INATIVOS'] as const).map((situacao) => {
+            const selecionado = clientes.situacao === situacao;
+            return (
+              <TouchableOpacity
+                key={situacao}
+                style={[styles.statusFilterButton, selecionado && styles.statusFilterButtonActive]}
+                onPress={() => clientes.setSituacao(situacao)}
+              >
+                <Text style={[styles.statusFilterText, selecionado && styles.statusFilterTextActive]}>
+                  {situacao === 'ATIVOS' ? 'Ativos' : 'Inativos'}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+
         <View style={styles.tableHeader}>
           <TouchableOpacity
             style={[styles.headerColumn, { flex: 2 }]}
@@ -234,9 +255,9 @@ export default function ClientesScreen() {
         <ClienteDetailsModal
           visible={clientes.modalDetalhesVisivel}
           cliente={clientes.clienteSelecionado}
-          excluindo={clientes.excluindo}
+          alterandoStatus={clientes.alterandoStatus}
           onEdit={clientes.abrirEdicao}
-          onDelete={confirmarExclusaoCliente}
+          onToggleStatus={confirmarAlteracaoStatus}
           onClose={clientes.fecharDetalhes}
         />
       </View>
@@ -350,6 +371,31 @@ const styles = StyleSheet.create({
   addButtonText: {
     fontSize: 15,
     fontWeight: '900',
+    color: '#FFFFFF',
+  },
+  statusFilter: {
+    flexDirection: 'row',
+    padding: 4,
+    borderRadius: 14,
+    backgroundColor: COLORS.primarySoft,
+    marginBottom: 12,
+  },
+  statusFilterButton: {
+    flex: 1,
+    minHeight: 39,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 11,
+  },
+  statusFilterButtonActive: {
+    backgroundColor: COLORS.primary,
+  },
+  statusFilterText: {
+    color: COLORS.primary,
+    fontSize: 12,
+    fontWeight: '900',
+  },
+  statusFilterTextActive: {
     color: '#FFFFFF',
   },
   tableHeader: {

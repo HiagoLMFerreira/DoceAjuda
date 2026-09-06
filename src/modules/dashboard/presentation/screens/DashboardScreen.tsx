@@ -320,6 +320,18 @@ export default function DashboardScreen({
           />
 
           <SummaryCard
+            title="Vendas no mês"
+            value={formatarMoeda(
+              dados.resumo.vendasMes
+            )}
+            subtitle="Total do mês atual"
+            icon="calendar-outline"
+            onPress={() =>
+              navigation.navigate('Relatorios')
+            }
+          />
+
+          <SummaryCard
             title="Pedidos hoje"
             value={String(
               dados.resumo.quantidadeVendasHoje

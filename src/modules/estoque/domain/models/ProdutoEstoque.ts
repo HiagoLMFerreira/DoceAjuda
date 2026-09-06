@@ -20,6 +20,7 @@ export type ProdutoEstoque = {
   preco_ultima_entrada: number;
   preco_medio: number;
   quantidade: number;
+  quantidade_minima: number;
   quantidade_embalagem: number;
   unidade_medida: string;
   ativo?: number;
@@ -30,6 +31,7 @@ export type CriarProdutoEstoqueDTO = {
   nome: string;
   codigo_barras?: string;
   unidade_medida: UnidadeMedidaEstoque;
+  quantidade_minima?: number;
 };
 
 export type AtualizarProdutoEstoqueDTO =
@@ -52,6 +54,7 @@ export type FiltrosProdutoEstoque = {
   termo?: string;
   ordenarPor?: OrdenarProdutoEstoquePor;
   direcao?: DirecaoOrdenacao;
+  situacao?: 'ATIVOS' | 'INATIVOS';
 };
 
 export type ModoFormularioProduto = 'cadastro' | 'edicao';
@@ -61,4 +64,5 @@ export type FormularioProdutoEstoque = {
   nome: string;
   codigoBarras: string;
   unidadeMedida: UnidadeMedidaEstoque;
+  quantidadeMinima: string;
 };

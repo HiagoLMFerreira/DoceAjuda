@@ -1,67 +1,74 @@
-import type { DocumentoComercialDetalhado } from "../core/database/databaseManager";
-import { escapeHtml } from '../shared/formatters/html';
+import type { DocumentoComercialDetalhado } from '../core/database/databaseManager';
+import {
+  formatCurrency,
+  formatDateOnlyBR,
+  formatDecimal,
+} from '../core/formatters';
+import { PdfDocumentBuilder } from '../shared/pdf/PdfDocumentBuilder';
 import { pdfService } from '../shared/pdf/PdfService';
-import { formatDateOnlyBR } from '../core/formatters/date';
 
-function formatCurrency(value: number): string {
-  return Number(value || 0).toLocaleString('pt-BR', {
-    style: 'currency',
-    currency: 'BRL',
-  });
+const pdfBuilder = new PdfDocumentBuilder();
+
+function formatarStatus(status: DocumentoComercialDetalhado['status']): string {
+  const rotulos = {
+    PENDENTE: 'Pendente',
+    CONVERTIDO: 'Convertido em venda',
+    CONCLUIDA: 'Concluído',
+    CANCELADA: 'Cancelado',
+  } as const;
+
+  return rotulos[status];
 }
 
 export async function compartilharPdfOrcamento(
   orcamento: DocumentoComercialDetalhado
 ): Promise<void> {
-  const rows = orcamento.itens
-    .map(
-      (item) => `
-        <tr>
-          <td>${escapeHtml(item.produto_nome)}</td>
-          <td style="text-align:center">${escapeHtml(item.quantidade)}</td>
-          <td style="text-align:right">${escapeHtml(formatCurrency(item.valor_unitario))}</td>
-          <td style="text-align:right">${escapeHtml(formatCurrency(item.subtotal))}</td>
-        </tr>
-      `
-    )
-    .join('');
-
-  const html = `<!DOCTYPE html>
-  <html lang="pt-BR">
-    <head>
-      <meta charset="UTF-8" />
-      <style>
-        @page { margin: 28px; }
-        body { font-family: Arial, sans-serif; color: #222; font-size: 12px; }
-        h1 { margin: 0 0 6px; font-size: 23px; }
-        .meta { color: #555; margin-bottom: 18px; line-height: 1.6; }
-        table { width: 100%; border-collapse: collapse; }
-        th { background: #111; color: #fff; padding: 8px; text-align: left; }
-        td { padding: 8px; border-bottom: 1px solid #ddd; }
-        .total { margin-top: 16px; text-align: right; font-size: 16px; font-weight: bold; }
-        .obs { margin-top: 18px; white-space: pre-wrap; }
-      </style>
-    </head>
-    <body>
-      <h1>Orçamento #${escapeHtml(orcamento.id)}</h1>
-      <div class="meta">
-        <strong>Cliente:</strong> ${escapeHtml(orcamento.cliente_nome)}<br />
-        <strong>Telefone:</strong> ${escapeHtml(orcamento.cliente_telefone || '-')}<br />
-        <strong>Validade:</strong> ${escapeHtml(orcamento.data_validade || '-')}<br />
-        <strong>Data da encomenda:</strong> ${escapeHtml(formatDateOnlyBR(orcamento.data_encomenda))}<br />
-        <strong>Finalidade:</strong> ${escapeHtml(orcamento.finalidade || '-')}<br />
-        <strong>Status:</strong> ${escapeHtml(orcamento.status)}
-      </div>
-      <table>
-        <thead>
-          <tr><th>Produto</th><th>Qtd.</th><th>Unitário</th><th>Subtotal</th></tr>
-        </thead>
-        <tbody>${rows}</tbody>
-      </table>
-      <div class="total">Total: ${escapeHtml(formatCurrency(orcamento.valor_total))}</div>
-      ${orcamento.observacoes ? `<div class="obs"><strong>Observações:</strong><br />${escapeHtml(orcamento.observacoes)}</div>` : ''}
-    </body>
-  </html>`;
+  const html = pdfBuilder.buildTableDocument({
+    title: `Orçamento #${orcamento.id}`,
+    subtitle: 'Proposta comercial',
+    metadata: [
+      { label: 'Cliente', value: orcamento.cliente_nome },
+      { label: 'Telefone', value: orcamento.cliente_telefone || 'Não informado' },
+      { label: 'Endereço', value: orcamento.cliente_endereco || 'Não informado' },
+      { label: 'Finalidade', value: orcamento.finalidade || 'Não informada' },
+      { label: 'Data da encomenda', value: formatDateOnlyBR(orcamento.data_encomenda) },
+      { label: 'Validade', value: orcamento.data_validade || 'Não informada' },
+      { label: 'Status', value: formatarStatus(orcamento.status) },
+    ],
+    columns: [
+      { key: 'produto', title: 'Produto' },
+      { key: 'quantidade', title: 'Qtd.', align: 'center' },
+      { key: 'unitario', title: 'Valor unitário', align: 'right' },
+      { key: 'subtotal', title: 'Subtotal', align: 'right' },
+    ],
+    rows: orcamento.itens.map((item) => ({
+      produto: item.produto_nome,
+      quantidade: formatDecimal(item.quantidade),
+      unitario: formatCurrency(item.valor_unitario),
+      subtotal: formatCurrency(item.subtotal),
+    })),
+    summaries: [
+      {
+        label: 'Produtos diferentes',
+        value: String(orcamento.itens.length),
+      },
+      {
+        label: 'Quantidade total',
+        value: formatDecimal(
+          orcamento.itens.reduce((total, item) => total + Number(item.quantidade || 0), 0)
+        ),
+      },
+      {
+        label: 'Valor total',
+        value: formatCurrency(orcamento.valor_total),
+        highlight: true,
+      },
+    ],
+    summaryTitle: 'Resumo do orçamento',
+    notes: orcamento.observacoes
+      ? { title: 'Observações', text: orcamento.observacoes }
+      : undefined,
+  });
 
   await pdfService.generateAndShare({
     html,

@@ -4,6 +4,7 @@ export type Cliente = {
   telefone: string;
   endereco: string;
   total_compras: number;
+  ativo: number;
 };
 
 export type CriarClienteDTO = {
@@ -23,4 +24,5 @@ export type FiltroClientes = {
   termo?: string;
   ordenarPor?: CampoOrdenacaoCliente;
   direcao?: DirecaoOrdenacaoCliente;
+  situacao?: 'ATIVOS' | 'INATIVOS';
 };

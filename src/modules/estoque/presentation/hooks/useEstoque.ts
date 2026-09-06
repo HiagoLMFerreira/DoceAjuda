@@ -16,6 +16,7 @@ const FORMULARIO_INICIAL: FormularioProdutoEstoque = {
   nome: '',
   codigoBarras: '',
   unidadeMedida: 'un',
+  quantidadeMinima: '',
 };
 
 export function obterNomeProduto(produto: ProdutoEstoque): string {
@@ -42,7 +43,9 @@ export function useEstoque() {
   const [produtos, setProdutos] = useState<ProdutoEstoque[]>([]);
   const [carregando, setCarregando] = useState(false);
   const [salvando, setSalvando] = useState(false);
-  const [excluindo, setExcluindo] = useState(false);
+  const [alterandoStatus, setAlterandoStatus] = useState(false);
+  const [situacao, setSituacao] =
+    useState<'ATIVOS' | 'INATIVOS'>('ATIVOS');
 
   const [busca, setBusca] = useState('');
   const [ordenarPor, setOrdenarPor] =
@@ -71,12 +74,13 @@ export function useEstoque() {
           termo: busca,
           ordenarPor,
           direcao,
+          situacao,
         })
       );
     } finally {
       setCarregando(false);
     }
-  }, [busca, ordenarPor, direcao]);
+  }, [busca, ordenarPor, direcao, situacao]);
 
   const abrirCadastro = useCallback(() => {
     setModoFormulario('cadastro');
@@ -109,6 +113,9 @@ export function useEstoque() {
       unidadeMedida: UNIDADES_MEDIDA_ESTOQUE.includes(unidade)
         ? unidade
         : 'un',
+      quantidadeMinima: produtoSelecionado.quantidade_minima
+        ? String(produtoSelecionado.quantidade_minima).replace('.', ',')
+        : '',
     });
     setModalDetalhes(false);
     setModalFormulario(true);
@@ -140,6 +147,9 @@ export function useEstoque() {
         nome: formulario.nome,
         codigo_barras: formulario.codigoBarras,
         unidade_medida: formulario.unidadeMedida,
+        quantidade_minima: formulario.quantidadeMinima.trim()
+          ? Number(formulario.quantidadeMinima.replace(',', '.'))
+          : 0,
       };
 
       if (modoFormulario === 'cadastro') {
@@ -168,16 +178,19 @@ export function useEstoque() {
     carregar,
   ]);
 
-  const excluir = useCallback(async () => {
+  const alterarStatus = useCallback(async () => {
     if (!produtoSelecionado) return;
 
     try {
-      setExcluindo(true);
-      await estoqueController.excluir(produtoSelecionado.id);
+      setAlterandoStatus(true);
+      await estoqueController.alterarStatus(
+        produtoSelecionado.id,
+        produtoSelecionado.ativo !== 1
+      );
       fecharDetalhes();
       await carregar();
     } finally {
-      setExcluindo(false);
+      setAlterandoStatus(false);
     }
   }, [produtoSelecionado, fecharDetalhes, carregar]);
 
@@ -232,7 +245,8 @@ export function useEstoque() {
       produtos,
       carregando,
       salvando,
-      excluindo,
+      alterandoStatus,
+      situacao,
       busca,
       ordenarPor,
       direcao,
@@ -243,6 +257,7 @@ export function useEstoque() {
       modalFormulario,
       scannerVisivel,
       setBusca,
+      setSituacao,
       carregar,
       abrirCadastro,
       abrirDetalhes,
@@ -251,7 +266,7 @@ export function useEstoque() {
       fecharFormulario,
       alterarFormulario,
       salvar,
-      excluir,
+      alterarStatus,
       alternarOrdenacao,
       abrirScanner,
       fecharScanner,
@@ -262,7 +277,8 @@ export function useEstoque() {
       produtos,
       carregando,
       salvando,
-      excluindo,
+      alterandoStatus,
+      situacao,
       busca,
       ordenarPor,
       direcao,
@@ -280,7 +296,7 @@ export function useEstoque() {
       fecharFormulario,
       alterarFormulario,
       salvar,
-      excluir,
+      alterarStatus,
       alternarOrdenacao,
       abrirScanner,
       fecharScanner,

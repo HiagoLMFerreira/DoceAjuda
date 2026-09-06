@@ -34,6 +34,7 @@ export async function listarProdutos(ordenarPor: OrdenarProdutoPor = "nome", dir
       preco_ultima_entrada,
       preco_medio,
       quantidade,
+      quantidade_minima,
       quantidade_embalagem,
       unidade_medida,
       ativo,
@@ -75,6 +76,7 @@ export async function buscarProdutos(filtro: string = "", ordenarPor: OrdenarPro
         preco_ultima_entrada,
         preco_medio,
         quantidade,
+        quantidade_minima,
         quantidade_embalagem,
         unidade_medida,
         ativo,
@@ -100,6 +102,7 @@ export async function buscarProdutos(filtro: string = "", ordenarPor: OrdenarPro
       preco_ultima_entrada,
       preco_medio,
       quantidade,
+      quantidade_minima,
       quantidade_embalagem,
       unidade_medida,
       ativo,
@@ -135,12 +138,13 @@ export async function cadastrarProduto(produto: NovoProdutoEstoque): Promise<voi
       preco_ultima_entrada,
       preco_medio,
       quantidade,
+      quantidade_minima,
       quantidade_embalagem,
       unidade_medida,
       ativo,
       preco
-    ) VALUES (?, ?, ?, 0, 0, 0, 1, ?, 1, 0)
-    `, [nome, nome, codigoBarras, unidadeMedida]);
+    ) VALUES (?, ?, ?, 0, 0, 0, ?, 1, ?, 1, 0)
+    `, [nome, nome, codigoBarras, produto.quantidade_minima ?? 0, unidadeMedida]);
 }
 
 export async function editarProduto(produto: EditarProdutoEstoque): Promise<void> {
@@ -163,9 +167,10 @@ export async function editarProduto(produto: EditarProdutoEstoque): Promise<void
       descricao = ?,
       nome = ?,
       codigo_barras = ?,
-      unidade_medida = ?
+      unidade_medida = ?,
+      quantidade_minima = ?
     WHERE id = ?
-    `, [nome, nome, codigoBarras, unidadeMedida, produto.id]);
+    `, [nome, nome, codigoBarras, unidadeMedida, produto.quantidade_minima ?? 0, produto.id]);
 }
 
 export async function excluirProduto(produtoId: number): Promise<void> {

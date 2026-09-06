@@ -24,7 +24,9 @@ export function useClientes() {
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [carregando, setCarregando] = useState(false);
   const [salvando, setSalvando] = useState(false);
-  const [excluindo, setExcluindo] = useState(false);
+  const [alterandoStatus, setAlterandoStatus] = useState(false);
+  const [situacao, setSituacao] =
+    useState<'ATIVOS' | 'INATIVOS'>('ATIVOS');
 
   const [termoBusca, setTermoBusca] = useState('');
   const [campoOrdenacao, setCampoOrdenacao] =
@@ -49,13 +51,14 @@ export function useClientes() {
         termo: termoBusca,
         ordenarPor: campoOrdenacao,
         direcao: direcaoOrdenacao,
+        situacao,
       });
 
       setClientes(resultado);
     } finally {
       setCarregando(false);
     }
-  }, [termoBusca, campoOrdenacao, direcaoOrdenacao]);
+  }, [termoBusca, campoOrdenacao, direcaoOrdenacao, situacao]);
 
   const abrirCadastro = useCallback(() => {
     setClienteEditando(null);
@@ -131,18 +134,21 @@ export function useClientes() {
     carregarClientes,
   ]);
 
-  const excluirCliente = useCallback(async () => {
+  const alterarStatusCliente = useCallback(async () => {
     if (!clienteSelecionado) {
       return;
     }
 
     try {
-      setExcluindo(true);
-      await clienteController.excluir(clienteSelecionado.id);
+      setAlterandoStatus(true);
+      await clienteController.alterarStatus(
+        clienteSelecionado.id,
+        clienteSelecionado.ativo !== 1
+      );
       fecharDetalhes();
       await carregarClientes();
     } finally {
-      setExcluindo(false);
+      setAlterandoStatus(false);
     }
   }, [clienteSelecionado, fecharDetalhes, carregarClientes]);
 
@@ -183,7 +189,8 @@ export function useClientes() {
       clientes,
       carregando,
       salvando,
-      excluindo,
+      alterandoStatus,
+      situacao,
       termoBusca,
       campoOrdenacao,
       direcaoOrdenacao,
@@ -193,6 +200,7 @@ export function useClientes() {
       modalFormularioVisivel,
       modalDetalhesVisivel,
       setTermoBusca,
+      setSituacao,
       carregarClientes,
       abrirCadastro,
       abrirDetalhes,
@@ -201,7 +209,7 @@ export function useClientes() {
       fecharFormulario,
       alterarFormulario,
       salvarCliente,
-      excluirCliente,
+      alterarStatusCliente,
       ordenarClientes,
       indicadorOrdenacao,
       mensagemErro,
@@ -210,7 +218,8 @@ export function useClientes() {
       clientes,
       carregando,
       salvando,
-      excluindo,
+      alterandoStatus,
+      situacao,
       termoBusca,
       campoOrdenacao,
       direcaoOrdenacao,
@@ -227,7 +236,7 @@ export function useClientes() {
       fecharFormulario,
       alterarFormulario,
       salvarCliente,
-      excluirCliente,
+      alterarStatusCliente,
       ordenarClientes,
       indicadorOrdenacao,
       mensagemErro,

@@ -261,6 +261,33 @@ export function ProdutoEstoqueFormModal({
                 </View>
 
                 <View style={styles.fieldGroup}>
+                  <Text style={styles.label}>
+                    Quantidade mínima (opcional)
+                  </Text>
+
+                  <View style={styles.inputContainer}>
+                    <Ionicons
+                      name="alert-circle-outline"
+                      size={21}
+                      color={COLORS.primary}
+                    />
+
+                    <TextInput
+                      style={styles.input}
+                      placeholder="Ex.: 5"
+                      placeholderTextColor={COLORS.placeholder}
+                      value={formulario.quantidadeMinima}
+                      onChangeText={(valor) => onChange('quantidadeMinima', valor)}
+                      keyboardType="decimal-pad"
+                      editable={!salvando}
+                    />
+                  </View>
+                  <Text style={styles.fieldHint}>
+                    Usada nos alertas e relatórios de estoque baixo.
+                  </Text>
+                </View>
+
+                <View style={styles.fieldGroup}>
                   <View style={styles.labelRow}>
                     <Ionicons
                       name="scale-outline"
@@ -494,6 +521,13 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '800',
     marginBottom: 8,
+  },
+
+  fieldHint: {
+    color: COLORS.textSecondary,
+    fontSize: 11,
+    lineHeight: 16,
+    marginTop: 6,
   },
 
   inputContainer: {

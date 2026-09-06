@@ -84,6 +84,7 @@ export default function EstoqueScreen() {
     estoque.busca,
     estoque.ordenarPor,
     estoque.direcao,
+    estoque.situacao,
   ]);
 
   const salvar = async () => {
@@ -100,31 +101,32 @@ export default function EstoqueScreen() {
     }
   };
 
-  const confirmarExclusao = (
+  const confirmarAlteracaoStatus = (
     produto: ProdutoEstoque
   ) => {
+    const inativar = produto.ativo === 1;
     Alert.alert(
-      'Excluir produto',
-      `Deseja realmente excluir "${obterNomeProduto(
-        produto
-      )}"?`,
+      inativar ? 'Inativar produto' : 'Reativar produto',
+      inativar
+        ? `O produto "${obterNomeProduto(produto)}" deixará de aparecer nos lançamentos. O histórico será preservado.`
+        : `Deseja reativar o produto "${obterNomeProduto(produto)}"?`,
       [
         {
           text: 'Cancelar',
           style: 'cancel',
         },
         {
-          text: 'Excluir',
-          style: 'destructive',
+          text: inativar ? 'Inativar' : 'Reativar',
+          style: inativar ? 'destructive' : 'default',
           onPress: async () => {
             try {
-              await estoque.excluir();
+              await estoque.alterarStatus();
             } catch (error) {
               Alert.alert(
                 'Erro',
                 estoque.mensagemErro(
                   error,
-                  'Não foi possível excluir o produto.'
+                  'Não foi possível alterar o status do produto.'
                 )
               );
             }
@@ -296,6 +298,33 @@ export default function EstoqueScreen() {
           </Text>
         </TouchableOpacity>
 
+        <View style={styles.statusFilter}>
+          <TouchableOpacity
+            style={[
+              styles.statusFilterButton,
+              estoque.situacao === 'ATIVOS' && styles.statusFilterButtonActive,
+            ]}
+            onPress={() => estoque.setSituacao('ATIVOS')}
+          >
+            <Text style={[
+              styles.statusFilterText,
+              estoque.situacao === 'ATIVOS' && styles.statusFilterTextActive,
+            ]}>Ativos</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              styles.statusFilterButton,
+              estoque.situacao === 'INATIVOS' && styles.statusFilterButtonActive,
+            ]}
+            onPress={() => estoque.setSituacao('INATIVOS')}
+          >
+            <Text style={[
+              styles.statusFilterText,
+              estoque.situacao === 'INATIVOS' && styles.statusFilterTextActive,
+            ]}>Inativos</Text>
+          </TouchableOpacity>
+        </View>
+
         <View style={styles.tableHeader}>
           {renderCabecalho(
             'NOME',
@@ -330,11 +359,11 @@ export default function EstoqueScreen() {
         <ProdutoEstoqueDetailsModal
           visible={estoque.modalDetalhes}
           produto={estoque.produtoSelecionado}
-          excluindo={estoque.excluindo}
+          alterandoStatus={estoque.alterandoStatus}
           onEdit={estoque.abrirEdicao}
-          onDelete={() => {
+          onToggleStatus={() => {
             if (estoque.produtoSelecionado) {
-              confirmarExclusao(
+              confirmarAlteracaoStatus(
                 estoque.produtoSelecionado
               );
             }
@@ -511,6 +540,36 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 15,
     fontWeight: '900',
+  },
+
+  statusFilter: {
+    flexDirection: 'row',
+    padding: 4,
+    borderRadius: 14,
+    backgroundColor: COLORS.primarySoft,
+    marginBottom: 12,
+  },
+
+  statusFilterButton: {
+    flex: 1,
+    minHeight: 39,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 11,
+  },
+
+  statusFilterButtonActive: {
+    backgroundColor: COLORS.primary,
+  },
+
+  statusFilterText: {
+    color: COLORS.primary,
+    fontSize: 12,
+    fontWeight: '900',
+  },
+
+  statusFilterTextActive: {
+    color: '#FFFFFF',
   },
 
   tableHeader: {

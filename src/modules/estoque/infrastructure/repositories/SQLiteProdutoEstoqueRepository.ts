@@ -31,6 +31,7 @@ const SELECT_PRODUTO = `
     preco_ultima_entrada,
     preco_medio,
     quantidade,
+    quantidade_minima,
     quantidade_embalagem,
     unidade_medida,
     ativo,
@@ -51,11 +52,12 @@ export class SQLiteProdutoEstoqueRepository
         COLUNAS[filtros.ordenarPor ?? 'nome'] ?? COLUNAS.nome;
       const direcao =
         filtros.direcao === 'DESC' ? 'DESC' : 'ASC';
+      const situacao = filtros.situacao === 'INATIVOS' ? 0 : 1;
 
       if (!termo) {
         return database.getAllAsync<ProdutoEstoque>(`
           ${SELECT_PRODUTO}
-          WHERE ativo = 1
+          WHERE ativo = ${situacao}
           ORDER BY ${coluna} ${direcao}
         `);
       }
@@ -66,7 +68,7 @@ export class SQLiteProdutoEstoqueRepository
         return database.getAllAsync<ProdutoEstoque>(
           `
             ${SELECT_PRODUTO}
-            WHERE ativo = 1
+            WHERE ativo = ${situacao}
               AND (
                 id = ?
                 OR nome LIKE ?
@@ -82,7 +84,7 @@ export class SQLiteProdutoEstoqueRepository
       return database.getAllAsync<ProdutoEstoque>(
         `
           ${SELECT_PRODUTO}
-          WHERE ativo = 1
+          WHERE ativo = ${situacao}
             AND (
               nome LIKE ?
               OR descricao LIKE ?
@@ -131,16 +133,18 @@ export class SQLiteProdutoEstoqueRepository
             preco_ultima_entrada,
             preco_medio,
             quantidade,
+            quantidade_minima,
             quantidade_embalagem,
             unidade_medida,
             ativo,
             preco
-          ) VALUES (?, ?, ?, 0, 0, 0, 1, ?, 1, 0)
+          ) VALUES (?, ?, ?, 0, 0, 0, ?, 1, ?, 1, 0)
         `,
         [
           produto.nome,
           produto.nome,
           produto.codigo_barras ?? '',
+          produto.quantidade_minima ?? 0,
           produto.unidade_medida,
         ]
       );
@@ -166,7 +170,8 @@ export class SQLiteProdutoEstoqueRepository
             descricao = ?,
             nome = ?,
             codigo_barras = ?,
-            unidade_medida = ?
+            unidade_medida = ?,
+            quantidade_minima = ?
           WHERE id = ?
         `,
         [
@@ -174,6 +179,7 @@ export class SQLiteProdutoEstoqueRepository
           produto.nome,
           produto.codigo_barras ?? '',
           produto.unidade_medida,
+          produto.quantidade_minima ?? 0,
           produto.id,
         ]
       );
@@ -224,32 +230,20 @@ export class SQLiteProdutoEstoqueRepository
     }
   }
 
-  async excluir(id: number): Promise<void> {
+  async alterarStatus(id: number, ativo: boolean): Promise<void> {
     try {
       const database = await getDatabaseConnection();
+      const result = await database.runAsync(
+        'UPDATE produtos SET ativo = ? WHERE id = ?',
+        [ativo ? 1 : 0, id]
+      );
 
-      await database.withTransactionAsync(async () => {
-        await database.runAsync(
-          'DELETE FROM movimentacoes WHERE produto_id = ?',
-          [id]
-        );
-        await database.runAsync(
-          'DELETE FROM receita_itens WHERE produto_id = ?',
-          [id]
-        );
-
-        const result = await database.runAsync(
-          'DELETE FROM produtos WHERE id = ?',
-          [id]
-        );
-
-        if (result.changes !== 1) {
-          throw new Error('Produto não encontrado.');
-        }
-      });
+      if (result.changes !== 1) {
+        throw new Error('Produto não encontrado.');
+      }
     } catch (error) {
       throw new DatabaseError(
-        'Não foi possível excluir o produto.',
+        'Não foi possível alterar o status do produto.',
         error
       );
     }

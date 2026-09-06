@@ -5,7 +5,7 @@ import type {
 } from '../../domain/models/ProdutoEstoque';
 import type { AtualizarProdutoEstoqueService } from '../../application/services/AtualizarProdutoEstoqueService';
 import type { CriarProdutoEstoqueService } from '../../application/services/CriarProdutoEstoqueService';
-import type { ExcluirProdutoEstoqueService } from '../../application/services/ExcluirProdutoEstoqueService';
+import type { AlterarStatusProdutoEstoqueService } from '../../application/services/AlterarStatusProdutoEstoqueService';
 import type { ListarProdutosEstoqueService } from '../../application/services/ListarProdutosEstoqueService';
 
 export class EstoqueController {
@@ -13,7 +13,7 @@ export class EstoqueController {
     private readonly listarService: ListarProdutosEstoqueService,
     private readonly criarService: CriarProdutoEstoqueService,
     private readonly atualizarService: AtualizarProdutoEstoqueService,
-    private readonly excluirService: ExcluirProdutoEstoqueService
+    private readonly alterarStatusService: AlterarStatusProdutoEstoqueService
   ) {}
 
   listar(filtros?: FiltrosProdutoEstoque) {
@@ -28,7 +28,7 @@ export class EstoqueController {
     return this.atualizarService.executar(produto);
   }
 
-  excluir(id: number) {
-    return this.excluirService.executar(id);
+  alterarStatus(id: number, ativo: boolean) {
+    return this.alterarStatusService.executar(id, ativo);
   }
 }

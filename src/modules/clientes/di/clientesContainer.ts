@@ -1,7 +1,7 @@
 import { AtualizarClienteService } from '../application/services/AtualizarClienteService';
 import { BuscarClientePorIdService } from '../application/services/BuscarClientePorIdService';
 import { CriarClienteService } from '../application/services/CriarClienteService';
-import { ExcluirClienteService } from '../application/services/ExcluirClienteService';
+import { AlterarStatusClienteService } from '../application/services/AlterarStatusClienteService';
 import { ListarClientesService } from '../application/services/ListarClientesService';
 import { ValidarClienteService } from '../application/services/ValidarClienteService';
 import { SQLiteClienteRepository } from '../infrastructure/repositories/SQLiteClienteRepository';
@@ -21,12 +21,12 @@ const atualizarClienteService = new AtualizarClienteService(
   clienteRepository,
   validarClienteService
 );
-const excluirClienteService = new ExcluirClienteService(clienteRepository);
+const alterarStatusClienteService = new AlterarStatusClienteService(clienteRepository);
 
 export const clienteController = new ClienteController(
   listarClientesService,
   buscarClientePorIdService,
   criarClienteService,
   atualizarClienteService,
-  excluirClienteService
+  alterarStatusClienteService
 );

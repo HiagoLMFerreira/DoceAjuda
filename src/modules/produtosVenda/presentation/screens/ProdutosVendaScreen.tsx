@@ -316,27 +316,6 @@ export default function ProdutosVendaScreen() {
     });
   }, [produtos, ordenarProdutoPor, direcaoOrdenacaoProduto]);
 
-  const resumoProdutos = useMemo(() => {
-    const precoMedio = produtos.length
-      ? produtos.reduce(
-          (total, produto) => total + Number(produto.preco_venda || 0),
-          0
-        ) / produtos.length
-      : 0;
-    const custoMedio = produtos.length
-      ? produtos.reduce(
-          (total, produto) => total + Number(produto.custo_total || 0),
-          0
-        ) / produtos.length
-      : 0;
-
-    return {
-      quantidade: produtos.length,
-      precoMedio,
-      custoMedio,
-    };
-  }, [produtos]);
-
   const alterarOrdenacaoProduto = (campo: OrdenarProdutoVendaPor) => {
     if (ordenarProdutoPor === campo) {
       setDirecaoOrdenacaoProduto((direcaoAtual) =>
@@ -1566,28 +1545,6 @@ export default function ProdutosVendaScreen() {
               <Ionicons name="close-circle" size={21} color={COLORS.textMuted} />
             </TouchableOpacity>
           )}
-        </View>
-
-        <View style={styles.metricsRow}>
-          <View style={styles.metricCard}>
-            <View style={styles.metricIcon}>
-              <Ionicons name="cube-outline" size={18} color={COLORS.primary} />
-            </View>
-            <Text style={styles.metricValue}>{resumoProdutos.quantidade}</Text>
-            <Text style={styles.metricLabel}>Produtos</Text>
-          </View>
-          <View style={styles.metricCard}>
-            <Text style={styles.metricMoney} numberOfLines={1}>
-              {formatarMoeda(resumoProdutos.custoMedio)}
-            </Text>
-            <Text style={styles.metricLabel}>Custo médio</Text>
-          </View>
-          <View style={[styles.metricCard, styles.metricCardHighlight]}>
-            <Text style={styles.metricMoneyHighlight} numberOfLines={1}>
-              {formatarMoeda(resumoProdutos.precoMedio)}
-            </Text>
-            <Text style={styles.metricLabelHighlight}>Preço médio</Text>
-          </View>
         </View>
 
       <View style={styles.topButtons}>

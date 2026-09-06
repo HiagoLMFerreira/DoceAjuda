@@ -33,6 +33,7 @@ export type ProdutoEstoque = {
     preco_ultima_entrada: number;
     preco_medio: number;
     quantidade: number;
+    quantidade_minima: number;
     quantidade_embalagem: number;
     unidade_medida: string;
     ativo?: number;
@@ -43,6 +44,7 @@ export type NovoProdutoEstoque = {
     nome: string;
     codigo_barras?: string;
     unidade_medida: UnidadeMedidaEstoque;
+    quantidade_minima?: number;
 };
 
 export type EditarProdutoEstoque = {
@@ -50,6 +52,7 @@ export type EditarProdutoEstoque = {
     nome: string;
     codigo_barras?: string;
     unidade_medida: UnidadeMedidaEstoque;
+    quantidade_minima?: number;
 };
 
 export type OrdenarProdutoPor = "id" | "nome" | "codigo_barras" | "preco_ultima_entrada" | "preco_medio" | "quantidade" | "unidade_medida";
@@ -113,6 +116,7 @@ export type ClienteDatabase = {
     telefone: string;
     endereco: string;
     total_compras: number;
+    ativo: number;
 };
 
 export type NovoCliente = {
@@ -446,6 +450,7 @@ export async function initializeDatabase(): Promise<SQLite.SQLiteDatabase> {
         preco_ultima_entrada REAL DEFAULT 0,
         preco_medio REAL DEFAULT 0,
         quantidade REAL DEFAULT 0,
+        quantidade_minima REAL NOT NULL DEFAULT 0 CHECK(quantidade_minima >= 0),
         ativo INTEGER DEFAULT 1,
         preco REAL DEFAULT 0,
         quantidade_embalagem REAL DEFAULT 1,
@@ -500,7 +505,8 @@ export async function initializeDatabase(): Promise<SQLite.SQLiteDatabase> {
         nome TEXT NOT NULL,
         telefone TEXT DEFAULT '',
         endereco TEXT DEFAULT '',
-        total_compras REAL DEFAULT 0
+        total_compras REAL DEFAULT 0,
+        ativo INTEGER NOT NULL DEFAULT 1 CHECK(ativo IN (0, 1))
       );
 
       CREATE TABLE IF NOT EXISTS receitas (
@@ -773,6 +779,7 @@ export async function aplicarMigracoesProdutos(): Promise<void> {
     await adicionarColunaSeNaoExistir("produtos", "preco_ultima_entrada", "REAL DEFAULT 0");
     await adicionarColunaSeNaoExistir("produtos", "preco_medio", "REAL DEFAULT 0");
     await adicionarColunaSeNaoExistir("produtos", "quantidade", "REAL DEFAULT 0");
+    await adicionarColunaSeNaoExistir("produtos", "quantidade_minima", "REAL NOT NULL DEFAULT 0 CHECK(quantidade_minima >= 0)");
     await adicionarColunaSeNaoExistir("produtos", "ativo", "INTEGER DEFAULT 1");
     await adicionarColunaSeNaoExistir("produtos", "preco", "REAL DEFAULT 0");
     await adicionarColunaSeNaoExistir("produtos", "quantidade_embalagem", "REAL DEFAULT 1");
@@ -851,6 +858,7 @@ export async function aplicarMigracoesClientes(): Promise<void> {
     await adicionarColunaSeNaoExistir("clientes", "telefone", "TEXT DEFAULT ''");
     await adicionarColunaSeNaoExistir("clientes", "endereco", "TEXT DEFAULT ''");
     await adicionarColunaSeNaoExistir("clientes", "total_compras", "REAL DEFAULT 0");
+    await adicionarColunaSeNaoExistir("clientes", "ativo", "INTEGER NOT NULL DEFAULT 1 CHECK(ativo IN (0, 1))");
 }
 
 export async function aplicarMigracoesReceitas(): Promise<void> {

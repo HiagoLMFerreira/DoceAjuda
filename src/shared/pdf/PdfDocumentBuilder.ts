@@ -17,6 +17,15 @@ export class PdfDocumentBuilder {
       value: string;
       highlight?: boolean;
     }>;
+    summaryTitle?: string;
+    metadata?: Array<{
+      label: string;
+      value: string;
+    }>;
+    notes?: {
+      title: string;
+      text: string;
+    };
     generatedAt?: string;
   }): string {
     const columns = options.columns
@@ -58,6 +67,17 @@ export class PdfDocumentBuilder {
       )
       .join('');
 
+    const metadata = (options.metadata ?? [])
+      .map(
+        (item) => `
+          <div class="metadata-item">
+            <span class="metadata-label">${escapeHtml(item.label)}</span>
+            <strong class="metadata-value">${escapeHtml(item.value)}</strong>
+          </div>
+        `
+      )
+      .join('');
+
     return `
       <!DOCTYPE html>
       <html lang="pt-BR">
@@ -75,7 +95,7 @@ export class PdfDocumentBuilder {
               margin: 0;
               font-family: Arial, Helvetica, sans-serif;
               color: #242329;
-              font-size: 11px;
+              font-size: 13px;
               background: #ffffff;
               -webkit-print-color-adjust: exact;
               print-color-adjust: exact;
@@ -107,7 +127,7 @@ export class PdfDocumentBuilder {
               border-radius: 50%;
               background: #fff0f4;
               color: #ff3b73;
-              font-size: 14px;
+              font-size: 16px;
               font-weight: 900;
               line-height: 38px;
               text-align: center;
@@ -119,17 +139,17 @@ export class PdfDocumentBuilder {
             }
             .brand-name {
               color: #242329;
-              font-size: 15px;
+              font-size: 18px;
               font-weight: 900;
             }
             .brand-tagline {
               margin-top: 2px;
               color: #8a8589;
-              font-size: 9px;
+              font-size: 11px;
             }
             .document-label {
               color: #bd3159;
-              font-size: 9px;
+              font-size: 11px;
               font-weight: 900;
               letter-spacing: 1px;
               text-align: right;
@@ -145,7 +165,7 @@ export class PdfDocumentBuilder {
             h1 {
               margin: 0;
               color: #242329;
-              font-size: 24px;
+              font-size: 27px;
               font-weight: 900;
               line-height: 1.15;
             }
@@ -164,11 +184,12 @@ export class PdfDocumentBuilder {
               color: #d12e60;
               font-weight: 700;
               text-align: right;
+              font-size: 11px;
             }
             .section-title {
               margin: 0 0 9px;
               color: #514e52;
-              font-size: 9px;
+              font-size: 11px;
               font-weight: 900;
               letter-spacing: 0.9px;
               text-transform: uppercase;
@@ -178,6 +199,31 @@ export class PdfDocumentBuilder {
               grid-template-columns: repeat(3, 1fr);
               gap: 8px;
               margin-bottom: 20px;
+            }
+            .metadata {
+              display: grid;
+              grid-template-columns: repeat(2, 1fr);
+              gap: 8px;
+              margin-bottom: 20px;
+            }
+            .metadata-item {
+              min-height: 54px;
+              padding: 10px 12px;
+              border: 1px solid #f1e7ea;
+              border-radius: 10px;
+              background: #ffffff;
+            }
+            .metadata-label {
+              display: block;
+              margin-bottom: 5px;
+              color: #8a8589;
+              font-size: 10px;
+              font-weight: 700;
+            }
+            .metadata-value {
+              color: #3f3c42;
+              font-size: 12px;
+              line-height: 1.35;
             }
             .summary-card {
               min-height: 60px;
@@ -194,13 +240,13 @@ export class PdfDocumentBuilder {
               display: block;
               margin-bottom: 6px;
               color: #737178;
-              font-size: 8px;
+              font-size: 10px;
               font-weight: 700;
             }
             .summary-value {
               display: block;
               color: #242329;
-              font-size: 14px;
+              font-size: 16px;
               font-weight: 900;
               line-height: 1.15;
             }
@@ -209,7 +255,7 @@ export class PdfDocumentBuilder {
             }
             .summary-card.highlight .summary-value {
               color: #d12e60;
-              font-size: 16px;
+              font-size: 18px;
             }
             table {
               width: 100%;
@@ -231,7 +277,7 @@ export class PdfDocumentBuilder {
               border-right: 1px solid rgba(255, 255, 255, 0.18);
               background: #ff3b73;
               color: #ffffff;
-              font-size: 8px;
+              font-size: 10px;
               font-weight: 900;
               letter-spacing: 0.25px;
               text-transform: uppercase;
@@ -240,7 +286,7 @@ export class PdfDocumentBuilder {
               padding: 9px;
               border-bottom: 1px solid #f3ebed;
               color: #514e52;
-              font-size: 9px;
+              font-size: 11px;
               line-height: 1.35;
             }
             tbody tr:nth-child(even) td {
@@ -249,6 +295,23 @@ export class PdfDocumentBuilder {
             tbody tr:last-child td {
               border-bottom: 0;
             }
+            .notes {
+              margin-top: 18px;
+              padding: 13px 15px;
+              border: 1px solid #f1e7ea;
+              border-radius: 10px;
+              background: #fffafb;
+              color: #514e52;
+              font-size: 11px;
+              line-height: 1.55;
+              white-space: pre-wrap;
+            }
+            .notes strong {
+              display: block;
+              margin-bottom: 5px;
+              color: #242329;
+              font-size: 12px;
+            }
             .footer {
               display: table;
               width: 100%;
@@ -256,7 +319,7 @@ export class PdfDocumentBuilder {
               padding-top: 8px;
               border-top: 1px solid #f1e7ea;
               color: #8a8589;
-              font-size: 8px;
+              font-size: 10px;
             }
             .footer-brand,
             .footer-date {
@@ -292,12 +355,14 @@ export class PdfDocumentBuilder {
               </div>
             </div>
           </div>
-          ${summaries ? `<div class="section-title">Resumo do período</div><div class="summaries">${summaries}</div>` : ''}
+          ${metadata ? `<div class="section-title">Informações</div><div class="metadata">${metadata}</div>` : ''}
+          ${summaries ? `<div class="section-title">${escapeHtml(options.summaryTitle ?? 'Resumo do período')}</div><div class="summaries">${summaries}</div>` : ''}
           <div class="section-title">Detalhamento</div>
           <table>
             <thead><tr>${columns}</tr></thead>
             <tbody>${rows}</tbody>
           </table>
+          ${options.notes?.text ? `<div class="notes"><strong>${escapeHtml(options.notes.title)}</strong>${escapeHtml(options.notes.text)}</div>` : ''}
           <div class="footer">
             <span class="footer-brand">DoceAjuda · Relatório gerencial</span>
             <span class="footer-date">Gerado em ${escapeHtml(options.generatedAt ?? new Date().toLocaleString('pt-BR'))}</span>

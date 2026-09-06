@@ -6,6 +6,7 @@ export type ProdutoCompra = {
   preco_ultima_entrada: number;
   preco_medio: number;
   quantidade: number;
+  quantidade_minima: number;
   quantidade_embalagem: number;
   unidade_medida: string;
   ativo?: number;

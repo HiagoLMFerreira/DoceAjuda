@@ -17,5 +17,5 @@ export interface IProdutoEstoqueRepository {
   criar(produto: CriarProdutoEstoqueDTO): Promise<number>;
   atualizar(produto: AtualizarProdutoEstoqueDTO): Promise<void>;
   buscarVinculos(id: number): Promise<VinculosProdutoEstoque>;
-  excluir(id: number): Promise<void>;
+  alterarStatus(id: number, ativo: boolean): Promise<void>;
 }

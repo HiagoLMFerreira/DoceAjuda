@@ -10,6 +10,5 @@ export interface IClienteRepository {
   buscarPorId(id: number): Promise<Cliente | null>;
   criar(cliente: CriarClienteDTO): Promise<number>;
   atualizar(cliente: AtualizarClienteDTO): Promise<void>;
-  possuiDocumentosVinculados(id: number): Promise<boolean>;
-  excluir(id: number): Promise<void>;
+  alterarStatus(id: number, ativo: boolean): Promise<void>;
 }

@@ -97,7 +97,12 @@ export async function prepararDocumentoComercial(database: SQLite.SQLiteDatabase
     }
     const dataEncomenda = documento.data_encomenda?.trim() ?? "";
     const finalidade = documento.finalidade?.trim() ?? "";
-    if (documento.tipo === "ORCAMENTO" || documento.orcamento_origem_id) {
+    if (
+        documento.tipo === "ORCAMENTO" ||
+        documento.orcamento_origem_id ||
+        dataEncomenda ||
+        finalidade
+    ) {
         if (!dataEncomenda) {
             throw new Error("Informe a data da encomenda.");
         }

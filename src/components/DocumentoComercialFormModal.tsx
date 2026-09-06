@@ -151,6 +151,7 @@ export default function DocumentoComercialFormModal({
         telefone: '',
         endereco: '',
         total_compras: 0,
+        ativo: 1,
       });
 
       setItens(
@@ -267,6 +268,7 @@ export default function DocumentoComercialFormModal({
         telefone: novoClienteTelefone.trim(),
         endereco: novoClienteEndereco.trim(),
         total_compras: 0,
+        ativo: 1,
       };
 
       setClienteSelecionado(clienteCriado);
@@ -366,7 +368,13 @@ export default function DocumentoComercialFormModal({
       return;
     }
 
-    const exigeDadosEncomenda = tipo === 'ORCAMENTO' || Boolean(documentoOrigem);
+    const encomendaOpcionalPreenchida = Boolean(
+      dataEncomenda.trim() || finalidade.trim()
+    );
+    const exigeDadosEncomenda =
+      tipo === 'ORCAMENTO' ||
+      Boolean(documentoOrigem) ||
+      encomendaOpcionalPreenchida;
     const dataEncomendaNormalizada = dataEncomenda
       ? parseDateBR(dataEncomenda)
       : null;
@@ -484,14 +492,18 @@ export default function DocumentoComercialFormModal({
               </>
             )}
 
-            {(tipo === 'ORCAMENTO' || documentoOrigem) && (
+            {(tipo === 'ORCAMENTO' || tipo === 'VENDA') && (
               <View style={styles.encomendaCard}>
                 <View style={styles.encomendaTituloLinha}>
                   <Ionicons name="calendar-outline" size={20} color={COLORS.primary} />
-                  <Text style={styles.encomendaTitulo}>DADOS DA ENCOMENDA</Text>
+                  <Text style={styles.encomendaTitulo}>
+                    DADOS DA ENCOMENDA{tipo === 'VENDA' && !documentoOrigem ? ' (OPCIONAL)' : ''}
+                  </Text>
                 </View>
 
-                <Text style={styles.label}>Data da encomenda *</Text>
+                <Text style={styles.label}>
+                  Data da encomenda{tipo === 'VENDA' && !documentoOrigem ? '' : ' *'}
+                </Text>
                 <TextInput
                   style={styles.input}
                   placeholder="DD/MM/AAAA"
@@ -502,7 +514,9 @@ export default function DocumentoComercialFormModal({
                   maxLength={10}
                 />
 
-                <Text style={styles.label}>Finalidade *</Text>
+                <Text style={styles.label}>
+                  Finalidade{tipo === 'VENDA' && !documentoOrigem ? '' : ' *'}
+                </Text>
                 <TextInput
                   style={styles.input}
                   placeholder="Ex.: aniversário, casamento"

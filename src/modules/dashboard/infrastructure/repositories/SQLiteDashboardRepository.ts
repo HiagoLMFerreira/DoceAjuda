@@ -11,6 +11,7 @@ import type { IDashboardRepository } from '../../domain/repositories/IDashboardR
 
 type ResumoRow = {
   vendasHoje: number | null;
+  vendasMes: number | null;
   quantidadeVendasHoje: number | null;
   ticketMedioHoje: number | null;
   clientesCadastrados: number | null;
@@ -121,6 +122,14 @@ export class SQLiteDashboardRepository
                 date('now', 'localtime')
         ) AS vendasHoje,
         (
+          SELECT COALESCE(SUM(valor_total), 0)
+          FROM documentos_comerciais
+          WHERE tipo = 'VENDA'
+            AND status = 'CONCLUIDA'
+            AND strftime('%Y-%m', created_at, 'localtime') =
+                strftime('%Y-%m', 'now', 'localtime')
+        ) AS vendasMes,
+        (
           SELECT COUNT(*)
           FROM documentos_comerciais
           WHERE tipo = 'VENDA'
@@ -139,6 +148,7 @@ export class SQLiteDashboardRepository
         (
           SELECT COUNT(*)
           FROM clientes
+          WHERE ativo = 1
         ) AS clientesCadastrados,
         (
           SELECT COUNT(*)
@@ -150,7 +160,8 @@ export class SQLiteDashboardRepository
           SELECT COUNT(*)
           FROM produtos
           WHERE ativo = 1
-            AND quantidade <= 5
+            AND quantidade_minima > 0
+            AND quantidade <= quantidade_minima
         ) AS produtosEstoqueBaixo
         ,(
           SELECT COALESCE(SUM(valor_pendente), 0)
@@ -224,7 +235,8 @@ export class SQLiteDashboardRepository
           unidade_medida AS unidadeMedida
         FROM produtos
         WHERE ativo = 1
-          AND quantidade <= 5
+          AND quantidade_minima > 0
+          AND quantidade <= quantidade_minima
         ORDER BY quantidade ASC, nome ASC
         LIMIT 4
       `);
@@ -264,6 +276,8 @@ export class SQLiteDashboardRepository
       resumo: {
         vendasHoje:
           Number(resumo?.vendasHoje) || 0,
+        vendasMes:
+          Number(resumo?.vendasMes) || 0,
         quantidadeVendasHoje:
           Number(resumo?.quantidadeVendasHoje) || 0,
         ticketMedioHoje:

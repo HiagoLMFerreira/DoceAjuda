@@ -14,18 +14,18 @@ import type { Cliente } from '../../domain/models/Cliente';
 type Props = {
   visible: boolean;
   cliente: Cliente | null;
-  excluindo: boolean;
+  alterandoStatus: boolean;
   onEdit: (cliente: Cliente) => void;
-  onDelete: (cliente: Cliente) => void;
+  onToggleStatus: (cliente: Cliente) => void;
   onClose: () => void;
 };
 
 export function ClienteDetailsModal({
   visible,
   cliente,
-  excluindo,
+  alterandoStatus,
   onEdit,
-  onDelete,
+  onToggleStatus,
   onClose,
 }: Props) {
   return (
@@ -52,7 +52,7 @@ export function ClienteDetailsModal({
             <TouchableOpacity
               style={styles.headerCloseButton}
               onPress={onClose}
-              disabled={excluindo}
+              disabled={alterandoStatus}
             >
               <Ionicons name="close" size={22} color="#FF3B73" />
             </TouchableOpacity>
@@ -120,23 +120,32 @@ export function ClienteDetailsModal({
                 <TouchableOpacity
                   style={[styles.detailButton, styles.editButton]}
                   onPress={() => onEdit(cliente)}
-                  disabled={excluindo}
+                  disabled={alterandoStatus}
                 >
                   <Ionicons name="create-outline" size={19} color="#FFFFFF" />
                   <Text style={styles.buttonText}>Editar</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
-                  style={[styles.detailButton, styles.deleteButton]}
-                  onPress={() => onDelete(cliente)}
-                  disabled={excluindo}
+                  style={[
+                    styles.detailButton,
+                    cliente.ativo === 1 ? styles.inactivateButton : styles.reactivateButton,
+                  ]}
+                  onPress={() => onToggleStatus(cliente)}
+                  disabled={alterandoStatus}
                 >
-                  {excluindo ? (
+                  {alterandoStatus ? (
                     <ActivityIndicator size="small" color="#fff" />
                   ) : (
                     <>
-                      <Ionicons name="trash-outline" size={19} color="#FFFFFF" />
-                      <Text style={styles.buttonText}>Excluir</Text>
+                      <Ionicons
+                        name={cliente.ativo === 1 ? 'pause-circle-outline' : 'refresh-circle-outline'}
+                        size={19}
+                        color="#FFFFFF"
+                      />
+                      <Text style={styles.buttonText}>
+                        {cliente.ativo === 1 ? 'Inativar' : 'Reativar'}
+                      </Text>
                     </>
                   )}
                 </TouchableOpacity>
@@ -145,7 +154,7 @@ export function ClienteDetailsModal({
               <TouchableOpacity
                 style={[styles.fullButton, styles.closeButton]}
                 onPress={onClose}
-                disabled={excluindo}
+                disabled={alterandoStatus}
               >
                 <Text style={styles.closeButtonText}>Fechar</Text>
               </TouchableOpacity>
@@ -320,8 +329,11 @@ const styles = StyleSheet.create({
   editButton: {
     backgroundColor: '#FF3B73',
   },
-  deleteButton: {
+  inactivateButton: {
     backgroundColor: '#D93C56',
+  },
+  reactivateButton: {
+    backgroundColor: '#2D9449',
   },
   fullButton: {
     minHeight: 50,

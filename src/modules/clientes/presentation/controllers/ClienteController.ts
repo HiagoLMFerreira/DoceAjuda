@@ -6,7 +6,7 @@ import type {
 import type { AtualizarClienteService } from '../../application/services/AtualizarClienteService';
 import type { BuscarClientePorIdService } from '../../application/services/BuscarClientePorIdService';
 import type { CriarClienteService } from '../../application/services/CriarClienteService';
-import type { ExcluirClienteService } from '../../application/services/ExcluirClienteService';
+import type { AlterarStatusClienteService } from '../../application/services/AlterarStatusClienteService';
 import type { ListarClientesService } from '../../application/services/ListarClientesService';
 
 export class ClienteController {
@@ -15,7 +15,7 @@ export class ClienteController {
     private readonly buscarClientePorIdService: BuscarClientePorIdService,
     private readonly criarClienteService: CriarClienteService,
     private readonly atualizarClienteService: AtualizarClienteService,
-    private readonly excluirClienteService: ExcluirClienteService
+    private readonly alterarStatusClienteService: AlterarStatusClienteService
   ) {}
 
   listar(filtros?: FiltroClientes) {
@@ -34,7 +34,7 @@ export class ClienteController {
     return this.atualizarClienteService.executar(cliente);
   }
 
-  excluir(id: number) {
-    return this.excluirClienteService.executar(id);
+  alterarStatus(id: number, ativo: boolean) {
+    return this.alterarStatusClienteService.executar(id, ativo);
   }
 }

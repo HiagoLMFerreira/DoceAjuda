@@ -73,6 +73,7 @@ export class AgendaPdfService {
           highlight: true,
         },
       ],
+      summaryTitle: 'Resumo da produção',
     });
   }
 }

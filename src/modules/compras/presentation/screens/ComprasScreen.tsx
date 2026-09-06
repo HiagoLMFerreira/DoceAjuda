@@ -317,13 +317,22 @@ export default function ComprasScreen() {
 
   const confirmarExclusao = () => {
     if (!detalhes) return;
-    Alert.alert('Excluir compra', 'Apenas compras canceladas podem ser excluídas. Deseja continuar?', [
+    const precisaEstornar = detalhes.status === 'CONFIRMADA';
+    Alert.alert(
+      'Excluir lançamento',
+      precisaEstornar
+        ? 'A compra será removida e sua entrada no estoque será estornada. Deseja continuar?'
+        : 'A compra cancelada será removida definitivamente. Deseja continuar?',
+      [
       { text: 'Não', style: 'cancel' },
       {
         text: 'Excluir',
         style: 'destructive',
         onPress: async () => {
           try {
+            if (precisaEstornar) {
+              await cancelarCompra(detalhes.id);
+            }
             await excluirCompra(detalhes.id);
             setModalDetalhes(false);
             setDetalhes(null);
@@ -332,8 +341,9 @@ export default function ComprasScreen() {
             Alert.alert('Erro', error instanceof Error ? error.message : 'Não foi possível excluir a compra.');
           }
         },
-      },
-    ]);
+        },
+      ]
+    );
   };
 
   const confirmarLogout = () => {
@@ -373,20 +383,6 @@ export default function ComprasScreen() {
       String(produto.codigo_barras || '').includes(texto)
     );
   }, [produtos, buscaProduto]);
-
-  const resumoCompras = useMemo(() => {
-    const confirmadas = compras.filter((compra) => compra.status === 'CONFIRMADA');
-    const valorConfirmado = confirmadas.reduce(
-      (total, compra) => total + Number(compra.valor_total || 0),
-      0
-    );
-
-    return {
-      total: compras.length,
-      confirmadas: confirmadas.length,
-      valorConfirmado,
-    };
-  }, [compras]);
 
   return (
     <SafeAreaView
@@ -435,29 +431,6 @@ export default function ComprasScreen() {
               <Ionicons name="close-circle" size={21} color={COLORS.textMuted} />
             </TouchableOpacity>
           )}
-        </View>
-
-        <View style={styles.resumoContainer}>
-          <View style={styles.resumoCard}>
-            <View style={styles.resumoIcone}>
-              <Ionicons name="receipt-outline" size={18} color={COLORS.primary} />
-            </View>
-            <Text style={styles.resumoNumero}>{resumoCompras.total}</Text>
-            <Text style={styles.resumoTexto}>Compras</Text>
-          </View>
-          <View style={styles.resumoCard}>
-            <View style={[styles.resumoIcone, styles.resumoIconeSucesso]}>
-              <Ionicons name="checkmark-circle-outline" size={18} color={COLORS.success} />
-            </View>
-            <Text style={styles.resumoNumero}>{resumoCompras.confirmadas}</Text>
-            <Text style={styles.resumoTexto}>Confirmadas</Text>
-          </View>
-          <View style={[styles.resumoCard, styles.resumoCardDestaque]}>
-            <Text style={styles.resumoValor} numberOfLines={1}>
-              {formatarMoeda(resumoCompras.valorConfirmado)}
-            </Text>
-            <Text style={styles.resumoTextoDestaque}>Total confirmado</Text>
-          </View>
         </View>
 
         <TouchableOpacity
@@ -668,9 +641,7 @@ export default function ComprasScreen() {
                   {detalhes.status === 'CONFIRMADA' && (
                     <TouchableOpacity style={styles.botaoPerigo} onPress={confirmarCancelamento}><Ionicons name="close-circle-outline" size={20} color="#fff" /><Text style={styles.botaoPerigoTexto}>Cancelar compra</Text></TouchableOpacity>
                   )}
-                  {detalhes.status === 'CANCELADA' && (
-                    <TouchableOpacity style={styles.botaoPerigo} onPress={confirmarExclusao}><Ionicons name="trash-outline" size={20} color="#fff" /><Text style={styles.botaoPerigoTexto}>Excluir compra</Text></TouchableOpacity>
-                  )}
+                  <TouchableOpacity style={styles.botaoPerigo} onPress={confirmarExclusao}><Ionicons name="trash-outline" size={20} color="#fff" /><Text style={styles.botaoPerigoTexto}>Excluir lançamento</Text></TouchableOpacity>
                   <TouchableOpacity style={styles.botaoCancelarInteiro} onPress={() => setModalDetalhes(false)}><Text style={styles.botaoCancelarTexto}>FECHAR</Text></TouchableOpacity>
                 </>
               )}

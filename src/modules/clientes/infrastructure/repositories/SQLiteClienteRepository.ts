@@ -15,6 +15,7 @@ type ClienteRow = {
   telefone: string;
   endereco: string;
   total_compras: number;
+  ativo: number;
 };
 
 const COLUNAS_ORDENACAO: Record<CampoOrdenacaoCliente, string> = {
@@ -30,6 +31,7 @@ function mapearCliente(row: ClienteRow): Cliente {
     telefone: row.telefone ?? '',
     endereco: row.endereco ?? '',
     total_compras: Number(row.total_compras ?? 0),
+    ativo: Number(row.ativo ?? 1),
   };
 }
 
@@ -41,6 +43,7 @@ export class SQLiteClienteRepository implements IClienteRepository {
       const ordenarPor = filtros.ordenarPor ?? 'nome';
       const direcao = filtros.direcao === 'DESC' ? 'DESC' : 'ASC';
       const coluna = COLUNAS_ORDENACAO[ordenarPor] ?? COLUNAS_ORDENACAO.nome;
+      const situacao = filtros.situacao === 'INATIVOS' ? 0 : 1;
 
       if (!termo) {
         const rows = await database.getAllAsync<ClienteRow>(`
@@ -50,7 +53,9 @@ export class SQLiteClienteRepository implements IClienteRepository {
             telefone,
             endereco,
             total_compras
+            ,ativo
           FROM clientes
+          WHERE ativo = ${situacao}
           ORDER BY ${coluna} ${direcao}
         `);
 
@@ -68,8 +73,10 @@ export class SQLiteClienteRepository implements IClienteRepository {
               telefone,
               endereco,
               total_compras
+              ,ativo
             FROM clientes
-            WHERE id = ? OR nome LIKE ?
+            WHERE ativo = ${situacao}
+              AND (id = ? OR nome LIKE ?)
             ORDER BY ${coluna} ${direcao}
           `,
           [termoNumerico, `%${termo}%`]
@@ -86,8 +93,10 @@ export class SQLiteClienteRepository implements IClienteRepository {
             telefone,
             endereco,
             total_compras
+            ,ativo
           FROM clientes
-          WHERE nome LIKE ?
+          WHERE ativo = ${situacao}
+            AND nome LIKE ?
           ORDER BY ${coluna} ${direcao}
         `,
         [`%${termo}%`]
@@ -113,6 +122,7 @@ export class SQLiteClienteRepository implements IClienteRepository {
             telefone,
             endereco,
             total_compras
+            ,ativo
           FROM clientes
           WHERE id = ?
         `,
@@ -187,33 +197,12 @@ export class SQLiteClienteRepository implements IClienteRepository {
     }
   }
 
-  async possuiDocumentosVinculados(id: number): Promise<boolean> {
-    try {
-      const database = await getDatabaseConnection();
-      const resultado = await database.getFirstAsync<{ total: number }>(
-        `
-          SELECT COUNT(*) AS total
-          FROM documentos_comerciais
-          WHERE cliente_id = ?
-        `,
-        [id]
-      );
-
-      return Number(resultado?.total ?? 0) > 0;
-    } catch (error) {
-      throw new DatabaseError(
-        'Não foi possível verificar os vínculos do cliente.',
-        error
-      );
-    }
-  }
-
-  async excluir(id: number): Promise<void> {
+  async alterarStatus(id: number, ativo: boolean): Promise<void> {
     try {
       const database = await getDatabaseConnection();
       const resultado = await database.runAsync(
-        'DELETE FROM clientes WHERE id = ?',
-        [id]
+        'UPDATE clientes SET ativo = ? WHERE id = ?',
+        [ativo ? 1 : 0, id]
       );
 
       if (resultado.changes !== 1) {
@@ -221,7 +210,7 @@ export class SQLiteClienteRepository implements IClienteRepository {
       }
     } catch (error) {
       throw new DatabaseError(
-        'Não foi possível excluir o cliente.',
+        'Não foi possível alterar o status do cliente.',
         error
       );
     }

@@ -40,18 +40,18 @@ const COLORS = {
 type Props = {
   visible: boolean;
   produto: ProdutoEstoque | null;
-  excluindo: boolean;
+  alterandoStatus: boolean;
   onEdit: () => void;
-  onDelete: () => void;
+  onToggleStatus: () => void;
   onClose: () => void;
 };
 
 export function ProdutoEstoqueDetailsModal({
   visible,
   produto,
-  excluindo,
+  alterandoStatus,
   onEdit,
-  onDelete,
+  onToggleStatus,
   onClose,
 }: Props) {
   const zerado =
@@ -105,7 +105,7 @@ export function ProdutoEstoqueDetailsModal({
                   <TouchableOpacity
                     style={styles.closeButton}
                     onPress={onClose}
-                    disabled={excluindo}
+                    disabled={alterandoStatus}
                     activeOpacity={0.75}
                   >
                     <Ionicons
@@ -200,6 +200,16 @@ export function ProdutoEstoqueDetailsModal({
                     />
 
                     <Detail
+                      icon="alert-circle-outline"
+                      label="Quantidade mínima"
+                      value={
+                        produto.quantidade_minima > 0
+                          ? `${formatDecimal(produto.quantidade_minima)} ${obterRotuloUnidade(produto.unidade_medida)}`
+                          : 'Não definida'
+                      }
+                    />
+
+                    <Detail
                       icon="receipt-outline"
                       label="Última entrada"
                       value={formatCurrency(
@@ -225,7 +235,7 @@ export function ProdutoEstoqueDetailsModal({
                       styles.secondaryButton,
                     ]}
                     onPress={onEdit}
-                    disabled={excluindo}
+                    disabled={alterandoStatus}
                     activeOpacity={0.8}
                   >
                     <Ionicons
@@ -244,20 +254,22 @@ export function ProdutoEstoqueDetailsModal({
                   <TouchableOpacity
                     style={[
                       styles.footerButton,
-                      styles.deleteButton,
+                      produto.ativo === 1
+                        ? styles.inactivateButton
+                        : styles.reactivateButton,
                     ]}
-                    onPress={onDelete}
-                    disabled={excluindo}
+                    onPress={onToggleStatus}
+                    disabled={alterandoStatus}
                     activeOpacity={0.8}
                   >
-                    {excluindo ? (
+                    {alterandoStatus ? (
                       <ActivityIndicator
                         size="small"
                         color="#FFFFFF"
                       />
                     ) : (
                       <Ionicons
-                        name="trash-outline"
+                        name={produto.ativo === 1 ? 'pause-circle-outline' : 'refresh-circle-outline'}
                         size={20}
                         color="#FFFFFF"
                       />
@@ -266,7 +278,7 @@ export function ProdutoEstoqueDetailsModal({
                     <Text
                       style={styles.deleteButtonText}
                     >
-                      Excluir
+                      {produto.ativo === 1 ? 'Inativar' : 'Reativar'}
                     </Text>
                   </TouchableOpacity>
                 </View>
@@ -556,8 +568,12 @@ const styles = StyleSheet.create({
     borderColor: '#FFD1DD',
   },
 
-  deleteButton: {
+  inactivateButton: {
     backgroundColor: COLORS.danger,
+  },
+
+  reactivateButton: {
+    backgroundColor: '#2D9449',
   },
 
   secondaryButtonText: {

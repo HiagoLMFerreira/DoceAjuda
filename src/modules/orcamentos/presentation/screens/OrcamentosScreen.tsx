@@ -1281,7 +1281,7 @@ const styles = StyleSheet.create({
   },
   modalDetalhes: {
     width: "100%",
-    maxHeight: "94%",
+    height: "91%",
     backgroundColor: COLORS.background,
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
@@ -1427,7 +1427,7 @@ const styles = StyleSheet.create({
     gap: 9,
     paddingHorizontal: 18,
     paddingTop: 12,
-    paddingBottom: 16,
+    paddingBottom: 24,
     borderTopWidth: 1,
     borderTopColor: COLORS.border,
     backgroundColor: COLORS.background,

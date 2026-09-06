@@ -25,9 +25,11 @@ export async function listarClientes(filtro: string = "", ordenarPor: OrdenarCli
           nome,
           telefone,
           endereco,
-          total_compras
+          total_compras,
+          ativo
         FROM clientes
-        WHERE id = ? OR nome LIKE ?
+        WHERE ativo = 1
+          AND (id = ? OR nome LIKE ?)
         ORDER BY ${colunaOrdenacao} ${direcaoOrdenacao}
         `, [buscaNumerica, `%${busca}%`]);
             return resultado;
@@ -38,9 +40,11 @@ export async function listarClientes(filtro: string = "", ordenarPor: OrdenarCli
         nome,
         telefone,
         endereco,
-        total_compras
+        total_compras,
+        ativo
       FROM clientes
-      WHERE nome LIKE ?
+      WHERE ativo = 1
+        AND nome LIKE ?
       ORDER BY ${colunaOrdenacao} ${direcaoOrdenacao}
       `, [`%${busca}%`]);
         return resultado;
@@ -51,8 +55,10 @@ export async function listarClientes(filtro: string = "", ordenarPor: OrdenarCli
       nome,
       telefone,
       endereco,
-      total_compras
+      total_compras,
+      ativo
     FROM clientes
+    WHERE ativo = 1
     ORDER BY ${colunaOrdenacao} ${direcaoOrdenacao}
   `);
     return resultado;
@@ -71,7 +77,8 @@ export async function adicionarCliente(nome: string, telefone: string = "", ende
       nome,
       telefone,
       endereco,
-      total_compras
+      total_compras,
+      ativo
     ) VALUES (?, ?, ?, 0)
     `, [nomeTratado, telefoneTratado, enderecoTratado]);
     return resultado.lastInsertRowId;

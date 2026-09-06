@@ -1,5 +1,6 @@
 export type DashboardResumo = {
   vendasHoje: number;
+  vendasMes: number;
   quantidadeVendasHoje: number;
   ticketMedioHoje: number;
   clientesCadastrados: number;
