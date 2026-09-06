@@ -1,13 +1,17 @@
 import React from 'react';
 import {
   ActivityIndicator,
+  KeyboardAvoidingView,
   Modal,
+  Platform,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import type { Cliente } from '../../domain/models/Cliente';
 
 type FormularioCliente = {
@@ -39,12 +43,47 @@ export function ClienteFormModal({
   onSave,
 }: Props) {
   return (
-    <Modal visible={visible} transparent animationType="fade">
-      <View style={styles.modalOverlay}>
+    <Modal
+      visible={visible}
+      transparent
+      animationType="fade"
+      onRequestClose={onClose}
+    >
+      <KeyboardAvoidingView
+        style={styles.modalOverlay}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
         <View style={styles.formModalContent}>
-          <Text style={styles.modalTitle}>
-            {clienteEditando ? 'EDITAR CLIENTE' : 'NOVO CLIENTE'}
-          </Text>
+          <View style={styles.modalHandle} />
+
+          <View style={styles.modalHeader}>
+            <View style={styles.headerIcon}>
+              <Ionicons name="person-outline" size={22} color="#FF3B73" />
+            </View>
+            <View style={styles.headerText}>
+              <Text style={styles.modalTitle}>
+                {clienteEditando ? 'Editar cliente' : 'Novo cliente'}
+              </Text>
+              <Text style={styles.modalSubtitle}>
+                {clienteEditando
+                  ? 'Atualize os dados do cadastro'
+                  : 'Preencha os dados do novo contato'}
+              </Text>
+            </View>
+            <TouchableOpacity
+              style={styles.closeButton}
+              onPress={onClose}
+              disabled={salvando}
+            >
+              <Ionicons name="close" size={22} color="#FF3B73" />
+            </TouchableOpacity>
+          </View>
+
+          <ScrollView
+            contentContainerStyle={styles.formContent}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+          >
 
           {clienteEditando && (
             <>
@@ -104,12 +143,15 @@ export function ClienteFormModal({
               {salvando ? (
                 <ActivityIndicator size="small" color="#fff" />
               ) : (
-                <Text style={styles.buttonText}>Salvar</Text>
+                <Text style={[styles.buttonText, styles.saveButtonText]}>
+                  Salvar
+                </Text>
               )}
             </TouchableOpacity>
           </View>
+          </ScrollView>
         </View>
-      </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }
@@ -117,49 +159,94 @@ export function ClienteFormModal({
 const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: 'rgba(24, 16, 20, 0.48)',
+    justifyContent: 'flex-end',
   },
   formModalContent: {
-    width: '85%',
-    maxHeight: '90%',
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 20,
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
+    width: '100%',
+    maxHeight: '92%',
+    backgroundColor: '#FFFDFE',
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    overflow: 'hidden',
+  },
+  modalHandle: {
+    width: 48,
+    height: 5,
+    borderRadius: 3,
+    alignSelf: 'center',
+    backgroundColor: '#E8DDE1',
+    marginTop: 9,
+  },
+  modalHeader: {
+    minHeight: 76,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 18,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1E7EA',
+  },
+  headerIcon: {
+    width: 43,
+    height: 43,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#FFF0F4',
+    marginRight: 10,
+  },
+  headerText: {
+    flex: 1,
   },
   modalTitle: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: '#1a1a1a',
-    textAlign: 'center',
-    marginBottom: 15,
-    letterSpacing: 2,
+    fontSize: 20,
+    fontWeight: '900',
+    color: '#242329',
+  },
+  modalSubtitle: {
+    color: '#737178',
+    fontSize: 11,
+    marginTop: 3,
+  },
+  closeButton: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#FFF0F4',
+    marginLeft: 8,
+  },
+  formContent: {
+    paddingHorizontal: 18,
+    paddingTop: 12,
+    paddingBottom: 22,
   },
   inputLabel: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '800',
-    color: '#1a1a1a',
-    marginBottom: 6,
+    color: '#242329',
+    marginBottom: 7,
+    marginTop: 4,
   },
   formInput: {
-    backgroundColor: '#f5f5f5',
-    borderRadius: 8,
-    padding: 12,
+    minHeight: 54,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    paddingHorizontal: 14,
     fontSize: 14,
     marginBottom: 14,
     borderWidth: 1,
-    borderColor: '#ccc',
-    color: '#1a1a1a',
+    borderColor: '#F1E7EA',
+    color: '#242329',
   },
   disabledInput: {
-    backgroundColor: '#eaeaea',
-    color: '#777',
+    backgroundColor: '#F7F1F3',
+    color: '#737178',
   },
   textArea: {
-    minHeight: 80,
+    minHeight: 92,
+    paddingTop: 13,
     textAlignVertical: 'top',
   },
   modalButtons: {
@@ -169,20 +256,31 @@ const styles = StyleSheet.create({
   },
   modalButton: {
     flex: 1,
-    paddingVertical: 10,
-    borderRadius: 8,
+    minHeight: 52,
+    borderRadius: 16,
     minWidth: 100,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   cancelButton: {
-    backgroundColor: '#aaa',
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#DCCFD4',
   },
   saveButton: {
-    backgroundColor: '#000',
+    backgroundColor: '#FF3B73',
+    shadowColor: '#FF3B73',
+    shadowOffset: { width: 0, height: 5 },
+    shadowOpacity: 0.18,
+    shadowRadius: 8,
+    elevation: 4,
   },
   buttonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 14,
+    color: '#242329',
+    fontWeight: '900',
+    fontSize: 13,
+  },
+  saveButtonText: {
+    color: '#FFFFFF',
   },
 });

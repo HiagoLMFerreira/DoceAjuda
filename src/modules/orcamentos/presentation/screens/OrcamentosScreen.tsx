@@ -5,7 +5,6 @@ import {
   FlatList,
   Modal,
   Pressable,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
@@ -13,6 +12,7 @@ import {
   View,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 import DocumentoComercialFormModal from '../../../../components/DocumentoComercialFormModal';
 import {
@@ -45,6 +45,21 @@ type DirecaoOrdenacaoOrcamento = "ASC" | "DESC";
 type OrdenacaoOrcamento = {
   campo: CampoOrdenacaoOrcamento;
   direcao: DirecaoOrdenacaoOrcamento;
+};
+
+const COLORS = {
+  primary: "#FF3B73",
+  primarySoft: "#FFF0F4",
+  background: "#FFFDFE",
+  surface: "#FFFFFF",
+  textPrimary: "#242329",
+  textSecondary: "#737178",
+  textMuted: "#9B98A0",
+  border: "#F1E7EA",
+  borderStrong: "#FFD1DD",
+  success: "#2D9449",
+  warning: "#DF8514",
+  danger: "#D93C56",
 };
 
 function formatarData(data: string): string {
@@ -210,14 +225,20 @@ export default function OrcamentosScreen({ navigation }: Props) {
 
   function renderizarIconeOrdenacao(campo: CampoOrdenacaoOrcamento) {
     if (ordenacao.campo !== campo) {
-      return <Ionicons name="swap-vertical-outline" size={13} color="#777" />;
+      return (
+        <Ionicons
+          name="swap-vertical-outline"
+          size={13}
+          color={COLORS.textSecondary}
+        />
+      );
     }
 
     return (
       <Ionicons
         name={ordenacao.direcao === "ASC" ? "chevron-up" : "chevron-down"}
         size={14}
-        color="#111"
+        color={COLORS.primary}
       />
     );
   }
@@ -392,29 +413,59 @@ export default function OrcamentosScreen({ navigation }: Props) {
   }
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView
+      style={styles.safeArea}
+      edges={["top", "left", "right"]}
+    >
       <View style={styles.container}>
         <View style={styles.header}>
           <Pressable style={styles.botaoVoltar} onPress={navigation.goBack}>
-            <Ionicons name="arrow-back" size={22} color="#fff" />
+            <Ionicons
+              name="arrow-back"
+              size={22}
+              color={COLORS.primary}
+            />
           </Pressable>
-          <Text style={styles.titulo}>ORÇAMENTOS</Text>
-          <View style={styles.espacoHeader} />
+
+          <View style={styles.headerContent}>
+            <View style={styles.headerIcon}>
+              <Ionicons
+                name="document-text-outline"
+                size={24}
+                color={COLORS.primary}
+              />
+            </View>
+
+            <View style={styles.headerTextArea}>
+              <Text style={styles.titulo}>Orçamentos</Text>
+              <Text style={styles.headerSubtitle}>
+                Propostas, valores e necessidades
+              </Text>
+            </View>
+          </View>
         </View>
 
         <View style={styles.buscaContainer}>
-          <Ionicons name="search" size={20} color="#666" />
+          <Ionicons
+            name="search-outline"
+            size={21}
+            color={COLORS.primary}
+          />
           <TextInput
             style={styles.buscaInput}
             placeholder="Buscar por cliente ou ID"
-            placeholderTextColor="#888"
+            placeholderTextColor={COLORS.textMuted}
             value={busca}
             onChangeText={setBusca}
             returnKeyType="search"
           />
           {!!busca && (
             <Pressable onPress={() => setBusca("")}>
-              <Ionicons name="close-circle" size={20} color="#777" />
+              <Ionicons
+                name="close-circle"
+                size={21}
+                color={COLORS.textMuted}
+              />
             </Pressable>
           )}
         </View>
@@ -501,7 +552,7 @@ export default function OrcamentosScreen({ navigation }: Props) {
 
         {carregando ? (
           <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#111" />
+            <ActivityIndicator size="large" color={COLORS.primary} />
           </View>
         ) : (
           <FlatList
@@ -511,7 +562,13 @@ export default function OrcamentosScreen({ navigation }: Props) {
             contentContainerStyle={styles.listaContent}
             ListEmptyComponent={
               <View style={styles.estadoVazio}>
-                <Ionicons name="document-text-outline" size={48} color="#777" />
+                <View style={styles.estadoVazioIcone}>
+                  <Ionicons
+                    name="document-text-outline"
+                    size={34}
+                    color={COLORS.primary}
+                  />
+                </View>
                 <Text style={styles.estadoVazioTitulo}>
                   Nenhum orçamento encontrado
                 </Text>
@@ -588,6 +645,7 @@ export default function OrcamentosScreen({ navigation }: Props) {
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalDetalhes}>
+            <View style={styles.modalHandle} />
             <View style={styles.detalhesHeader}>
               <Text style={styles.modalTitulo}>
                 ORÇAMENTO #{orcamentoSelecionado?.id ?? ""}
@@ -596,13 +654,13 @@ export default function OrcamentosScreen({ navigation }: Props) {
                 style={styles.botaoFechar}
                 onPress={() => setModalDetalhes(false)}
               >
-                <Ionicons name="close" size={23} color="#111" />
+                <Ionicons name="close" size={23} color={COLORS.primary} />
               </Pressable>
             </View>
 
             {carregandoDetalhes || !orcamentoSelecionado ? (
               <View style={styles.loadingDetalhesContainer}>
-                <ActivityIndicator color="#111" />
+                <ActivityIndicator color={COLORS.primary} />
               </View>
             ) : (
               <ScrollView
@@ -767,13 +825,14 @@ export default function OrcamentosScreen({ navigation }: Props) {
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalNecessidades}>
+            <View style={styles.modalHandle} />
             <View style={styles.detalhesHeader}>
               <Text style={styles.modalTitulo}>LISTA DE NECESSIDADES</Text>
               <Pressable
                 style={styles.botaoFechar}
                 onPress={fecharNecessidades}
               >
-                <Ionicons name="close" size={23} color="#111" />
+                <Ionicons name="close" size={23} color={COLORS.primary} />
               </Pressable>
             </View>
 
@@ -817,7 +876,7 @@ export default function OrcamentosScreen({ navigation }: Props) {
                   <Ionicons
                     name="checkmark-circle-outline"
                     size={42}
-                    color="#2e7d32"
+                    color={COLORS.success}
                   />
                   <Text style={styles.necessidadesVazioTitulo}>
                     Nenhuma necessidade encontrada
@@ -933,79 +992,115 @@ export default function OrcamentosScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: "#ebebeb",
+    backgroundColor: COLORS.background,
   },
   container: {
     flex: 1,
-    backgroundColor: "#ebebeb",
+    backgroundColor: COLORS.background,
     paddingHorizontal: 16,
-    paddingTop: 50,
+    paddingTop: 12,
   },
   header: {
-    height: 58,
-    backgroundColor: "#d7d7d7",
+    minHeight: 76,
+    backgroundColor: COLORS.surface,
     borderRadius: 18,
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 10,
+    paddingHorizontal: 12,
     marginBottom: 14,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    shadowColor: "#5A3844",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.06,
+    shadowRadius: 9,
+    elevation: 2,
   },
   botaoVoltar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "#111",
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: COLORS.primarySoft,
     alignItems: "center",
     justifyContent: "center",
+    marginRight: 11,
   },
-  titulo: {
-    fontSize: 18,
-    fontWeight: "900",
-    color: "#111",
-  },
-  espacoHeader: {
-    width: 40,
-  },
-  buscaContainer: {
-    height: 49,
+  headerContent: {
+    flex: 1,
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
-    backgroundColor: "#fff",
-    borderRadius: 14,
-    paddingHorizontal: 13,
-    marginBottom: 11,
+  },
+  headerIcon: {
+    width: 43,
+    height: 43,
+    borderRadius: 22,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: COLORS.primarySoft,
+    marginRight: 10,
+  },
+  headerTextArea: {
+    flex: 1,
+  },
+  titulo: {
+    fontSize: 20,
+    fontWeight: "900",
+    color: COLORS.textPrimary,
+  },
+  headerSubtitle: {
+    color: COLORS.textSecondary,
+    fontSize: 11,
+    marginTop: 3,
+  },
+  buscaContainer: {
+    minHeight: 54,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 9,
+    backgroundColor: COLORS.surface,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    paddingHorizontal: 14,
+    marginBottom: 12,
   },
   buscaInput: {
     flex: 1,
-    height: "100%",
-    color: "#111",
-    fontSize: 15,
+    minHeight: 52,
+    color: COLORS.textPrimary,
+    fontSize: 14,
+    fontWeight: "500",
   },
   botaoNovo: {
-    height: 50,
-    borderRadius: 14,
-    backgroundColor: "#111",
+    minHeight: 53,
+    borderRadius: 16,
+    backgroundColor: COLORS.primary,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
     marginBottom: 14,
+    shadowColor: COLORS.primary,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.23,
+    shadowRadius: 10,
+    elevation: 5,
   },
   botaoNovoTexto: {
-    color: "#fff",
-    fontWeight: "800",
+    color: "#FFFFFF",
+    fontWeight: "900",
     fontSize: 15,
   },
   cabecalhoLista: {
-    minHeight: 42,
+    minHeight: 43,
     borderRadius: 12,
-    backgroundColor: "#d2d2d2",
+    backgroundColor: COLORS.primarySoft,
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 10,
     marginBottom: 8,
+    borderWidth: 1,
+    borderColor: "#FFD5E0",
   },
   cabecalhoOrdenavel: {
     minHeight: 42,
@@ -1021,12 +1116,11 @@ const styles = StyleSheet.create({
   },
   cabecalhoTexto: {
     fontSize: 10,
-    fontWeight: "800",
-    color: "#555",
+    fontWeight: "900",
+    color: COLORS.textPrimary,
   },
   cabecalhoTextoAtivo: {
-    color: "#111",
-    fontWeight: "900",
+    color: COLORS.primary,
   },
   colunaCliente: {
     flex: 1.4,
@@ -1055,11 +1149,19 @@ const styles = StyleSheet.create({
     flexGrow: 1,
   },
   card: {
-    backgroundColor: "#fff",
+    minHeight: 68,
+    backgroundColor: COLORS.surface,
     borderRadius: 15,
     paddingHorizontal: 10,
     paddingVertical: 13,
-    marginBottom: 9,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    shadowColor: "#5A3844",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.04,
+    shadowRadius: 7,
+    elevation: 2,
   },
   cardLinhaPrincipal: {
     flexDirection: "row",
@@ -1067,23 +1169,23 @@ const styles = StyleSheet.create({
   },
   cardCliente: {
     fontSize: 13,
-    fontWeight: "800",
-    color: "#111",
+    fontWeight: "900",
+    color: COLORS.textPrimary,
   },
   cardId: {
     fontSize: 10,
-    color: "#777",
+    color: COLORS.textSecondary,
     marginTop: 3,
   },
   cardTexto: {
     fontSize: 10,
-    color: "#555",
+    color: COLORS.textSecondary,
     paddingHorizontal: 2,
   },
   cardTotal: {
     fontSize: 11,
-    fontWeight: "800",
-    color: "#111",
+    fontWeight: "900",
+    color: COLORS.primary,
     paddingHorizontal: 2,
   },
   statusColuna: {
@@ -1097,21 +1199,21 @@ const styles = StyleSheet.create({
     borderRadius: 999,
   },
   statusPendente: {
-    backgroundColor: "#fff0bf",
+    backgroundColor: "#FFF5E8",
   },
   statusConvertido: {
-    backgroundColor: "#d9ead3",
+    backgroundColor: "#EDF8EE",
   },
   statusConcluido: {
-    backgroundColor: "#d9ead3",
+    backgroundColor: "#EDF8EE",
   },
   statusCancelado: {
-    backgroundColor: "#f4cccc",
+    backgroundColor: "#FFF0F3",
   },
   statusTexto: {
     fontSize: 9,
-    fontWeight: "800",
-    color: "#333",
+    fontWeight: "900",
+    color: COLORS.textPrimary,
   },
   loadingContainer: {
     flex: 1,
@@ -1124,67 +1226,84 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     paddingHorizontal: 30,
   },
+  estadoVazioIcone: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: COLORS.primarySoft,
+  },
   estadoVazioTitulo: {
     fontSize: 16,
-    fontWeight: "800",
-    color: "#333",
+    fontWeight: "900",
+    color: COLORS.textPrimary,
     marginTop: 11,
   },
   estadoVazioTexto: {
     textAlign: "center",
-    color: "#777",
+    color: COLORS.textSecondary,
     marginTop: 5,
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.58)",
-    justifyContent: "center",
-    padding: 18,
+    backgroundColor: "rgba(24, 16, 20, 0.48)",
+    justifyContent: "flex-end",
   },
   modalTitulo: {
     flex: 1,
-    textAlign: "center",
-    fontSize: 17,
+    fontSize: 20,
     fontWeight: "900",
-    color: "#111",
-    marginBottom: 13,
+    color: COLORS.textPrimary,
+  },
+  modalHandle: {
+    width: 48,
+    height: 5,
+    borderRadius: 3,
+    alignSelf: "center",
+    backgroundColor: "#E8DDE1",
+    marginTop: 9,
   },
   modalDetalhes: {
-    display: "flex",
     width: "100%",
-    height: "94%",
-    maxHeight: 700,
-    backgroundColor: "#ebebeb",
-    borderRadius: 22,
+    maxHeight: "94%",
+    backgroundColor: COLORS.background,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
     overflow: "hidden",
   },
   detalhesHeader: {
-    minHeight: 58,
+    minHeight: 70,
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 13,
+    paddingHorizontal: 18,
     flexShrink: 0,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+    backgroundColor: COLORS.background,
   },
   detalhesScroll: {
     flex: 1,
     minHeight: 0,
-    maxHeight:'62%',
   },
   botaoFechar: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: "#d4d4d4",
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: COLORS.primarySoft,
     alignItems: "center",
     justifyContent: "center",
   },
   detalhesContent: {
-    paddingHorizontal: 15,
-    paddingBottom: 18,
+    paddingHorizontal: 18,
+    paddingTop: 16,
+    paddingBottom: 20,
   },
   infoCard: {
-    backgroundColor: "#fff",
-    borderRadius: 15,
+    backgroundColor: COLORS.surface,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: COLORS.border,
     paddingHorizontal: 14,
     marginBottom: 15,
   },
@@ -1194,7 +1313,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     borderBottomWidth: 1,
-    borderBottomColor: "#ededed",
+    borderBottomColor: "#F6EDF0",
   },
   infoLinhaSemBorda: {
     minHeight: 45,
@@ -1203,31 +1322,36 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   infoLabel: {
-    color: "#666",
-    fontWeight: "600",
+    color: COLORS.textSecondary,
+    fontSize: 12,
+    fontWeight: "700",
   },
   infoValor: {
     flex: 1,
     textAlign: "right",
-    color: "#111",
-    fontWeight: "800",
+    color: COLORS.textPrimary,
+    fontSize: 12,
+    fontWeight: "900",
     marginLeft: 12,
   },
   detalhesSecaoTitulo: {
     fontSize: 14,
     fontWeight: "900",
-    color: "#111",
+    color: COLORS.primary,
     marginBottom: 8,
   },
   detalheItemCard: {
-    backgroundColor: "#fff",
-    borderRadius: 14,
-    padding: 13,
-    marginBottom: 8,
+    backgroundColor: COLORS.surface,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    padding: 14,
+    marginBottom: 10,
   },
   detalheItemNome: {
-    color: "#111",
-    fontWeight: "800",
+    color: COLORS.textPrimary,
+    fontSize: 14,
+    fontWeight: "900",
     marginBottom: 7,
   },
   detalheItemLinha: {
@@ -1236,31 +1360,38 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   detalheItemTexto: {
-    color: "#666",
+    color: COLORS.textSecondary,
+    fontSize: 11,
   },
   detalheItemSubtotal: {
-    color: "#111",
-    fontWeight: "800",
+    color: COLORS.primary,
+    fontSize: 13,
+    fontWeight: "900",
   },
   observacoesCard: {
-    backgroundColor: "#fff",
-    borderRadius: 14,
-    padding: 13,
+    backgroundColor: COLORS.surface,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    padding: 14,
     marginTop: 5,
   },
   observacoesTitulo: {
-    color: "#111",
-    fontWeight: "800",
+    color: COLORS.textPrimary,
+    fontWeight: "900",
     marginBottom: 5,
   },
   observacoesTexto: {
-    color: "#555",
+    color: COLORS.textSecondary,
+    fontSize: 12,
     lineHeight: 20,
   },
   totalDetalhesCard: {
     minHeight: 68,
-    backgroundColor: "#111",
-    borderRadius: 15,
+    backgroundColor: "#FFF7F9",
+    borderWidth: 1,
+    borderColor: COLORS.borderStrong,
+    borderRadius: 17,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
@@ -1268,23 +1399,23 @@ const styles = StyleSheet.create({
     marginTop: 11,
   },
   totalDetalhesLabel: {
-    color: "#fff",
+    color: COLORS.textSecondary,
     fontWeight: "800",
   },
   totalDetalhesValor: {
-    color: "#fff",
+    color: COLORS.primary,
     fontWeight: "900",
     fontSize: 21,
   },
   detalhesAcoes: {
     flexShrink: 0,
     gap: 9,
-    paddingHorizontal: 14,
+    paddingHorizontal: 18,
     paddingTop: 12,
     paddingBottom: 16,
     borderTopWidth: 1,
-    borderTopColor: "#d1d1d1",
-    backgroundColor: "#ebebeb",
+    borderTopColor: COLORS.border,
+    backgroundColor: COLORS.background,
   },
   detalhesAcoesLinha: {
     flexDirection: "row",
@@ -1293,37 +1424,38 @@ const styles = StyleSheet.create({
   detalhesBotao: {
     flex: 1,
     minHeight: 48,
-    borderRadius: 13,
+    borderRadius: 16,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: 7,
   },
   botaoPdf: {
-    backgroundColor: "#444",
+    backgroundColor: "#FF779B",
   },
   botaoNecessidades: {
-    backgroundColor: "#1565c0",
+    backgroundColor: COLORS.primary,
   },
   botaoRealizarVenda: {
-    backgroundColor: "#2e7d32",
+    backgroundColor: COLORS.success,
   },
   botaoExcluir: {
-    backgroundColor: "#c62828",
+    backgroundColor: COLORS.danger,
   },
   botaoEditar: {
-    backgroundColor: "#111",
+    backgroundColor: COLORS.primary,
   },
   detalhesBotaoTexto: {
-    color: "#fff",
-    fontWeight: "800",
+    color: "#FFFFFF",
+    fontSize: 12,
+    fontWeight: "900",
   },
   modalNecessidades: {
     width: "100%",
-    height: "88%",
-    maxHeight: 720,
-    backgroundColor: "#ebebeb",
-    borderRadius: 22,
+    height: "90%",
+    backgroundColor: COLORS.background,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
     overflow: "hidden",
   },
   necessidadesResumo: {
@@ -1331,8 +1463,10 @@ const styles = StyleSheet.create({
     marginHorizontal: 15,
     marginBottom: 8,
     paddingHorizontal: 18,
-    borderRadius: 14,
-    backgroundColor: "#fff",
+    borderRadius: 17,
+    borderWidth: 1,
+    borderColor: COLORS.borderStrong,
+    backgroundColor: "#FFF7F9",
     flexDirection: "row",
     alignItems: "center",
   },
@@ -1343,18 +1477,18 @@ const styles = StyleSheet.create({
   necessidadeResumoDivisor: {
     width: 1,
     height: 38,
-    backgroundColor: "#dddddd",
+    backgroundColor: COLORS.borderStrong,
   },
   necessidadeResumoValor: {
     fontSize: 21,
     fontWeight: "900",
-    color: "#111",
+    color: COLORS.primary,
   },
   necessidadeResumoLabel: {
     marginTop: 2,
     fontSize: 11,
     fontWeight: "700",
-    color: "#666",
+    color: COLORS.textSecondary,
   },
   necessidadesAviso: {
     marginHorizontal: 17,
@@ -1362,7 +1496,11 @@ const styles = StyleSheet.create({
     textAlign: "center",
     fontSize: 11,
     fontWeight: "700",
-    color: "#666",
+    color: COLORS.textSecondary,
+    backgroundColor: COLORS.primarySoft,
+    borderRadius: 12,
+    paddingVertical: 9,
+    paddingHorizontal: 12,
   },
   necessidadesLista: {
     flex: 1,
@@ -1375,13 +1513,13 @@ const styles = StyleSheet.create({
   necessidadeCard: {
     padding: 13,
     marginBottom: 9,
-    borderRadius: 14,
+    borderRadius: 16,
     borderWidth: 1,
-    borderColor: "#dddddd",
-    backgroundColor: "#fff",
+    borderColor: COLORS.border,
+    backgroundColor: COLORS.surface,
   },
   necessidadeCardFaltante: {
-    borderColor: "#ef9a9a",
+    borderColor: "#FFC8D7",
   },
   necessidadeCardHeader: {
     flexDirection: "row",
@@ -1393,7 +1531,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 15,
     fontWeight: "900",
-    color: "#111",
+    color: COLORS.textPrimary,
   },
   necessidadeBadge: {
     paddingHorizontal: 8,
@@ -1401,15 +1539,15 @@ const styles = StyleSheet.create({
     borderRadius: 999,
   },
   necessidadeBadgeOk: {
-    backgroundColor: "#d9ead3",
+    backgroundColor: "#EDF8EE",
   },
   necessidadeBadgeFalta: {
-    backgroundColor: "#f4cccc",
+    backgroundColor: "#FFF0F3",
   },
   necessidadeBadgeTexto: {
     fontSize: 9,
     fontWeight: "900",
-    color: "#333",
+    color: COLORS.textPrimary,
   },
   necessidadeGrid: {
     flexDirection: "row",
@@ -1421,24 +1559,24 @@ const styles = StyleSheet.create({
     paddingVertical: 9,
     paddingHorizontal: 6,
     borderRadius: 9,
-    backgroundColor: "#f3f3f3",
+    backgroundColor: COLORS.primarySoft,
     alignItems: "center",
   },
   necessidadeDadoLabel: {
     fontSize: 9,
     fontWeight: "800",
-    color: "#777",
+    color: COLORS.textSecondary,
     textTransform: "uppercase",
   },
   necessidadeDadoValor: {
     marginTop: 4,
     fontSize: 11,
     fontWeight: "900",
-    color: "#111",
+    color: COLORS.textPrimary,
     textAlign: "center",
   },
   textoFaltante: {
-    color: "#c62828",
+    color: COLORS.danger,
   },
   necessidadesVazio: {
     minHeight: 220,
@@ -1450,12 +1588,12 @@ const styles = StyleSheet.create({
     marginTop: 9,
     fontSize: 15,
     fontWeight: "900",
-    color: "#222",
+    color: COLORS.textPrimary,
     textAlign: "center",
   },
   necessidadesVazioTexto: {
     marginTop: 5,
-    color: "#666",
+    color: COLORS.textSecondary,
     textAlign: "center",
   },
   necessidadesRodape: {
@@ -1464,17 +1602,18 @@ const styles = StyleSheet.create({
     paddingTop: 11,
     paddingBottom: 15,
     borderTopWidth: 1,
-    borderTopColor: "#d1d1d1",
+    borderTopColor: COLORS.border,
+    backgroundColor: COLORS.background,
   },
   botaoFecharNecessidades: {
-    minHeight: 47,
-    borderRadius: 13,
-    backgroundColor: "#111",
+    minHeight: 52,
+    borderRadius: 16,
+    backgroundColor: COLORS.primary,
     alignItems: "center",
     justifyContent: "center",
   },
   botaoFecharNecessidadesTexto: {
-    color: "#fff",
+    color: "#FFFFFF",
     fontWeight: "900",
   },
   loadingDetalhesContainer: {

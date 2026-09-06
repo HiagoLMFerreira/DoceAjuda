@@ -106,6 +106,17 @@ const PARAMETROS_INICIAIS: ParametrosPrecificacao = {
 
 const UNIDADES = ['g', 'kg', 'ml', 'l', 'un'];
 
+const COLORS = {
+  primary: '#FF3B73',
+  primarySoft: '#FFF0F4',
+  background: '#FFFDFE',
+  surface: '#FFFFFF',
+  textPrimary: '#242329',
+  textSecondary: '#737178',
+  textMuted: '#9B98A0',
+  border: '#F1E7EA',
+};
+
 function formatarNumero(valor: number): string {
   return Number(valor || 0).toLocaleString('pt-BR', {
     maximumFractionDigits: 3,
@@ -304,6 +315,27 @@ export default function ProdutosVendaScreen() {
       return direcaoOrdenacaoProduto === 'asc' ? comparacao : comparacao * -1;
     });
   }, [produtos, ordenarProdutoPor, direcaoOrdenacaoProduto]);
+
+  const resumoProdutos = useMemo(() => {
+    const precoMedio = produtos.length
+      ? produtos.reduce(
+          (total, produto) => total + Number(produto.preco_venda || 0),
+          0
+        ) / produtos.length
+      : 0;
+    const custoMedio = produtos.length
+      ? produtos.reduce(
+          (total, produto) => total + Number(produto.custo_total || 0),
+          0
+        ) / produtos.length
+      : 0;
+
+    return {
+      quantidade: produtos.length,
+      precoMedio,
+      custoMedio,
+    };
+  }, [produtos]);
 
   const alterarOrdenacaoProduto = (campo: OrdenarProdutoVendaPor) => {
     if (ordenarProdutoPor === campo) {
@@ -1494,26 +1526,69 @@ export default function ProdutosVendaScreen() {
       edges={['top', 'left', 'right']}
     >
       <View style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-        >
-          <Text style={styles.backButtonText}>‹</Text>
-        </TouchableOpacity>
+        <View style={styles.header}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
+            activeOpacity={0.75}
+          >
+            <Ionicons name="arrow-back" size={22} color={COLORS.primary} />
+          </TouchableOpacity>
 
-        <View style={styles.headerTextArea}>
-          <Text style={styles.headerTitle}>Produtos para venda</Text>
+          <View style={styles.headerContent}>
+            <View style={styles.headerIcon}>
+              <Ionicons name="pricetags-outline" size={24} color={COLORS.primary} />
+            </View>
+            <View style={styles.headerTextArea}>
+              <Text style={styles.headerTitle}>Produtos</Text>
+              <Text style={styles.headerSubtitle}>
+                Catálogo, composição e precificação
+              </Text>
+            </View>
+          </View>
         </View>
-      </View>
 
-      <TextInput
-        style={styles.searchInput}
-        placeholder="Buscar por nome ou ID"
-        placeholderTextColor="#888"
-        value={busca}
-        onChangeText={setBusca}
-      />
+        <View style={styles.searchContainer}>
+          <Ionicons name="search-outline" size={21} color={COLORS.primary} />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Buscar por nome ou ID"
+            placeholderTextColor={COLORS.textMuted}
+            value={busca}
+            onChangeText={setBusca}
+          />
+          {!!busca && (
+            <TouchableOpacity
+              style={styles.clearSearchButton}
+              onPress={() => setBusca('')}
+              activeOpacity={0.75}
+            >
+              <Ionicons name="close-circle" size={21} color={COLORS.textMuted} />
+            </TouchableOpacity>
+          )}
+        </View>
+
+        <View style={styles.metricsRow}>
+          <View style={styles.metricCard}>
+            <View style={styles.metricIcon}>
+              <Ionicons name="cube-outline" size={18} color={COLORS.primary} />
+            </View>
+            <Text style={styles.metricValue}>{resumoProdutos.quantidade}</Text>
+            <Text style={styles.metricLabel}>Produtos</Text>
+          </View>
+          <View style={styles.metricCard}>
+            <Text style={styles.metricMoney} numberOfLines={1}>
+              {formatarMoeda(resumoProdutos.custoMedio)}
+            </Text>
+            <Text style={styles.metricLabel}>Custo médio</Text>
+          </View>
+          <View style={[styles.metricCard, styles.metricCardHighlight]}>
+            <Text style={styles.metricMoneyHighlight} numberOfLines={1}>
+              {formatarMoeda(resumoProdutos.precoMedio)}
+            </Text>
+            <Text style={styles.metricLabelHighlight}>Preço médio</Text>
+          </View>
+        </View>
 
       <View style={styles.topButtons}>
         <TouchableOpacity
@@ -1531,7 +1606,7 @@ export default function ProdutosVendaScreen() {
           activeOpacity={0.8}
         >
           <Ionicons name="add-circle-outline" size={20} color="#fff" />
-          <Text style={styles.topButtonText}>Novo Produto</Text>
+          <Text style={styles.topButtonText}>Novo produto</Text>
         </TouchableOpacity>
       </View>
 
@@ -1585,8 +1660,13 @@ export default function ProdutosVendaScreen() {
         contentContainerStyle={styles.listContent}
         ListEmptyComponent={
           <View style={styles.emptyBox}>
-            <Ionicons name="pricetags-outline" size={34} color="#FF3B73" />
-            <Text style={styles.emptyText}>Nenhum produto cadastrado.</Text>
+            <View style={styles.emptyIcon}>
+              <Ionicons name="pricetags-outline" size={29} color={COLORS.primary} />
+            </View>
+            <Text style={styles.emptyTitle}>Nenhum produto encontrado</Text>
+            <Text style={styles.emptyText}>
+              Cadastre um produto ou ajuste o termo da busca.
+            </Text>
           </View>
         }
       />
@@ -2137,9 +2217,12 @@ export default function ProdutosVendaScreen() {
                         {produtoDetalhado.descricao}
                       </Text>
                     )}
-                    <Text style={styles.detailsLine}>
-                      Tempo: {produtoDetalhado.tempo_producao_minutos} minutos
-                    </Text>
+                    <View style={styles.detailsMetaRow}>
+                      <Ionicons name="time-outline" size={17} color={COLORS.primary} />
+                      <Text style={styles.detailsMetaText}>
+                        Tempo: {produtoDetalhado.tempo_producao_minutos} minutos
+                      </Text>
+                    </View>
                   </View>
 
                   <View style={styles.detailsCard}>
@@ -2148,7 +2231,7 @@ export default function ProdutosVendaScreen() {
                       <Text style={styles.emptySmall}>Nenhuma receita.</Text>
                     ) : (
                       produtoDetalhado.receitas.map((item) => (
-                        <View key={item.id} style={styles.detailsItem}>
+                        <View key={item.id} style={styles.detailsItemRow}>
                           <Text style={styles.detailsItemName}>
                             {item.receita_nome}
                           </Text>
@@ -2168,7 +2251,7 @@ export default function ProdutosVendaScreen() {
                       <Text style={styles.emptySmall}>Nenhum item.</Text>
                     ) : (
                       produtoDetalhado.itens.map((item) => (
-                        <View key={item.id} style={styles.detailsItem}>
+                        <View key={item.id} style={styles.detailsItemRow}>
                           <Text style={styles.detailsItemName}>
                             {item.produto_nome}
                           </Text>
@@ -2294,12 +2377,12 @@ export default function ProdutosVendaScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#FFFDFE',
+    backgroundColor: COLORS.background,
   },
 
   container: {
     flex: 1,
-    backgroundColor: '#FFFDFE',
+    backgroundColor: COLORS.background,
     paddingHorizontal: 16,
     paddingTop: 12,
   },
@@ -2308,10 +2391,10 @@ const styles = StyleSheet.create({
     minHeight: 76,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.surface,
     borderRadius: 18,
     borderWidth: 1,
-    borderColor: '#F1E7EA',
+    borderColor: COLORS.border,
     paddingHorizontal: 12,
     marginBottom: 14,
     shadowColor: '#5A3844',
@@ -2330,16 +2413,24 @@ const styles = StyleSheet.create({
     borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#FFF0F4',
+    backgroundColor: COLORS.primarySoft,
     marginRight: 11,
   },
 
-  backButtonText: {
-    color: '#FF3B73',
-    fontSize: 36,
-    lineHeight: 38,
-    fontWeight: '500',
-    marginTop: -3,
+  headerContent: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+
+  headerIcon: {
+    width: 43,
+    height: 43,
+    borderRadius: 22,
+    backgroundColor: COLORS.primarySoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 10,
   },
 
   headerTextArea: {
@@ -2348,22 +2439,109 @@ const styles = StyleSheet.create({
   },
 
   headerTitle: {
-    color: '#242329',
+    color: COLORS.textPrimary,
     fontSize: 20,
     fontWeight: '900',
   },
 
-  searchInput: {
+  headerSubtitle: {
+    color: COLORS.textSecondary,
+    fontSize: 11,
+    marginTop: 3,
+  },
+
+  searchContainer: {
     minHeight: 54,
-    color: '#242329',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 9,
+    backgroundColor: COLORS.surface,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: 16,
+    paddingHorizontal: 14,
+    marginBottom: 12,
+  },
+
+  searchInput: {
+    flex: 1,
+    minHeight: 52,
+    color: COLORS.textPrimary,
     fontSize: 14,
     fontWeight: '500',
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#F1E7EA',
-    borderRadius: 16,
-    paddingHorizontal: 15,
+  },
+
+  clearSearchButton: {
+    width: 34,
+    height: 42,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  metricsRow: {
+    flexDirection: 'row',
+    gap: 8,
     marginBottom: 12,
+  },
+
+  metricCard: {
+    flex: 1,
+    minHeight: 78,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: 16,
+    backgroundColor: COLORS.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 7,
+  },
+
+  metricCardHighlight: {
+    flex: 1.12,
+    borderColor: '#FFD1DD',
+    backgroundColor: COLORS.primarySoft,
+  },
+
+  metricIcon: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: COLORS.primarySoft,
+    marginBottom: 3,
+  },
+
+  metricValue: {
+    color: COLORS.textPrimary,
+    fontSize: 15,
+    fontWeight: '900',
+  },
+
+  metricMoney: {
+    color: COLORS.textPrimary,
+    fontSize: 12,
+    fontWeight: '900',
+  },
+
+  metricMoneyHighlight: {
+    color: COLORS.primary,
+    fontSize: 13,
+    fontWeight: '900',
+  },
+
+  metricLabel: {
+    color: COLORS.textSecondary,
+    fontSize: 9,
+    fontWeight: '700',
+    marginTop: 4,
+  },
+
+  metricLabelHighlight: {
+    color: '#B9345A',
+    fontSize: 9,
+    fontWeight: '800',
+    marginTop: 4,
   },
 
   topButtons: {
@@ -2506,15 +2684,33 @@ const styles = StyleSheet.create({
   emptyBox: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 55,
+    paddingVertical: 42,
     paddingHorizontal: 24,
   },
 
-  emptyText: {
-    color: '#737178',
-    fontSize: 13,
+  emptyIcon: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: COLORS.primarySoft,
+    marginBottom: 10,
+  },
+
+  emptyTitle: {
+    color: COLORS.textPrimary,
+    fontSize: 14,
+    fontWeight: '900',
     textAlign: 'center',
-    marginTop: 10,
+  },
+
+  emptyText: {
+    color: COLORS.textSecondary,
+    fontSize: 11,
+    lineHeight: 17,
+    textAlign: 'center',
+    marginTop: 5,
   },
 
   emptySmall: {
@@ -3020,7 +3216,23 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
 
-  detailsLine: {
+  detailsMetaRow: {
+    minHeight: 42,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 7,
+    borderTopWidth: 1,
+    borderTopColor: '#F6EDF0',
+    marginTop: 2,
+  },
+
+  detailsMetaText: {
+    color: COLORS.textSecondary,
+    fontSize: 11,
+    fontWeight: '700',
+  },
+
+  detailsItemRow: {
     minHeight: 48,
     flexDirection: 'row',
     alignItems: 'center',
@@ -3028,12 +3240,6 @@ const styles = StyleSheet.create({
     gap: 12,
     borderTopWidth: 1,
     borderTopColor: '#F6EDF0',
-  },
-
-  detailsItem: {
-    color: '#737178',
-    fontSize: 11,
-    fontWeight: '700',
   },
 
   detailsItemName: {

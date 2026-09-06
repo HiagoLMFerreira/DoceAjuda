@@ -2,11 +2,13 @@ import React from 'react';
 import {
   ActivityIndicator,
   Modal,
+  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import type { Cliente } from '../../domain/models/Cliente';
 
 type Props = {
@@ -27,53 +29,92 @@ export function ClienteDetailsModal({
   onClose,
 }: Props) {
   return (
-    <Modal visible={visible} transparent animationType="fade">
+    <Modal
+      visible={visible}
+      transparent
+      animationType="fade"
+      onRequestClose={onClose}
+    >
       <View style={styles.modalOverlay}>
         <View style={styles.detailsModalContent}>
-          <Text style={styles.modalTitle}>DADOS DO CLIENTE</Text>
+          <View style={styles.modalHandle} />
+
+          <View style={styles.modalHeader}>
+            <View style={styles.headerIcon}>
+              <Ionicons name="person-outline" size={22} color="#FF3B73" />
+            </View>
+            <View style={styles.headerText}>
+              <Text style={styles.modalTitle}>Dados do cliente</Text>
+              <Text style={styles.modalSubtitle}>
+                Informações e histórico de compras
+              </Text>
+            </View>
+            <TouchableOpacity
+              style={styles.headerCloseButton}
+              onPress={onClose}
+              disabled={excluindo}
+            >
+              <Ionicons name="close" size={22} color="#FF3B73" />
+            </TouchableOpacity>
+          </View>
 
           {cliente && (
             <>
-              <View style={styles.detailsBox}>
-                <View style={styles.detailRow}>
-                  <Text style={styles.detailLabel}>ID:</Text>
-                  <Text style={styles.detailValue}>{cliente.id}</Text>
+              <ScrollView
+                style={styles.scroll}
+                contentContainerStyle={styles.scrollContent}
+                showsVerticalScrollIndicator={false}
+              >
+                <View style={styles.heroCard}>
+                  <View style={styles.heroIcon}>
+                    <Ionicons
+                      name="person-outline"
+                      size={28}
+                      color="#FF3B73"
+                    />
+                  </View>
+                  <View style={styles.heroText}>
+                    <Text style={styles.clientName}>{cliente.nome}</Text>
+                    <Text style={styles.clientId}>Cliente #{cliente.id}</Text>
+                  </View>
                 </View>
 
-                <View style={styles.detailLine} />
+                <View style={styles.detailsBox}>
+                  <View style={styles.detailRow}>
+                    <View style={styles.detailLabelArea}>
+                      <Ionicons name="call-outline" size={18} color="#FF3B73" />
+                      <Text style={styles.detailLabel}>Telefone</Text>
+                    </View>
+                    <Text style={styles.detailValue}>
+                      {cliente.telefone?.trim() ? cliente.telefone : '-'}
+                    </Text>
+                  </View>
 
-                <View style={styles.detailRow}>
-                  <Text style={styles.detailLabel}>Nome:</Text>
-                  <Text style={styles.detailValue}>{cliente.nome}</Text>
+                  <View style={styles.detailLine} />
+
+                  <View style={styles.detailRow}>
+                    <View style={styles.detailLabelArea}>
+                      <Ionicons name="location-outline" size={18} color="#FF3B73" />
+                      <Text style={styles.detailLabel}>Endereço</Text>
+                    </View>
+                    <Text style={[styles.detailValue, styles.detailValueLong]}>
+                      {cliente.endereco?.trim() ? cliente.endereco : '-'}
+                    </Text>
+                  </View>
+
+                  <View style={styles.detailLine} />
+
+                  <View style={styles.detailRow}>
+                    <View style={styles.detailLabelArea}>
+                      <Ionicons name="bag-handle-outline" size={18} color="#FF3B73" />
+                      <Text style={styles.detailLabel}>Compras</Text>
+                    </View>
+                    <Text style={[styles.detailValue, styles.purchaseValue]}>
+                      R$ {cliente.total_compras.toFixed(2)}
+                    </Text>
+                  </View>
                 </View>
-
-                <View style={styles.detailLine} />
-
-                <View style={styles.detailRow}>
-                  <Text style={styles.detailLabel}>Telefone:</Text>
-                  <Text style={styles.detailValue}>
-                    {cliente.telefone?.trim() ? cliente.telefone : '-'}
-                  </Text>
-                </View>
-
-                <View style={styles.detailLine} />
-
-                <View style={styles.detailRow}>
-                  <Text style={styles.detailLabel}>Endereço:</Text>
-                  <Text style={[styles.detailValue, styles.detailValueLong]}>
-                    {cliente.endereco?.trim() ? cliente.endereco : '-'}
-                  </Text>
-                </View>
-
-                <View style={styles.detailLine} />
-
-                <View style={styles.detailRow}>
-                  <Text style={styles.detailLabel}>Compras:</Text>
-                  <Text style={styles.detailValue}>
-                    R$ {cliente.total_compras.toFixed(2)}
-                  </Text>
-                </View>
-              </View>
+              </ScrollView>
 
               <View style={styles.detailActions}>
                 <TouchableOpacity
@@ -81,6 +122,7 @@ export function ClienteDetailsModal({
                   onPress={() => onEdit(cliente)}
                   disabled={excluindo}
                 >
+                  <Ionicons name="create-outline" size={19} color="#FFFFFF" />
                   <Text style={styles.buttonText}>Editar</Text>
                 </TouchableOpacity>
 
@@ -92,7 +134,10 @@ export function ClienteDetailsModal({
                   {excluindo ? (
                     <ActivityIndicator size="small" color="#fff" />
                   ) : (
-                    <Text style={styles.buttonText}>Excluir</Text>
+                    <>
+                      <Ionicons name="trash-outline" size={19} color="#FFFFFF" />
+                      <Text style={styles.buttonText}>Excluir</Text>
+                    </>
                   )}
                 </TouchableOpacity>
               </View>
@@ -102,7 +147,7 @@ export function ClienteDetailsModal({
                 onPress={onClose}
                 disabled={excluindo}
               >
-                <Text style={styles.buttonText}>Fechar</Text>
+                <Text style={styles.closeButtonText}>Fechar</Text>
               </TouchableOpacity>
             </>
           )}
@@ -115,90 +160,190 @@ export function ClienteDetailsModal({
 const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: 'rgba(24, 16, 20, 0.48)',
+    justifyContent: 'flex-end',
   },
   detailsModalContent: {
-    width: '85%',
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 20,
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
+    width: '100%',
+    maxHeight: '90%',
+    backgroundColor: '#FFFDFE',
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    overflow: 'hidden',
+    paddingBottom: 18,
+  },
+  modalHandle: {
+    width: 48,
+    height: 5,
+    borderRadius: 3,
+    alignSelf: 'center',
+    backgroundColor: '#E8DDE1',
+    marginTop: 9,
+  },
+  modalHeader: {
+    minHeight: 76,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 18,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1E7EA',
+  },
+  headerIcon: {
+    width: 43,
+    height: 43,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#FFF0F4',
+    marginRight: 10,
+  },
+  headerText: {
+    flex: 1,
   },
   modalTitle: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: '#1a1a1a',
-    textAlign: 'center',
-    marginBottom: 15,
-    letterSpacing: 2,
+    fontSize: 20,
+    fontWeight: '900',
+    color: '#242329',
+  },
+  modalSubtitle: {
+    color: '#737178',
+    fontSize: 11,
+    marginTop: 3,
+  },
+  headerCloseButton: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#FFF0F4',
+    marginLeft: 8,
+  },
+  scroll: {
+    flexShrink: 1,
+  },
+  scrollContent: {
+    paddingHorizontal: 18,
+    paddingTop: 16,
+  },
+  heroCard: {
+    minHeight: 82,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFF7F9',
+    borderWidth: 1,
+    borderColor: '#FFD1DD',
+    borderRadius: 18,
+    padding: 14,
+    marginBottom: 14,
+  },
+  heroIcon: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#FFF0F4',
+    marginRight: 12,
+  },
+  heroText: {
+    flex: 1,
+  },
+  clientName: {
+    color: '#242329',
+    fontSize: 17,
+    fontWeight: '900',
+  },
+  clientId: {
+    color: '#737178',
+    fontSize: 11,
+    marginTop: 4,
   },
   detailsBox: {
-    backgroundColor: '#f5f5f5',
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 10,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 18,
+    paddingHorizontal: 14,
     borderWidth: 1,
-    borderColor: '#e0e0e0',
+    borderColor: '#F1E7EA',
   },
   detailRow: {
+    minHeight: 58,
     flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'space-between',
-    gap: 10,
-    paddingVertical: 8,
+    gap: 12,
+    paddingVertical: 10,
+  },
+  detailLabelArea: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 7,
   },
   detailLabel: {
-    flex: 1,
-    fontSize: 12,
-    fontWeight: '800',
-    color: '#1a1a1a',
-  },
-  detailValue: {
-    flex: 1.4,
     fontSize: 12,
     fontWeight: '700',
-    color: '#1a1a1a',
+    color: '#737178',
+  },
+  detailValue: {
+    flex: 1,
+    fontSize: 12,
+    fontWeight: '900',
+    color: '#242329',
     textAlign: 'right',
   },
   detailValueLong: {
-    fontSize: 12,
+    lineHeight: 18,
+  },
+  purchaseValue: {
+    color: '#FF3B73',
+    fontSize: 14,
   },
   detailLine: {
     height: 1,
-    backgroundColor: '#e0e0e0',
+    backgroundColor: '#F6EDF0',
   },
   detailActions: {
     flexDirection: 'row',
-    gap: 10,
-    marginTop: 10,
-    marginBottom: 10,
+    gap: 12,
+    marginTop: 16,
+    paddingHorizontal: 18,
   },
   detailButton: {
     flex: 1,
-    paddingVertical: 12,
-    borderRadius: 8,
+    minHeight: 52,
+    flexDirection: 'row',
+    gap: 7,
+    borderRadius: 16,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   editButton: {
-    backgroundColor: '#000',
+    backgroundColor: '#FF3B73',
   },
   deleteButton: {
-    backgroundColor: '#c90000',
+    backgroundColor: '#D93C56',
   },
   fullButton: {
-    paddingVertical: 12,
-    borderRadius: 8,
+    minHeight: 50,
+    borderRadius: 15,
     alignItems: 'center',
-    marginTop: 4,
+    justifyContent: 'center',
+    marginHorizontal: 18,
+    marginTop: 10,
   },
   closeButton: {
-    backgroundColor: '#aaa',
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#DCCFD4',
   },
   buttonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 14,
+    color: '#FFFFFF',
+    fontWeight: '900',
+    fontSize: 13,
+  },
+  closeButtonText: {
+    color: '#242329',
+    fontWeight: '900',
+    fontSize: 13,
   },
 });

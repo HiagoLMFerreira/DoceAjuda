@@ -54,27 +54,27 @@ export default function SeletorFormaPagamento({
 
 const styles = StyleSheet.create({
   container: {
-    gap: 7,
-    paddingBottom: 12,
+    gap: 8,
+    paddingBottom: 14,
   },
   option: {
     borderWidth: 1,
-    borderColor: '#bbb',
-    backgroundColor: '#fff',
-    borderRadius: 9,
-    paddingVertical: 9,
-    paddingHorizontal: 12,
+    borderColor: '#F1E7EA',
+    backgroundColor: '#FFFDFE',
+    borderRadius: 13,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
   },
   selected: {
-    backgroundColor: '#111',
-    borderColor: '#111',
+    backgroundColor: '#FFF0F4',
+    borderColor: '#FF3B73',
   },
   text: {
-    color: '#333',
+    color: '#737178',
     fontSize: 11,
     fontWeight: '800',
   },
   selectedText: {
-    color: '#fff',
+    color: '#D12E60',
   },
 });

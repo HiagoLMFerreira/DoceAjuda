@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import BotoesPeriodoRapido from '../components/BotoesPeriodoRapido';
 import BotaoGerarPdf from '../components/BotaoGerarPdf';
 import EstadoRelatorio from '../components/EstadoRelatorio';
@@ -37,29 +38,40 @@ type OpcaoRelatorio = {
 const OPCOES_RELATORIO: OpcaoRelatorio[] = [
   {
     tipo: 'VENDAS',
-    titulo: 'VENDAS',
+    titulo: 'Vendas',
     descricao: 'Faturamento, status e pagamentos',
     icone: 'cash-outline',
   },
   {
     tipo: 'COMPRAS',
-    titulo: 'COMPRAS',
+    titulo: 'Compras',
     descricao: 'Entradas, valores e cancelamentos',
     icone: 'cart-outline',
   },
   {
     tipo: 'ESTOQUE',
-    titulo: 'ESTOQUE',
+    titulo: 'Estoque',
     descricao: 'Saldos e custo estimado',
     icone: 'cube-outline',
   },
   {
     tipo: 'CLIENTES',
-    titulo: 'CLIENTES',
+    titulo: 'Clientes',
     descricao: 'Cadastro e total de compras',
     icone: 'people-outline',
   },
 ];
+
+const COLORS = {
+  primary: '#FF3B73',
+  primarySoft: '#FFF0F4',
+  background: '#FFFDFE',
+  surface: '#FFFFFF',
+  textPrimary: '#242329',
+  textSecondary: '#737178',
+  border: '#F1E7EA',
+  borderStrong: '#FFD1DD',
+};
 
 function formatarDataBanco(data: Date): string {
   const ano = data.getFullYear();
@@ -180,29 +192,48 @@ export default function RelatoriosScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.botaoVoltar}
-          onPress={() => navigation.goBack()}
-        >
-          <Ionicons name="arrow-back" size={22} color="#fff" />
-        </TouchableOpacity>
+    <SafeAreaView
+      style={styles.safeArea}
+      edges={['top', 'left', 'right']}
+    >
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity
+            style={styles.botaoVoltar}
+            onPress={() => navigation.goBack()}
+            activeOpacity={0.75}
+          >
+            <Ionicons name="arrow-back" size={22} color={COLORS.primary} />
+          </TouchableOpacity>
 
-        <View style={styles.headerTituloLinha}>
-          <Ionicons name="bar-chart-outline" size={22} color="#111" />
-          <Text style={styles.headerTitulo}>RELATÓRIOS</Text>
+          <View style={styles.headerTituloLinha}>
+            <View style={styles.headerIcon}>
+              <Ionicons
+                name="bar-chart-outline"
+                size={24}
+                color={COLORS.primary}
+              />
+            </View>
+            <View style={styles.headerTextArea}>
+              <Text style={styles.headerTitulo}>Relatórios</Text>
+              <Text style={styles.headerSubtitle}>
+                Indicadores para acompanhar seu negócio
+              </Text>
+            </View>
+          </View>
         </View>
 
-        <View style={styles.espacoHeader} />
-      </View>
-
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.conteudo}
-        keyboardShouldPersistTaps="handled"
-      >
-        <Text style={styles.secaoTitulo}>ESCOLHA O RELATÓRIO</Text>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.conteudo}
+          keyboardShouldPersistTaps="handled"
+        >
+          <View style={styles.secaoHeader}>
+            <Text style={styles.secaoTitulo}>Escolha o relatório</Text>
+            <Text style={styles.secaoDescricao}>
+              Selecione uma categoria para configurar a análise.
+            </Text>
+          </View>
 
         <View style={styles.gridRelatorios}>
           {OPCOES_RELATORIO.map((opcao) => {
@@ -227,24 +258,24 @@ export default function RelatoriosScreen() {
                   <Ionicons
                     name={opcao.icone}
                     size={25}
-                    color={selecionado ? '#fff' : '#111'}
+                    color={COLORS.primary}
                   />
                 </View>
 
+                {selecionado && (
+                  <View style={styles.checkSelecionado}>
+                    <Ionicons name="checkmark" size={14} color="#FFFFFF" />
+                  </View>
+                )}
+
                 <Text
-                  style={[
-                    styles.cardTitulo,
-                    selecionado && styles.cardTextoSelecionado,
-                  ]}
+                  style={styles.cardTitulo}
                 >
                   {opcao.titulo}
                 </Text>
 
                 <Text
-                  style={[
-                    styles.cardDescricao,
-                    selecionado && styles.cardDescricaoSelecionada,
-                  ]}
+                  style={styles.cardDescricao}
                 >
                   {opcao.descricao}
                 </Text>
@@ -259,10 +290,10 @@ export default function RelatoriosScreen() {
               <Ionicons
                 name={opcaoSelecionada?.icone ?? 'options-outline'}
                 size={21}
-                color="#111"
+                color={COLORS.primary}
               />
               <Text style={styles.filtrosTitulo}>
-                RELATÓRIO DE {opcaoSelecionada?.titulo}
+                Relatório de {opcaoSelecionada?.titulo}
               </Text>
             </View>
 
@@ -297,8 +328,8 @@ export default function RelatoriosScreen() {
               disabled={status === 'CARREGANDO'}
               activeOpacity={0.85}
             >
-              <Ionicons name="search-outline" size={20} color="#fff" />
-              <Text style={styles.botaoGerarTexto}>GERAR RELATÓRIO</Text>
+              <Ionicons name="analytics-outline" size={20} color="#FFFFFF" />
+              <Text style={styles.botaoGerarTexto}>Gerar relatório</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -324,65 +355,102 @@ export default function RelatoriosScreen() {
             />
           </>
         )}
-      </ScrollView>
-    </View>
+        </ScrollView>
+      </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: COLORS.background,
+  },
   container: {
     flex: 1,
-    backgroundColor: '#ebebeb',
+    backgroundColor: COLORS.background,
     paddingHorizontal: 16,
-    paddingTop: 50,
+    paddingTop: 12,
   },
 
   header: {
-    minHeight: 58,
-    borderRadius: 14,
-    backgroundColor: '#d1d1d1',
+    minHeight: 76,
+    borderRadius: 18,
+    backgroundColor: COLORS.surface,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 10,
+    paddingHorizontal: 12,
     marginBottom: 14,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    shadowColor: '#5A3844',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.06,
+    shadowRadius: 9,
+    elevation: 2,
   },
 
   botaoVoltar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#111',
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: COLORS.primarySoft,
     alignItems: 'center',
     justifyContent: 'center',
+    marginRight: 11,
   },
 
   headerTituloLinha: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 7,
+  },
+
+  headerIcon: {
+    width: 43,
+    height: 43,
+    borderRadius: 22,
+    backgroundColor: COLORS.primarySoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 10,
+  },
+
+  headerTextArea: {
+    flex: 1,
   },
 
   headerTitulo: {
     fontSize: 20,
-    fontWeight: '800',
-    color: '#111',
+    fontWeight: '900',
+    color: COLORS.textPrimary,
   },
 
-  espacoHeader: {
-    width: 40,
+  headerSubtitle: {
+    color: COLORS.textSecondary,
+    fontSize: 11,
+    marginTop: 3,
   },
 
   conteudo: {
-    paddingBottom: 50,
+    paddingBottom: 32,
+  },
+
+  secaoHeader: {
+    marginBottom: 12,
   },
 
   secaoTitulo: {
-    color: '#333',
-    fontSize: 12,
+    color: COLORS.textPrimary,
+    fontSize: 17,
     fontWeight: '900',
-    letterSpacing: 0.6,
-    marginBottom: 9,
+  },
+
+  secaoDescricao: {
+    color: COLORS.textSecondary,
+    fontSize: 11,
+    lineHeight: 17,
+    marginTop: 4,
   },
 
   gridRelatorios: {
@@ -394,60 +462,73 @@ const styles = StyleSheet.create({
 
   cardRelatorio: {
     width: '48.5%',
-    minHeight: 142,
-    borderRadius: 15,
-    borderWidth: 2,
-    borderColor: '#d5d5d5',
-    backgroundColor: '#fff',
-    padding: 13,
+    minHeight: 146,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    backgroundColor: COLORS.surface,
+    padding: 14,
     marginBottom: 10,
+    shadowColor: '#5A3844',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.04,
+    shadowRadius: 7,
+    elevation: 2,
+    position: 'relative',
   },
 
   cardRelatorioSelecionado: {
-    backgroundColor: '#111',
-    borderColor: '#111',
+    backgroundColor: '#FFF7F9',
+    borderColor: COLORS.primary,
+    borderWidth: 2,
   },
 
   iconeRelatorio: {
-    width: 43,
-    height: 43,
-    borderRadius: 13,
-    backgroundColor: '#ededed',
+    width: 46,
+    height: 46,
+    borderRadius: 23,
+    backgroundColor: COLORS.primarySoft,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 10,
   },
 
   iconeRelatorioSelecionado: {
-    backgroundColor: '#333',
+    backgroundColor: '#FFE5ED',
+  },
+
+  checkSelecionado: {
+    position: 'absolute',
+    top: 11,
+    right: 11,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: COLORS.primary,
   },
 
   cardTitulo: {
-    color: '#111',
-    fontSize: 13,
+    color: COLORS.textPrimary,
+    fontSize: 14,
     fontWeight: '900',
   },
 
-  cardTextoSelecionado: {
-    color: '#fff',
-  },
-
   cardDescricao: {
-    color: '#666',
+    color: COLORS.textSecondary,
     fontSize: 11,
     lineHeight: 16,
     marginTop: 4,
   },
 
-  cardDescricaoSelecionada: {
-    color: '#d4d4d4',
-  },
-
   filtrosBox: {
-    borderRadius: 15,
-    backgroundColor: '#f5f5f5',
-    padding: 14,
-    marginBottom: 12,
+    borderRadius: 20,
+    backgroundColor: COLORS.surface,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    padding: 16,
+    marginBottom: 14,
   },
 
   filtrosTituloLinha: {
@@ -459,36 +540,46 @@ const styles = StyleSheet.create({
 
   filtrosTitulo: {
     flex: 1,
-    color: '#111',
-    fontSize: 14,
+    color: COLORS.textPrimary,
+    fontSize: 15,
     fontWeight: '900',
   },
 
   label: {
-    color: '#333',
-    fontWeight: '700',
+    color: COLORS.textPrimary,
+    fontSize: 12,
+    fontWeight: '800',
     marginBottom: 7,
   },
 
   filtroInformacao: {
-    color: '#666',
+    color: COLORS.textSecondary,
     fontSize: 12,
     lineHeight: 18,
-    marginBottom: 12,
+    backgroundColor: COLORS.primarySoft,
+    borderRadius: 13,
+    padding: 12,
+    marginBottom: 14,
   },
 
   botaoGerar: {
-    minHeight: 48,
-    borderRadius: 11,
-    backgroundColor: '#111',
+    minHeight: 52,
+    borderRadius: 16,
+    backgroundColor: COLORS.primary,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
+    shadowColor: COLORS.primary,
+    shadowOffset: { width: 0, height: 5 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
   },
 
   botaoGerarTexto: {
-    color: '#fff',
-    fontWeight: '800',
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '900',
   },
 });

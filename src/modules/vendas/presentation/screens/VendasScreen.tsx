@@ -5,13 +5,13 @@ import {
   FlatList,
   Modal,
   Pressable,
-  SafeAreaView,
   StyleSheet,
   Text,
   TextInput,
   View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import DocumentoComercialFormModal from '../../../../components/DocumentoComercialFormModal';
 import {
@@ -30,6 +30,20 @@ type Props = {
     goBack: () => void;
     addListener?: (evento: string, callback: () => void) => () => void;
   };
+};
+
+const COLORS = {
+  primary: '#FF3B73',
+  primarySoft: '#FFF0F4',
+  background: '#FFFDFE',
+  surface: '#FFFFFF',
+  textPrimary: '#242329',
+  textSecondary: '#737178',
+  textMuted: '#9B98A0',
+  border: '#F1E7EA',
+  borderStrong: '#FFD1DD',
+  success: '#2D9449',
+  danger: '#D93C56',
 };
 
 function formatarData(data: string): string {
@@ -221,29 +235,55 @@ export default function VendasScreen({ navigation }: Props) {
   }
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView
+      style={styles.safeArea}
+      edges={['top', 'left', 'right']}
+    >
       <View style={styles.container}>
         <View style={styles.header}>
           <Pressable style={styles.botaoVoltar} onPress={navigation.goBack}>
-            <Ionicons name="arrow-back" size={22} color="#fff" />
+            <Ionicons name="arrow-back" size={22} color={COLORS.primary} />
           </Pressable>
-          <Text style={styles.titulo}>VENDAS</Text>
-          <View style={styles.espacoHeader} />
+
+          <View style={styles.headerContent}>
+            <View style={styles.headerIcon}>
+              <Ionicons
+                name="bag-handle-outline"
+                size={24}
+                color={COLORS.primary}
+              />
+            </View>
+
+            <View style={styles.headerTextArea}>
+              <Text style={styles.titulo}>Vendas</Text>
+              <Text style={styles.headerSubtitle}>
+                Pedidos, pagamentos e estoque
+              </Text>
+            </View>
+          </View>
         </View>
 
         <View style={styles.buscaLinha}>
           <View style={styles.buscaContainer}>
-            <Ionicons name="search" size={20} color="#666" />
+            <Ionicons
+              name="search-outline"
+              size={21}
+              color={COLORS.primary}
+            />
             <TextInput
               style={styles.buscaInput}
               placeholder="Buscar por cliente, ID, status ou pagamento"
-              placeholderTextColor="#888"
+              placeholderTextColor={COLORS.textMuted}
               value={busca}
               onChangeText={setBusca}
             />
             {!!busca && (
               <Pressable onPress={() => setBusca('')}>
-                <Ionicons name="close-circle" size={20} color="#777" />
+                <Ionicons
+                  name="close-circle"
+                  size={21}
+                  color={COLORS.textMuted}
+                />
               </Pressable>
             )}
           </View>
@@ -266,7 +306,11 @@ export default function VendasScreen({ navigation }: Props) {
             <Ionicons
               name={iconeOrdenacao('cliente_nome')}
               size={14}
-              color={ordenacao.campo === 'cliente_nome' ? '#111' : '#777'}
+              color={
+                ordenacao.campo === 'cliente_nome'
+                  ? COLORS.primary
+                  : COLORS.textSecondary
+              }
             />
           </Pressable>
 
@@ -282,7 +326,11 @@ export default function VendasScreen({ navigation }: Props) {
             <Ionicons
               name={iconeOrdenacao('created_at')}
               size={14}
-              color={ordenacao.campo === 'created_at' ? '#111' : '#777'}
+              color={
+                ordenacao.campo === 'created_at'
+                  ? COLORS.primary
+                  : COLORS.textSecondary
+              }
             />
           </Pressable>
 
@@ -298,14 +346,18 @@ export default function VendasScreen({ navigation }: Props) {
             <Ionicons
               name={iconeOrdenacao('valor_total')}
               size={14}
-              color={ordenacao.campo === 'valor_total' ? '#111' : '#777'}
+              color={
+                ordenacao.campo === 'valor_total'
+                  ? COLORS.primary
+                  : COLORS.textSecondary
+              }
             />
           </Pressable>
         </View>
 
         {carregando ? (
           <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#111" />
+            <ActivityIndicator size="large" color={COLORS.primary} />
           </View>
         ) : (
           <FlatList
@@ -315,7 +367,13 @@ export default function VendasScreen({ navigation }: Props) {
             contentContainerStyle={styles.listaContent}
             ListEmptyComponent={
               <View style={styles.estadoVazio}>
-                <Ionicons name="cart-outline" size={48} color="#777" />
+                <View style={styles.estadoVazioIcone}>
+                  <Ionicons
+                    name="bag-handle-outline"
+                    size={34}
+                    color={COLORS.primary}
+                  />
+                </View>
                 <Text style={styles.estadoVazioTitulo}>Nenhuma venda encontrada</Text>
                 <Text style={styles.estadoVazioTexto}>
                   Registre uma venda direta ou converta um orçamento.
@@ -353,7 +411,14 @@ export default function VendasScreen({ navigation }: Props) {
                         : styles.statusCancelada,
                     ]}
                   >
-                    <Text style={styles.statusTexto}>
+                    <Text
+                      style={[
+                        styles.statusTexto,
+                        item.status === 'CONCLUIDA'
+                          ? styles.statusTextoConcluida
+                          : styles.statusTextoCancelada,
+                      ]}
+                    >
                       {obterTextoStatus(item.status)}
                     </Text>
                   </View>
@@ -362,7 +427,11 @@ export default function VendasScreen({ navigation }: Props) {
                     <Text style={styles.formaPagamentoCard} numberOfLines={1}>
                       {item.forma_pagamento || '-'}
                     </Text>
-                    <Ionicons name="chevron-forward" size={20} color="#777" />
+                    <Ionicons
+                      name="chevron-forward"
+                      size={20}
+                      color={COLORS.primary}
+                    />
                   </View>
                 </View>
               </Pressable>
@@ -379,6 +448,7 @@ export default function VendasScreen({ navigation }: Props) {
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalDetalhes}>
+            <View style={styles.modalHandle} />
             <View style={styles.detalhesHeader}>
               <Text style={styles.modalTitulo}>
                 VENDA #{vendaSelecionada?.id ?? ''}
@@ -387,12 +457,15 @@ export default function VendasScreen({ navigation }: Props) {
                 style={styles.botaoFechar}
                 onPress={() => setModalDetalhes(false)}
               >
-                <Ionicons name="close" size={23} color="#111" />
+                <Ionicons name="close" size={23} color={COLORS.primary} />
               </Pressable>
             </View>
 
             {carregandoDetalhes || !vendaSelecionada ? (
-              <ActivityIndicator style={styles.loadingDetalhes} color="#111" />
+              <ActivityIndicator
+                style={styles.loadingDetalhes}
+                color={COLORS.primary}
+              />
             ) : (
               <FlatList
                 data={vendaSelecionada.itens}
@@ -514,7 +587,7 @@ export default function VendasScreen({ navigation }: Props) {
                         <Ionicons
                           name="information-circle-outline"
                           size={21}
-                          color="#7a1d1d"
+                          color={COLORS.danger}
                         />
                         <Text style={styles.avisoVendaCanceladaTexto}>
                           Esta venda permanece disponível apenas para consulta.
@@ -542,84 +615,120 @@ export default function VendasScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#ebebeb',
+    backgroundColor: COLORS.background,
   },
   container: {
     flex: 1,
-    backgroundColor: '#ebebeb',
+    backgroundColor: COLORS.background,
     paddingHorizontal: 16,
-    paddingTop: 50,
+    paddingTop: 12,
   },
   header: {
-    height: 58,
-    backgroundColor: '#d7d7d7',
+    minHeight: 76,
+    backgroundColor: COLORS.surface,
     borderRadius: 18,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 10,
+    paddingHorizontal: 12,
     marginBottom: 14,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    shadowColor: '#5A3844',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.06,
+    shadowRadius: 9,
+    elevation: 2,
   },
   botaoVoltar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#111',
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: COLORS.primarySoft,
     alignItems: 'center',
     justifyContent: 'center',
+    marginRight: 11,
+  },
+  headerContent: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  headerIcon: {
+    width: 43,
+    height: 43,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: COLORS.primarySoft,
+    marginRight: 10,
+  },
+  headerTextArea: {
+    flex: 1,
   },
   titulo: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: '900',
-    color: '#111',
+    color: COLORS.textPrimary,
   },
-  espacoHeader: {
-    width: 40,
+  headerSubtitle: {
+    color: COLORS.textSecondary,
+    fontSize: 11,
+    marginTop: 3,
   },
   buscaLinha: {
     flexDirection: 'row',
     gap: 9,
-    marginBottom: 11,
+    marginBottom: 12,
   },
   buscaContainer: {
     flex: 1,
-    height: 49,
+    minHeight: 54,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    backgroundColor: '#fff',
-    borderRadius: 14,
-    paddingHorizontal: 13,
+    gap: 9,
+    backgroundColor: COLORS.surface,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    paddingHorizontal: 14,
   },
   buscaInput: {
     flex: 1,
-    height: '100%',
-    color: '#111',
-    fontSize: 15,
+    minHeight: 52,
+    color: COLORS.textPrimary,
+    fontSize: 14,
+    fontWeight: '500',
   },
   botaoNovo: {
-    height: 50,
-    borderRadius: 14,
-    backgroundColor: '#111',
+    minHeight: 53,
+    borderRadius: 16,
+    backgroundColor: COLORS.primary,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
     marginBottom: 14,
+    shadowColor: COLORS.primary,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.23,
+    shadowRadius: 10,
+    elevation: 5,
   },
   botaoNovoTexto: {
-    color: '#fff',
-    fontWeight: '800',
+    color: '#FFFFFF',
+    fontWeight: '900',
     fontSize: 15,
   },
   cabecalhoLista: {
-    minHeight: 40,
+    minHeight: 43,
     borderRadius: 12,
-    backgroundColor: '#d2d2d2',
+    backgroundColor: COLORS.primarySoft,
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 13,
     marginBottom: 8,
+    borderWidth: 1,
+    borderColor: '#FFD5E0',
   },
   cabecalhoBotao: {
     minHeight: 40,
@@ -634,9 +743,9 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   cabecalhoTexto: {
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '900',
-    color: '#333',
+    color: COLORS.textPrimary,
   },
   colunaCliente: {
     flex: 1.5,
@@ -652,11 +761,18 @@ const styles = StyleSheet.create({
     flexGrow: 1,
   },
   card: {
-    backgroundColor: '#fff',
+    backgroundColor: COLORS.surface,
     borderRadius: 15,
     paddingHorizontal: 13,
     paddingVertical: 12,
-    marginBottom: 9,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    shadowColor: '#5A3844',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.04,
+    shadowRadius: 7,
+    elevation: 2,
   },
   cardLinhaPrincipal: {
     flexDirection: 'row',
@@ -664,23 +780,23 @@ const styles = StyleSheet.create({
   },
   cardCliente: {
     fontSize: 14,
-    fontWeight: '800',
-    color: '#111',
+    fontWeight: '900',
+    color: COLORS.textPrimary,
   },
   cardId: {
     fontSize: 11,
-    color: '#777',
+    color: COLORS.textSecondary,
     marginTop: 3,
   },
   cardTexto: {
     fontSize: 12,
-    color: '#555',
+    color: COLORS.textSecondary,
     textAlign: 'center',
   },
   cardTotal: {
     fontSize: 13,
-    fontWeight: '800',
-    color: '#111',
+    fontWeight: '900',
+    color: COLORS.primary,
     textAlign: 'right',
   },
   cardRodape: {
@@ -690,7 +806,7 @@ const styles = StyleSheet.create({
     marginTop: 10,
     paddingTop: 9,
     borderTopWidth: 1,
-    borderTopColor: '#ededed',
+    borderTopColor: '#F6EDF0',
   },
   cardRodapeDireita: {
     flexDirection: 'row',
@@ -699,7 +815,7 @@ const styles = StyleSheet.create({
     maxWidth: '58%',
   },
   formaPagamentoCard: {
-    color: '#666',
+    color: COLORS.textSecondary,
     fontSize: 12,
     fontWeight: '600',
   },
@@ -709,15 +825,20 @@ const styles = StyleSheet.create({
     borderRadius: 999,
   },
   statusConcluida: {
-    backgroundColor: '#d9ead3',
+    backgroundColor: '#EDF8EE',
   },
   statusCancelada: {
-    backgroundColor: '#f4cccc',
+    backgroundColor: '#FFF0F3',
   },
   statusTexto: {
     fontSize: 11,
-    fontWeight: '800',
-    color: '#333',
+    fontWeight: '900',
+  },
+  statusTextoConcluida: {
+    color: COLORS.success,
+  },
+  statusTextoCancelada: {
+    color: COLORS.danger,
   },
   loadingContainer: {
     flex: 1,
@@ -730,58 +851,78 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: 30,
   },
+  estadoVazioIcone: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: COLORS.primarySoft,
+  },
   estadoVazioTitulo: {
     fontSize: 16,
-    fontWeight: '800',
-    color: '#333',
+    fontWeight: '900',
+    color: COLORS.textPrimary,
     marginTop: 11,
   },
   estadoVazioTexto: {
     textAlign: 'center',
-    color: '#777',
+    color: COLORS.textSecondary,
     marginTop: 5,
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.58)',
-    justifyContent: 'center',
-    padding: 18,
+    backgroundColor: 'rgba(24, 16, 20, 0.48)',
+    justifyContent: 'flex-end',
   },
   modalTitulo: {
     flex: 1,
-    textAlign: 'center',
-    fontSize: 17,
+    fontSize: 20,
     fontWeight: '900',
-    color: '#111',
-    marginBottom: 13,
+    color: COLORS.textPrimary,
   },
   modalDetalhes: {
     maxHeight: '90%',
-    backgroundColor: '#ebebeb',
-    borderRadius: 22,
+    width: '100%',
+    backgroundColor: COLORS.background,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
     overflow: 'hidden',
   },
+  modalHandle: {
+    width: 48,
+    height: 5,
+    borderRadius: 3,
+    alignSelf: 'center',
+    backgroundColor: '#E8DDE1',
+    marginTop: 9,
+  },
   detalhesHeader: {
-    minHeight: 58,
+    minHeight: 70,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 13,
+    paddingHorizontal: 18,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
   },
   botaoFechar: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: '#d4d4d4',
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: COLORS.primarySoft,
     alignItems: 'center',
     justifyContent: 'center',
   },
   detalhesContent: {
-    paddingHorizontal: 15,
-    paddingBottom: 16,
+    paddingHorizontal: 18,
+    paddingTop: 16,
+    paddingBottom: 20,
   },
   infoCard: {
-    backgroundColor: '#fff',
-    borderRadius: 15,
+    backgroundColor: COLORS.surface,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: 18,
     paddingHorizontal: 14,
     marginBottom: 15,
   },
@@ -791,7 +932,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     borderBottomWidth: 1,
-    borderBottomColor: '#ededed',
+    borderBottomColor: '#F6EDF0',
   },
   infoLinhaSemBorda: {
     minHeight: 45,
@@ -800,31 +941,36 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   infoLabel: {
-    color: '#666',
-    fontWeight: '600',
+    color: COLORS.textSecondary,
+    fontSize: 12,
+    fontWeight: '700',
   },
   infoValor: {
     flex: 1,
     textAlign: 'right',
-    color: '#111',
-    fontWeight: '800',
+    color: COLORS.textPrimary,
+    fontSize: 12,
+    fontWeight: '900',
     marginLeft: 12,
   },
   detalhesSecaoTitulo: {
     fontSize: 14,
     fontWeight: '900',
-    color: '#111',
+    color: COLORS.primary,
     marginBottom: 8,
   },
   detalheItemCard: {
-    backgroundColor: '#fff',
-    borderRadius: 14,
-    padding: 13,
-    marginBottom: 8,
+    backgroundColor: COLORS.surface,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: 16,
+    padding: 14,
+    marginBottom: 10,
   },
   detalheItemNome: {
-    color: '#111',
-    fontWeight: '800',
+    color: COLORS.textPrimary,
+    fontSize: 14,
+    fontWeight: '900',
     marginBottom: 7,
   },
   detalheItemLinha: {
@@ -833,31 +979,38 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   detalheItemTexto: {
-    color: '#666',
+    color: COLORS.textSecondary,
+    fontSize: 11,
   },
   detalheItemSubtotal: {
-    color: '#111',
-    fontWeight: '800',
+    color: COLORS.primary,
+    fontSize: 13,
+    fontWeight: '900',
   },
   observacoesCard: {
-    backgroundColor: '#fff',
-    borderRadius: 14,
-    padding: 13,
+    backgroundColor: COLORS.surface,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: 16,
+    padding: 14,
     marginTop: 5,
   },
   observacoesTitulo: {
-    color: '#111',
-    fontWeight: '800',
+    color: COLORS.textPrimary,
+    fontWeight: '900',
     marginBottom: 5,
   },
   observacoesTexto: {
-    color: '#555',
+    color: COLORS.textSecondary,
+    fontSize: 12,
     lineHeight: 20,
   },
   totalDetalhesCard: {
     minHeight: 68,
-    backgroundColor: '#111',
-    borderRadius: 15,
+    backgroundColor: '#FFF7F9',
+    borderWidth: 1,
+    borderColor: COLORS.borderStrong,
+    borderRadius: 17,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -865,18 +1018,18 @@ const styles = StyleSheet.create({
     marginTop: 11,
   },
   totalDetalhesLabel: {
-    color: '#fff',
+    color: COLORS.textSecondary,
     fontWeight: '800',
   },
   totalDetalhesValor: {
-    color: '#fff',
+    color: COLORS.primary,
     fontWeight: '900',
     fontSize: 21,
   },
   botaoCancelarVenda: {
-    minHeight: 50,
-    borderRadius: 14,
-    backgroundColor: '#b3261e',
+    minHeight: 52,
+    borderRadius: 16,
+    backgroundColor: COLORS.danger,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -884,8 +1037,8 @@ const styles = StyleSheet.create({
     marginTop: 11,
   },
   botaoCancelarVendaTexto: {
-    color: '#fff',
-    fontSize: 15,
+    color: '#FFFFFF',
+    fontSize: 13,
     fontWeight: '900',
   },
   botaoDesabilitado: {
@@ -893,8 +1046,10 @@ const styles = StyleSheet.create({
   },
   avisoVendaCancelada: {
     minHeight: 54,
-    borderRadius: 14,
-    backgroundColor: '#f4cccc',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#FFC8D7',
+    backgroundColor: '#FFF0F3',
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
@@ -903,7 +1058,7 @@ const styles = StyleSheet.create({
   },
   avisoVendaCanceladaTexto: {
     flex: 1,
-    color: '#7a1d1d',
+    color: COLORS.danger,
     fontWeight: '700',
     lineHeight: 18,
   },

@@ -24,18 +24,19 @@ export default function BotaoGerarPdf({
       ]}
       onPress={onPress}
       disabled={desabilitado || carregando}
+      activeOpacity={0.82}
     >
       {carregando ? (
-        <ActivityIndicator color="#fff" />
+        <ActivityIndicator color="#FFFFFF" />
       ) : (
         <>
           <Ionicons
             name="document-text-outline"
-            size={20}
-            color="#fff"
+            size={21}
+            color="#FFFFFF"
           />
           <Text style={styles.text}>
-            GERAR PDF
+            Gerar e compartilhar PDF
           </Text>
         </>
       )}
@@ -45,20 +46,26 @@ export default function BotaoGerarPdf({
 
 const styles = StyleSheet.create({
   button: {
-    minHeight: 48,
-    borderRadius: 11,
-    backgroundColor: '#111',
+    minHeight: 52,
+    borderRadius: 16,
+    backgroundColor: '#FF3B73',
     flexDirection: 'row',
     gap: 8,
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 12,
+    shadowColor: '#FF3B73',
+    shadowOffset: { width: 0, height: 5 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
   },
   disabled: {
     opacity: 0.5,
   },
   text: {
-    color: '#fff',
-    fontWeight: '800',
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '900',
   },
 });

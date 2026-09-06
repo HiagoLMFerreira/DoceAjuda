@@ -5,6 +5,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { formatDatabaseDate } from '../../../../shared/formatters/dateFormatters';
 import type { PeriodoRelatorio } from '../../domain/models/Relatorio';
 
@@ -63,7 +64,9 @@ function Button({
     <TouchableOpacity
       style={styles.button}
       onPress={onPress}
+      activeOpacity={0.75}
     >
+      <Ionicons name="calendar-outline" size={14} color="#FF3B73" />
       <Text style={styles.text}>{title}</Text>
     </TouchableOpacity>
   );
@@ -72,22 +75,26 @@ function Button({
 const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
-    gap: 7,
-    marginBottom: 10,
+    gap: 8,
+    marginBottom: 14,
   },
   button: {
     flex: 1,
-    minHeight: 38,
-    borderRadius: 9,
-    backgroundColor: '#e2e2e2',
+    minHeight: 42,
+    borderRadius: 13,
+    borderWidth: 1,
+    borderColor: '#FFD1DD',
+    backgroundColor: '#FFF7F9',
+    flexDirection: 'row',
+    gap: 5,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 5,
+    paddingHorizontal: 7,
   },
   text: {
-    color: '#222',
+    color: '#CC2F5D',
     fontSize: 11,
-    fontWeight: '800',
+    fontWeight: '900',
     textAlign: 'center',
   },
 });

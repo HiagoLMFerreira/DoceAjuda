@@ -53,6 +53,21 @@ const UNIDADES: Array<{ valor: UnidadeConteudo; rotulo: string }> = [
   { valor: 'pacote', rotulo: 'pacote' },
 ];
 
+const COLORS = {
+  primary: '#FF3B73',
+  primarySoft: '#FFF0F4',
+  background: '#FFFDFE',
+  surface: '#FFFFFF',
+  textPrimary: '#242329',
+  textSecondary: '#737178',
+  textMuted: '#9B98A0',
+  border: '#F1E7EA',
+  success: '#2D9449',
+  successSoft: '#EDF9F0',
+  danger: '#D93C56',
+  dangerSoft: '#FFF1F3',
+};
+
 function numeroEntrada(valor: string): number {
   return Number(valor.replace(',', '.'));
 }
@@ -359,40 +374,100 @@ export default function ComprasScreen() {
     );
   }, [produtos, buscaProduto]);
 
+  const resumoCompras = useMemo(() => {
+    const confirmadas = compras.filter((compra) => compra.status === 'CONFIRMADA');
+    const valorConfirmado = confirmadas.reduce(
+      (total, compra) => total + Number(compra.valor_total || 0),
+      0
+    );
+
+    return {
+      total: compras.length,
+      confirmadas: confirmadas.length,
+      valorConfirmado,
+    };
+  }, [compras]);
+
   return (
     <SafeAreaView
       style={styles.safeArea}
       edges={['top', 'left', 'right']}
     >
       <View style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.botaoVoltar} onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={22} color="#FF3B73" />
-        </TouchableOpacity>
-        <View style={styles.headerTituloLinha}>
-          <Ionicons name="cart-outline" size={22} color="#111" />
-          <Text style={styles.headerTitulo}>Compras</Text>
+        <View style={styles.header}>
+          <TouchableOpacity
+            style={styles.botaoVoltar}
+            onPress={() => navigation.goBack()}
+            activeOpacity={0.75}
+          >
+            <Ionicons name="arrow-back" size={22} color={COLORS.primary} />
+          </TouchableOpacity>
+
+          <View style={styles.headerTituloLinha}>
+            <View style={styles.headerIcone}>
+              <Ionicons name="cart-outline" size={24} color={COLORS.primary} />
+            </View>
+            <View style={styles.headerTextoArea}>
+              <Text style={styles.headerTitulo}>Compras</Text>
+              <Text style={styles.headerSubtitulo}>
+                Entradas, custos e reposição do estoque
+              </Text>
+            </View>
+          </View>
         </View>
-        <View style={styles.espacoHeader} />
-      </View>
 
-      <View style={styles.buscaContainer}>
-        <Ionicons name="search-outline" size={20} color="#666" />
-        <TextInput
-          style={styles.buscaInput}
-          placeholder="Buscar por ID, data, status ou produto"
-          placeholderTextColor="#888"
-          value={busca}
-          onChangeText={setBusca}
-          onSubmitEditing={carregarCompras}
-        />
-        {!!busca && <TouchableOpacity onPress={() => setBusca('')}><Ionicons name="close-circle" size={20} color="#777" /></TouchableOpacity>}
-      </View>
+        <View style={styles.buscaContainer}>
+          <Ionicons name="search-outline" size={21} color={COLORS.primary} />
+          <TextInput
+            style={styles.buscaInput}
+            placeholder="Buscar por ID, data, status ou produto"
+            placeholderTextColor={COLORS.textMuted}
+            value={busca}
+            onChangeText={setBusca}
+            onSubmitEditing={carregarCompras}
+          />
+          {!!busca && (
+            <TouchableOpacity
+              style={styles.limparBusca}
+              onPress={() => setBusca('')}
+              activeOpacity={0.75}
+            >
+              <Ionicons name="close-circle" size={21} color={COLORS.textMuted} />
+            </TouchableOpacity>
+          )}
+        </View>
 
-      <TouchableOpacity style={styles.botaoPrincipal} onPress={abrirNovaCompra}>
-        <Ionicons name="add-circle-outline" size={21} color="#fff" />
-        <Text style={styles.botaoPrincipalTexto}>Nova compra</Text>
-      </TouchableOpacity>
+        <View style={styles.resumoContainer}>
+          <View style={styles.resumoCard}>
+            <View style={styles.resumoIcone}>
+              <Ionicons name="receipt-outline" size={18} color={COLORS.primary} />
+            </View>
+            <Text style={styles.resumoNumero}>{resumoCompras.total}</Text>
+            <Text style={styles.resumoTexto}>Compras</Text>
+          </View>
+          <View style={styles.resumoCard}>
+            <View style={[styles.resumoIcone, styles.resumoIconeSucesso]}>
+              <Ionicons name="checkmark-circle-outline" size={18} color={COLORS.success} />
+            </View>
+            <Text style={styles.resumoNumero}>{resumoCompras.confirmadas}</Text>
+            <Text style={styles.resumoTexto}>Confirmadas</Text>
+          </View>
+          <View style={[styles.resumoCard, styles.resumoCardDestaque]}>
+            <Text style={styles.resumoValor} numberOfLines={1}>
+              {formatarMoeda(resumoCompras.valorConfirmado)}
+            </Text>
+            <Text style={styles.resumoTextoDestaque}>Total confirmado</Text>
+          </View>
+        </View>
+
+        <TouchableOpacity
+          style={styles.botaoPrincipal}
+          onPress={abrirNovaCompra}
+          activeOpacity={0.82}
+        >
+          <Ionicons name="add-circle-outline" size={22} color="#FFFFFF" />
+          <Text style={styles.botaoPrincipalTexto}>Nova compra</Text>
+        </TouchableOpacity>
 
       <View style={styles.cabecalhoGrid}>
         <Cabecalho titulo="ID" onPress={() => ordenar('id')} icone={iconeOrdenacao('id')} largura={0.7} />
@@ -405,12 +480,35 @@ export default function ComprasScreen() {
         data={compras}
         keyExtractor={(item) => String(item.id)}
         contentContainerStyle={styles.lista}
-        ListEmptyComponent={<Text style={styles.vazio}>Nenhuma compra encontrada.</Text>}
+        ListEmptyComponent={(
+          <View style={styles.vazioContainer}>
+            <View style={styles.vazioIcone}>
+              <Ionicons name="cart-outline" size={28} color={COLORS.primary} />
+            </View>
+            <Text style={styles.vazioTitulo}>Nenhuma compra encontrada</Text>
+            <Text style={styles.vazio}>
+              Cadastre uma nova compra ou ajuste os termos da busca.
+            </Text>
+          </View>
+        )}
         renderItem={({ item }) => (
-          <TouchableOpacity style={styles.card} onPress={() => abrirDetalhes(item)}>
+          <TouchableOpacity
+            style={styles.card}
+            onPress={() => abrirDetalhes(item)}
+            activeOpacity={0.8}
+          >
             <Text style={[styles.celula, { flex: 0.7 }]}>#{item.id}</Text>
             <Text style={[styles.celula, { flex: 1.2 }]}>{item.data_compra}</Text>
-            <Text style={[styles.celula, styles.status, item.status === 'CANCELADA' && styles.statusCancelada, { flex: 1.3 }]}>{item.status}</Text>
+            <View style={[styles.statusArea, { flex: 1.3 }]}>
+              <Text
+                style={[
+                  styles.status,
+                  item.status === 'CANCELADA' && styles.statusCancelada,
+                ]}
+              >
+                {item.status}
+              </Text>
+            </View>
             <Text style={[styles.celula, styles.valor, { flex: 1.2 }]}>{formatarMoeda(item.valor_total)}</Text>
           </TouchableOpacity>
         )}
@@ -618,12 +716,12 @@ function Info({ rotulo, valor }: { rotulo: string; valor: string }) {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#FFFDFE',
+    backgroundColor: COLORS.background,
   },
 
   container: {
     flex: 1,
-    backgroundColor: '#FFFDFE',
+    backgroundColor: COLORS.background,
     paddingHorizontal: 16,
     paddingTop: 12,
   },
@@ -631,14 +729,13 @@ const styles = StyleSheet.create({
   header: {
     minHeight: 76,
     borderRadius: 18,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.surface,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
     paddingHorizontal: 12,
     marginBottom: 14,
     borderWidth: 1,
-    borderColor: '#F1E7EA',
+    borderColor: COLORS.border,
     shadowColor: '#5A3844',
     shadowOffset: {
       width: 0,
@@ -653,33 +750,50 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: '#FFF0F4',
+    backgroundColor: COLORS.primarySoft,
     alignItems: 'center',
     justifyContent: 'center',
+    marginRight: 11,
   },
 
   headerTituloLinha: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+  },
+
+  headerIcone: {
+    width: 43,
+    height: 43,
+    borderRadius: 22,
+    backgroundColor: COLORS.primarySoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 10,
+  },
+
+  headerTextoArea: {
+    flex: 1,
   },
 
   headerTitulo: {
     fontSize: 20,
     fontWeight: '900',
-    color: '#242329',
+    color: COLORS.textPrimary,
   },
 
-  espacoHeader: {
-    width: 44,
+  headerSubtitulo: {
+    color: COLORS.textSecondary,
+    fontSize: 11,
+    marginTop: 3,
   },
 
   buscaContainer: {
     minHeight: 54,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.surface,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#F1E7EA',
+    borderColor: COLORS.border,
     paddingHorizontal: 14,
     flexDirection: 'row',
     alignItems: 'center',
@@ -690,9 +804,80 @@ const styles = StyleSheet.create({
   buscaInput: {
     flex: 1,
     minHeight: 52,
-    color: '#242329',
+    color: COLORS.textPrimary,
     fontSize: 14,
     fontWeight: '500',
+  },
+
+  limparBusca: {
+    width: 34,
+    height: 42,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  resumoContainer: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 12,
+  },
+
+  resumoCard: {
+    flex: 1,
+    minHeight: 78,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    backgroundColor: COLORS.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 7,
+  },
+
+  resumoCardDestaque: {
+    flex: 1.35,
+    borderColor: '#FFD1DD',
+    backgroundColor: COLORS.primarySoft,
+  },
+
+  resumoIcone: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: COLORS.primarySoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 3,
+  },
+
+  resumoIconeSucesso: {
+    backgroundColor: COLORS.successSoft,
+  },
+
+  resumoNumero: {
+    color: COLORS.textPrimary,
+    fontSize: 15,
+    fontWeight: '900',
+  },
+
+  resumoValor: {
+    color: COLORS.primary,
+    fontSize: 13,
+    fontWeight: '900',
+  },
+
+  resumoTexto: {
+    color: COLORS.textSecondary,
+    fontSize: 9,
+    fontWeight: '700',
+    marginTop: 2,
+  },
+
+  resumoTextoDestaque: {
+    color: '#B9345A',
+    fontSize: 9,
+    fontWeight: '800',
+    marginTop: 4,
   },
 
   botaoScannerBusca: {
@@ -707,13 +892,13 @@ const styles = StyleSheet.create({
   botaoPrincipal: {
     minHeight: 53,
     borderRadius: 16,
-    backgroundColor: '#FF3B73',
+    backgroundColor: COLORS.primary,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
     marginBottom: 14,
-    shadowColor: '#FF3B73',
+    shadowColor: COLORS.primary,
     shadowOffset: {
       width: 0,
       height: 6,
@@ -760,14 +945,14 @@ const styles = StyleSheet.create({
 
   card: {
     minHeight: 64,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: COLORS.surface,
     borderRadius: 14,
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 8,
     marginBottom: 8,
     borderWidth: 1,
-    borderColor: '#F1E7EA',
+    borderColor: COLORS.border,
     shadowColor: '#5A3844',
     shadowOffset: {
       width: 0,
@@ -781,27 +966,66 @@ const styles = StyleSheet.create({
   celula: {
     textAlign: 'center',
     fontSize: 11,
-    color: '#242329',
+    color: COLORS.textPrimary,
+  },
+
+  statusArea: {
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 
   status: {
+    minWidth: 76,
+    paddingVertical: 5,
+    paddingHorizontal: 7,
+    borderRadius: 10,
+    overflow: 'hidden',
+    backgroundColor: COLORS.successSoft,
+    textAlign: 'center',
+    fontSize: 9,
     fontWeight: '900',
-    color: '#2D9449',
+    color: COLORS.success,
   },
 
   statusCancelada: {
-    color: '#D93C56',
+    color: COLORS.danger,
+    backgroundColor: COLORS.dangerSoft,
   },
 
   valor: {
     fontWeight: '900',
   },
 
+  vazioContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 42,
+    paddingHorizontal: 22,
+  },
+
+  vazioIcone: {
+    width: 54,
+    height: 54,
+    borderRadius: 27,
+    backgroundColor: COLORS.primarySoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 10,
+  },
+
+  vazioTitulo: {
+    color: COLORS.textPrimary,
+    fontSize: 14,
+    fontWeight: '900',
+    textAlign: 'center',
+  },
+
   vazio: {
     textAlign: 'center',
-    marginTop: 45,
-    color: '#737178',
-    fontSize: 13,
+    marginTop: 5,
+    color: COLORS.textSecondary,
+    fontSize: 11,
+    lineHeight: 17,
   },
 
   overlay: {
