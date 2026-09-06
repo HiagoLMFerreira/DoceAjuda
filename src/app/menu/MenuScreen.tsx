@@ -72,6 +72,11 @@ const MENU_ITEMS: MenuItem[] = [
     icone: 'bag-handle-outline',
   },
   {
+    titulo: 'Agenda',
+    rota: 'Agenda',
+    icone: 'calendar-outline',
+  },
+  {
     titulo: 'Clientes',
     rota: 'Clientes',
     icone: 'people-outline',

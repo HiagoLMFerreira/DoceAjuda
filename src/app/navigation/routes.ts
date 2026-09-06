@@ -12,6 +12,7 @@ import ProdutosVendaScreen from '../../modules/produtosVenda/presentation/screen
 import ReceitasScreen from '../../modules/receitas/presentation/screens/ReceitasScreen';
 import RelatoriosScreen from '../../modules/relatorios/presentation/screens/RelatoriosScreen';
 import VendasScreen from '../../modules/vendas/presentation/screens/VendasScreen';
+import AgendaScreen from '../../modules/agenda/presentation/screens/AgendaScreen';
 
 import type { RootStackParamList } from './types';
 
@@ -32,4 +33,5 @@ export const APP_ROUTES: AppRoute[] = [
   { name: 'Vendas', component: VendasScreen },
   { name: 'Clientes', component: ClientesScreen },
   { name: 'Relatorios', component: RelatoriosScreen },
+  { name: 'Agenda', component: AgendaScreen },
 ];

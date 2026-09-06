@@ -14,6 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import DocumentoComercialFormModal from '../../../../components/DocumentoComercialFormModal';
+import { formatDateOnlyBR } from '../../../../core/formatters/date';
 import {
   buscarDocumentoComercialPorId,
   cancelarVenda,
@@ -493,6 +494,44 @@ export default function VendasScreen({ navigation }: Props) {
                           {vendaSelecionada.forma_pagamento || '-'}
                         </Text>
                       </View>
+                      {!!vendaSelecionada.data_encomenda && (
+                        <View style={styles.infoLinha}>
+                          <Text style={styles.infoLabel}>Data da encomenda</Text>
+                          <Text style={styles.infoValor}>
+                            {formatDateOnlyBR(vendaSelecionada.data_encomenda)}
+                          </Text>
+                        </View>
+                      )}
+                      {!!vendaSelecionada.finalidade && (
+                        <View style={styles.infoLinha}>
+                          <Text style={styles.infoLabel}>Finalidade</Text>
+                          <Text style={styles.infoValor}>
+                            {vendaSelecionada.finalidade}
+                          </Text>
+                        </View>
+                      )}
+                      {vendaSelecionada.sinal_pagamento > 0 && (
+                        <View style={styles.infoLinha}>
+                          <Text style={styles.infoLabel}>Sinal recebido</Text>
+                          <Text style={styles.infoValor}>
+                            {formatarMoeda(vendaSelecionada.sinal_pagamento)}
+                          </Text>
+                        </View>
+                      )}
+                      {!!vendaSelecionada.orcamento_origem_id && (
+                        <View style={styles.infoLinha}>
+                          <Text style={styles.infoLabel}>Saldo a receber</Text>
+                          <Text style={styles.infoValor}>
+                            {formatarMoeda(
+                              Math.max(
+                                0,
+                                vendaSelecionada.valor_total -
+                                  vendaSelecionada.sinal_pagamento
+                              )
+                            )}
+                          </Text>
+                        </View>
+                      )}
                       {!!vendaSelecionada.orcamento_origem_id && (
                         <View style={styles.infoLinha}>
                           <Text style={styles.infoLabel}>Orçamento de origem</Text>

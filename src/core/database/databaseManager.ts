@@ -340,6 +340,9 @@ export type DocumentoComercialDatabase = {
     observacoes: string;
     forma_pagamento: string;
     data_validade: string;
+    data_encomenda: string;
+    finalidade: string;
+    sinal_pagamento: number;
     orcamento_origem_id: number | null;
     estoque_baixado: number;
     estoque_estornado: number;
@@ -398,12 +401,32 @@ export type NovoDocumentoComercial = {
     observacoes?: string;
     forma_pagamento?: string;
     data_validade?: string;
+    data_encomenda?: string;
+    finalidade?: string;
+    sinal_pagamento?: number;
     orcamento_origem_id?: number | null;
     status?: StatusDocumentoComercial;
     itens: DocumentoComercialItemInput[];
 };
 
 export type ProdutoVendaParaDocumento = Pick<ProdutoVendaDatabase, "id" | "nome" | "descricao" | "preco_venda" | "ativo">;
+
+export type StatusContaReceber = "PENDENTE" | "PAGO" | "CANCELADO";
+
+export type ContaReceberDatabase = {
+    id: number;
+    venda_id: number;
+    cliente_id: number;
+    cliente_nome: string;
+    descricao: string;
+    valor_original: number;
+    valor_sinal: number;
+    valor_pendente: number;
+    data_vencimento: string;
+    status: StatusContaReceber;
+    created_at: string;
+    updated_at: string;
+};
 
 // ===============================
 // DATABASE
@@ -574,6 +597,9 @@ export async function initializeDatabase(): Promise<SQLite.SQLiteDatabase> {
         observacoes TEXT DEFAULT '',
         forma_pagamento TEXT DEFAULT '',
         data_validade TEXT DEFAULT '',
+        data_encomenda TEXT NOT NULL DEFAULT '',
+        finalidade TEXT NOT NULL DEFAULT '',
+        sinal_pagamento REAL NOT NULL DEFAULT 0,
         orcamento_origem_id INTEGER,
         estoque_baixado INTEGER NOT NULL DEFAULT 0
           CHECK(estoque_baixado IN (0, 1)),
@@ -611,6 +637,24 @@ export async function initializeDatabase(): Promise<SQLite.SQLiteDatabase> {
         estornado_at TEXT,
         FOREIGN KEY(venda_id) REFERENCES documentos_comerciais(id),
         FOREIGN KEY(produto_id) REFERENCES produtos(id)
+      );
+
+      CREATE TABLE IF NOT EXISTS contas_receber (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        venda_id INTEGER NOT NULL UNIQUE,
+        cliente_id INTEGER NOT NULL,
+        cliente_nome TEXT NOT NULL DEFAULT '',
+        descricao TEXT NOT NULL DEFAULT '',
+        valor_original REAL NOT NULL DEFAULT 0,
+        valor_sinal REAL NOT NULL DEFAULT 0,
+        valor_pendente REAL NOT NULL DEFAULT 0,
+        data_vencimento TEXT NOT NULL DEFAULT '',
+        status TEXT NOT NULL DEFAULT 'PENDENTE'
+          CHECK(status IN ('PENDENTE', 'PAGO', 'CANCELADO')),
+        created_at TEXT DEFAULT (datetime('now','localtime')),
+        updated_at TEXT DEFAULT (datetime('now','localtime')),
+        FOREIGN KEY(venda_id) REFERENCES documentos_comerciais(id),
+        FOREIGN KEY(cliente_id) REFERENCES clientes(id)
       );
 
       CREATE INDEX IF NOT EXISTS idx_compras_data
@@ -654,6 +698,9 @@ export async function initializeDatabase(): Promise<SQLite.SQLiteDatabase> {
 
       CREATE INDEX IF NOT EXISTS idx_venda_estoque_produto
         ON venda_estoque_itens(produto_id);
+
+      CREATE INDEX IF NOT EXISTS idx_contas_receber_status_vencimento
+        ON contas_receber(status, data_vencimento);
     `);
         // As migrações existentes usam a referência global.
         // Ela só fica disponível enquanto a inicialização está protegida pela Promise.
@@ -850,6 +897,9 @@ export async function aplicarMigracoesDocumentosComerciais(): Promise<void> {
     await adicionarColunaSeNaoExistir("documentos_comerciais", "estoque_baixado", "INTEGER NOT NULL DEFAULT 0 CHECK(estoque_baixado IN (0, 1))");
     await adicionarColunaSeNaoExistir("documentos_comerciais", "estoque_estornado", "INTEGER NOT NULL DEFAULT 0 CHECK(estoque_estornado IN (0, 1))");
     await adicionarColunaSeNaoExistir("documentos_comerciais", "canceled_at", "TEXT");
+    await adicionarColunaSeNaoExistir("documentos_comerciais", "data_encomenda", "TEXT NOT NULL DEFAULT ''");
+    await adicionarColunaSeNaoExistir("documentos_comerciais", "finalidade", "TEXT NOT NULL DEFAULT ''");
+    await adicionarColunaSeNaoExistir("documentos_comerciais", "sinal_pagamento", "REAL NOT NULL DEFAULT 0");
     await adicionarColunaSeNaoExistir("movimentacoes", "venda_id", "INTEGER");
     await adicionarColunaSeNaoExistir("movimentacoes", "venda_estoque_item_id", "INTEGER");
     await adicionarColunaSeNaoExistir("movimentacoes", "origem", "TEXT NOT NULL DEFAULT 'MANUAL'");
@@ -876,6 +926,30 @@ export async function aplicarMigracoesDocumentosComerciais(): Promise<void> {
 
     CREATE INDEX IF NOT EXISTS idx_venda_estoque_produto
       ON venda_estoque_itens(produto_id);
+
+    CREATE TABLE IF NOT EXISTS contas_receber (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      venda_id INTEGER NOT NULL UNIQUE,
+      cliente_id INTEGER NOT NULL,
+      cliente_nome TEXT NOT NULL DEFAULT '',
+      descricao TEXT NOT NULL DEFAULT '',
+      valor_original REAL NOT NULL DEFAULT 0,
+      valor_sinal REAL NOT NULL DEFAULT 0,
+      valor_pendente REAL NOT NULL DEFAULT 0,
+      data_vencimento TEXT NOT NULL DEFAULT '',
+      status TEXT NOT NULL DEFAULT 'PENDENTE'
+        CHECK(status IN ('PENDENTE', 'PAGO', 'CANCELADO')),
+      created_at TEXT DEFAULT (datetime('now','localtime')),
+      updated_at TEXT DEFAULT (datetime('now','localtime')),
+      FOREIGN KEY(venda_id) REFERENCES documentos_comerciais(id),
+      FOREIGN KEY(cliente_id) REFERENCES clientes(id)
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_documentos_comerciais_encomenda
+      ON documentos_comerciais(data_encomenda);
+
+    CREATE INDEX IF NOT EXISTS idx_contas_receber_status_vencimento
+      ON contas_receber(status, data_vencimento);
 
     CREATE INDEX IF NOT EXISTS idx_movimentacoes_venda
       ON movimentacoes(venda_id);

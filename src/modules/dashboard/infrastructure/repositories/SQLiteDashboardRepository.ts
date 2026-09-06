@@ -1,6 +1,7 @@
 import { getDatabase } from '../../../../core/database/databaseManager';
 import type {
   DashboardData,
+  DashboardContaReceber,
   DashboardEstoqueCritico,
   DashboardProdutoMaisVendido,
   DashboardVendaDia,
@@ -15,6 +16,8 @@ type ResumoRow = {
   clientesCadastrados: number | null;
   orcamentosPendentes: number | null;
   produtosEstoqueBaixo: number | null;
+  valorContasReceber: number | null;
+  quantidadeContasReceber: number | null;
 };
 
 type VendaDiaRow = {
@@ -43,6 +46,14 @@ type EstoqueCriticoRow = {
   nome: string;
   quantidade: number;
   unidadeMedida: string;
+};
+
+type DataEncomendaRow = {
+  dataEncomenda: string;
+};
+
+type ContaReceberRow = DashboardContaReceber & {
+  valorPendente: number | null;
 };
 
 const DIAS_SEMANA = [
@@ -141,6 +152,16 @@ export class SQLiteDashboardRepository
           WHERE ativo = 1
             AND quantidade <= 5
         ) AS produtosEstoqueBaixo
+        ,(
+          SELECT COALESCE(SUM(valor_pendente), 0)
+          FROM contas_receber
+          WHERE status = 'PENDENTE'
+        ) AS valorContasReceber
+        ,(
+          SELECT COUNT(*)
+          FROM contas_receber
+          WHERE status = 'PENDENTE'
+        ) AS quantidadeContasReceber
     `);
 
     const vendasSemanaRows =
@@ -208,6 +229,37 @@ export class SQLiteDashboardRepository
         LIMIT 4
       `);
 
+    const datasEncomendas =
+      await db.getAllAsync<DataEncomendaRow>(`
+        SELECT DISTINCT dc.data_encomenda AS dataEncomenda
+        FROM documentos_comerciais dc
+        WHERE dc.data_encomenda <> ''
+          AND dc.status <> 'CANCELADA'
+          AND (
+            dc.tipo = 'VENDA'
+            OR (dc.tipo = 'ORCAMENTO' AND dc.status = 'PENDENTE')
+          )
+        ORDER BY dc.data_encomenda ASC
+      `);
+
+    const contasReceber =
+      await db.getAllAsync<ContaReceberRow>(`
+        SELECT
+          id,
+          venda_id AS vendaId,
+          cliente_nome AS clienteNome,
+          descricao,
+          valor_pendente AS valorPendente,
+          data_vencimento AS dataVencimento
+        FROM contas_receber
+        WHERE status = 'PENDENTE'
+        ORDER BY
+          CASE WHEN data_vencimento = '' THEN 1 ELSE 0 END,
+          data_vencimento ASC,
+          id ASC
+        LIMIT 4
+      `);
+
     return {
       resumo: {
         vendasHoje:
@@ -222,6 +274,10 @@ export class SQLiteDashboardRepository
           Number(resumo?.orcamentosPendentes) || 0,
         produtosEstoqueBaixo:
           Number(resumo?.produtosEstoqueBaixo) || 0,
+        valorContasReceber:
+          Number(resumo?.valorContasReceber) || 0,
+        quantidadeContasReceber:
+          Number(resumo?.quantidadeContasReceber) || 0,
       },
       vendasSemana:
         criarUltimosSeteDias(vendasSemanaRows),
@@ -243,6 +299,11 @@ export class SQLiteDashboardRepository
           quantidade: Number(item.quantidade) || 0,
         })
       ),
+      datasEncomendas: datasEncomendas.map((item) => item.dataEncomenda),
+      contasReceber: contasReceber.map((item) => ({
+        ...item,
+        valorPendente: Number(item.valorPendente) || 0,
+      })),
     };
   }
 }

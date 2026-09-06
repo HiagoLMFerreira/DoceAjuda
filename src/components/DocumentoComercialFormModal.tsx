@@ -16,6 +16,12 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 
 import {
+  formatDateOnlyBR,
+  maskDateBR,
+  parseDateBR,
+} from '../core/formatters';
+
+import {
   adicionarCliente,
   atualizarDocumentoComercialCompleto,
   buscarProdutosVendaParaDocumento,
@@ -89,7 +95,10 @@ export default function DocumentoComercialFormModal({
   const [itens, setItens] = useState<ItemFormulario[]>([]);
   const [observacoes, setObservacoes] = useState('');
   const [dataValidade, setDataValidade] = useState('');
+  const [dataEncomenda, setDataEncomenda] = useState('');
+  const [finalidade, setFinalidade] = useState('');
   const [formaPagamento, setFormaPagamento] = useState('');
+  const [sinalPagamento, setSinalPagamento] = useState('');
   const [salvando, setSalvando] = useState(false);
 
   const [modalClientes, setModalClientes] = useState(false);
@@ -154,8 +163,19 @@ export default function DocumentoComercialFormModal({
       );
       setObservacoes(documentoBase.observacoes ?? '');
       setDataValidade(documentoBase.data_validade ?? '');
+      setDataEncomenda(
+        documentoBase.data_encomenda
+          ? formatDateOnlyBR(documentoBase.data_encomenda)
+          : ''
+      );
+      setFinalidade(documentoBase.finalidade ?? '');
       setFormaPagamento(
         tipo === 'VENDA' ? documentoEdicao?.forma_pagamento ?? '' : ''
+      );
+      setSinalPagamento(
+        tipo === 'VENDA' && documentoEdicao?.sinal_pagamento
+          ? numeroParaTexto(documentoEdicao.sinal_pagamento)
+          : ''
       );
       return;
     }
@@ -188,7 +208,10 @@ export default function DocumentoComercialFormModal({
     setItens([]);
     setObservacoes('');
     setDataValidade('');
+    setDataEncomenda('');
+    setFinalidade('');
     setFormaPagamento('');
+    setSinalPagamento('');
     setBuscaCliente('');
     setBuscaProduto('');
   }
@@ -343,6 +366,27 @@ export default function DocumentoComercialFormModal({
       return;
     }
 
+    const exigeDadosEncomenda = tipo === 'ORCAMENTO' || Boolean(documentoOrigem);
+    const dataEncomendaNormalizada = dataEncomenda
+      ? parseDateBR(dataEncomenda)
+      : null;
+
+    if (exigeDadosEncomenda && !dataEncomendaNormalizada) {
+      Alert.alert('Atenção', 'Informe uma data de encomenda válida no formato DD/MM/AAAA.');
+      return;
+    }
+
+    if (exigeDadosEncomenda && !finalidade.trim()) {
+      Alert.alert('Atenção', 'Informe a finalidade da encomenda.');
+      return;
+    }
+
+    const sinalPagamentoNumero = textoParaNumero(sinalPagamento);
+    if (sinalPagamento.trim() && (sinalPagamentoNumero < 0 || sinalPagamentoNumero > total)) {
+      Alert.alert('Atenção', 'O sinal deve estar entre zero e o valor total da venda.');
+      return;
+    }
+
     try {
       setSalvando(true);
 
@@ -351,7 +395,11 @@ export default function DocumentoComercialFormModal({
         cliente_id: clienteSelecionado.id,
         observacoes: observacoes.trim(),
         data_validade: tipo === 'ORCAMENTO' ? dataValidade.trim() : '',
+        data_encomenda: dataEncomendaNormalizada ?? '',
+        finalidade: finalidade.trim(),
         forma_pagamento: tipo === 'VENDA' ? formaPagamento.trim() : '',
+        sinal_pagamento:
+          tipo === 'VENDA' && documentoOrigem ? sinalPagamentoNumero : 0,
         status: documentoEdicao?.status,
         orcamento_origem_id:
           documentoOrigem?.id ??
@@ -436,6 +484,36 @@ export default function DocumentoComercialFormModal({
               </>
             )}
 
+            {(tipo === 'ORCAMENTO' || documentoOrigem) && (
+              <View style={styles.encomendaCard}>
+                <View style={styles.encomendaTituloLinha}>
+                  <Ionicons name="calendar-outline" size={20} color={COLORS.primary} />
+                  <Text style={styles.encomendaTitulo}>DADOS DA ENCOMENDA</Text>
+                </View>
+
+                <Text style={styles.label}>Data da encomenda *</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="DD/MM/AAAA"
+                  placeholderTextColor="#888"
+                  value={dataEncomenda}
+                  onChangeText={(valor) => setDataEncomenda(maskDateBR(valor))}
+                  keyboardType="number-pad"
+                  maxLength={10}
+                />
+
+                <Text style={styles.label}>Finalidade *</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Ex.: aniversário, casamento"
+                  placeholderTextColor="#888"
+                  value={finalidade}
+                  onChangeText={setFinalidade}
+                  maxLength={80}
+                />
+              </View>
+            )}
+
             {tipo === 'VENDA' && (
               <>
                 <Text style={styles.label}>Forma de pagamento</Text>
@@ -466,6 +544,27 @@ export default function DocumentoComercialFormModal({
                     );
                   })}
                 </View>
+
+                {documentoOrigem && (
+                  <>
+                    <Text style={styles.label}>Sinal de pagamento (opcional)</Text>
+                    <TextInput
+                      style={styles.input}
+                      placeholder="R$ 0,00"
+                      placeholderTextColor="#888"
+                      value={sinalPagamento}
+                      onChangeText={setSinalPagamento}
+                      keyboardType="decimal-pad"
+                      selectTextOnFocus
+                    />
+                    <View style={styles.saldoPreview}>
+                      <Text style={styles.saldoPreviewLabel}>Saldo a receber</Text>
+                      <Text style={styles.saldoPreviewValor}>
+                        {formatarMoeda(Math.max(0, total - textoParaNumero(sinalPagamento)))}
+                      </Text>
+                    </View>
+                  </>
+                )}
               </>
             )}
 
@@ -909,6 +1008,25 @@ const styles = StyleSheet.create({
     color: COLORS.textMuted,
     fontSize: 14,
   },
+  encomendaCard: {
+    marginTop: 14,
+    padding: 14,
+    borderRadius: 17,
+    borderWidth: 1,
+    borderColor: COLORS.borderStrong,
+    backgroundColor: '#FFF8FA',
+  },
+  encomendaTituloLinha: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 2,
+  },
+  encomendaTitulo: {
+    color: COLORS.primary,
+    fontSize: 13,
+    fontWeight: '900',
+  },
   formasPagamentoContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -935,6 +1053,26 @@ const styles = StyleSheet.create({
   },
   formaPagamentoTextoSelecionado: {
     color: '#fff',
+  },
+  saldoPreview: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    minHeight: 48,
+    paddingHorizontal: 14,
+    borderRadius: 14,
+    backgroundColor: COLORS.primarySoft,
+    marginBottom: 8,
+  },
+  saldoPreviewLabel: {
+    color: COLORS.textSecondary,
+    fontSize: 13,
+    fontWeight: '800',
+  },
+  saldoPreviewValor: {
+    color: COLORS.primary,
+    fontSize: 16,
+    fontWeight: '900',
   },
   tituloSecaoLinha: {
     flexDirection: 'row',

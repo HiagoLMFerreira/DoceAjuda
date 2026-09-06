@@ -5,6 +5,8 @@ export type DashboardResumo = {
   clientesCadastrados: number;
   orcamentosPendentes: number;
   produtosEstoqueBaixo: number;
+  valorContasReceber: number;
+  quantidadeContasReceber: number;
 };
 
 export type DashboardVendaDia = {
@@ -36,10 +38,21 @@ export type DashboardEstoqueCritico = {
   unidadeMedida: string;
 };
 
+export type DashboardContaReceber = {
+  id: number;
+  vendaId: number;
+  clienteNome: string;
+  descricao: string;
+  valorPendente: number;
+  dataVencimento: string;
+};
+
 export type DashboardData = {
   resumo: DashboardResumo;
   vendasSemana: DashboardVendaDia[];
   vendasRecentes: DashboardVendaRecente[];
   produtosMaisVendidos: DashboardProdutoMaisVendido[];
   estoqueCritico: DashboardEstoqueCritico[];
+  datasEncomendas: string[];
+  contasReceber: DashboardContaReceber[];
 };

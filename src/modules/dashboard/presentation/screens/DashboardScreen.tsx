@@ -22,12 +22,15 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../../../../app/navigation/types';
 import { useAuth } from '../../../auth/presentation/useAuth';
 import type {
+  DashboardContaReceber,
   DashboardEstoqueCritico,
   DashboardProdutoMaisVendido,
   DashboardVendaRecente,
 } from '../../domain/models/Dashboard';
 import { useDashboard } from '../hooks/useDashboard';
 import DashboardBottomNavigation from '../components/DashboardBottomNavigation';
+import MonthCalendar from '../../../../shared/components/MonthCalendar';
+import { formatDateOnlyBR } from '../../../../core/formatters';
 
 type Props = NativeStackScreenProps<
   RootStackParamList,
@@ -351,6 +354,75 @@ export default function DashboardScreen({
               navigation.navigate('Clientes')
             }
           />
+
+          <SummaryCard
+            title="A receber"
+            value={formatarMoeda(
+              dados.resumo.valorContasReceber
+            )}
+            subtitle={`${dados.resumo.quantidadeContasReceber} conta(s) pendente(s)`}
+            icon="wallet-outline"
+            onPress={() =>
+              navigation.navigate('Agenda')
+            }
+          />
+        </View>
+
+        <View style={styles.calendarCard}>
+          <View style={styles.cardHeader}>
+            <View>
+              <Text style={styles.cardTitle}>Agenda de encomendas</Text>
+              <Text style={styles.cardSubtitle}>Os pontos indicam dias com pedidos</Text>
+            </View>
+            <TouchableOpacity onPress={() => navigation.navigate('Agenda')}>
+              <Text style={styles.linkText}>Abrir agenda</Text>
+            </TouchableOpacity>
+          </View>
+
+          <MonthCalendar
+            markedDates={dados.datasEncomendas}
+            onSelectDate={(dataSelecionada) =>
+              navigation.navigate('Agenda', { dataSelecionada })
+            }
+          />
+        </View>
+
+        <View style={styles.receivablesCard}>
+          <View style={styles.cardHeader}>
+            <View>
+              <Text style={styles.cardTitle}>Contas a receber</Text>
+              <Text style={styles.cardSubtitle}>Saldos das encomendas confirmadas</Text>
+            </View>
+            <View style={styles.receivablesTotalBadge}>
+              <Text style={styles.receivablesTotalText}>
+                {formatarMoeda(dados.resumo.valorContasReceber)}
+              </Text>
+            </View>
+          </View>
+
+          {dados.contasReceber.length === 0 ? (
+            <Text style={styles.emptyText}>Nenhuma conta pendente.</Text>
+          ) : (
+            dados.contasReceber.map((conta: DashboardContaReceber) => (
+              <TouchableOpacity
+                key={conta.id}
+                style={styles.receivableRow}
+                onPress={() => navigation.navigate('Vendas')}
+                activeOpacity={0.78}
+              >
+                <View style={styles.rowIcon}>
+                  <Ionicons name="cash-outline" size={20} color={COLORS.primary} />
+                </View>
+                <View style={styles.rowContent}>
+                  <Text style={styles.rowTitle} numberOfLines={1}>{conta.clienteNome}</Text>
+                  <Text style={styles.rowSubtitle} numberOfLines={1}>
+                    {conta.descricao} · {formatDateOnlyBR(conta.dataVencimento)}
+                  </Text>
+                </View>
+                <Text style={styles.receivableValue}>{formatarMoeda(conta.valorPendente)}</Text>
+              </TouchableOpacity>
+            ))
+          )}
         </View>
 
         <View style={styles.chartCard}>
@@ -933,6 +1005,54 @@ const styles = StyleSheet.create({
     padding: 16,
     marginTop: 3,
     marginBottom: 14,
+  },
+
+  calendarCard: {
+    backgroundColor: COLORS.surface,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    padding: 16,
+    marginTop: 3,
+    marginBottom: 14,
+  },
+
+  receivablesCard: {
+    backgroundColor: COLORS.surface,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    padding: 16,
+    marginBottom: 14,
+  },
+
+  receivablesTotalBadge: {
+    borderRadius: 999,
+    backgroundColor: COLORS.primarySoft,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+
+  receivablesTotalText: {
+    color: COLORS.primary,
+    fontSize: 12,
+    fontWeight: '900',
+  },
+
+  receivableRow: {
+    minHeight: 67,
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderTopWidth: 1,
+    borderTopColor: '#F7EEF1',
+    paddingVertical: 10,
+  },
+
+  receivableValue: {
+    color: COLORS.primary,
+    fontSize: 13,
+    fontWeight: '900',
+    marginLeft: 8,
   },
 
   cardHeader: {

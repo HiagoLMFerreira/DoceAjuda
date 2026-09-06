@@ -18,6 +18,9 @@ export type Venda = {
   observacoes: string;
   forma_pagamento: string;
   data_validade: string;
+  data_encomenda: string;
+  finalidade: string;
+  sinal_pagamento: number;
   orcamento_origem_id: number | null;
   estoque_baixado: number;
   estoque_estornado: number;

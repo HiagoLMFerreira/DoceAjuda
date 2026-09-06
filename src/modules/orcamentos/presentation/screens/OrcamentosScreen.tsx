@@ -26,6 +26,7 @@ import {
   NecessidadeOrcamento,
 } from '../../application/orcamentosApi';
 import { compartilharPdfOrcamento } from '../../../../services/orcamentoPdf';
+import { formatDateOnlyBR } from '../../../../core/formatters/date';
 
 type Props = {
   navigation: {
@@ -688,6 +689,20 @@ export default function OrcamentosScreen({ navigation }: Props) {
                     <Text style={styles.infoLabel}>Validade</Text>
                     <Text style={styles.infoValor}>
                       {orcamentoSelecionado.data_validade || "-"}
+                    </Text>
+                  </View>
+
+                  <View style={styles.infoLinha}>
+                    <Text style={styles.infoLabel}>Data da encomenda</Text>
+                    <Text style={styles.infoValor}>
+                      {formatDateOnlyBR(orcamentoSelecionado.data_encomenda)}
+                    </Text>
+                  </View>
+
+                  <View style={styles.infoLinha}>
+                    <Text style={styles.infoLabel}>Finalidade</Text>
+                    <Text style={styles.infoValor} numberOfLines={2}>
+                      {orcamentoSelecionado.finalidade || '-'}
                     </Text>
                   </View>
 

@@ -1,6 +1,7 @@
 import type { DocumentoComercialDetalhado } from "../core/database/databaseManager";
 import { escapeHtml } from '../shared/formatters/html';
 import { pdfService } from '../shared/pdf/PdfService';
+import { formatDateOnlyBR } from '../core/formatters/date';
 
 function formatCurrency(value: number): string {
   return Number(value || 0).toLocaleString('pt-BR', {
@@ -47,6 +48,8 @@ export async function compartilharPdfOrcamento(
         <strong>Cliente:</strong> ${escapeHtml(orcamento.cliente_nome)}<br />
         <strong>Telefone:</strong> ${escapeHtml(orcamento.cliente_telefone || '-')}<br />
         <strong>Validade:</strong> ${escapeHtml(orcamento.data_validade || '-')}<br />
+        <strong>Data da encomenda:</strong> ${escapeHtml(formatDateOnlyBR(orcamento.data_encomenda))}<br />
+        <strong>Finalidade:</strong> ${escapeHtml(orcamento.finalidade || '-')}<br />
         <strong>Status:</strong> ${escapeHtml(orcamento.status)}
       </div>
       <table>

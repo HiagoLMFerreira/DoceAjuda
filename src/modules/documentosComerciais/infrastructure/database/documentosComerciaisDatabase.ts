@@ -27,6 +27,20 @@ export function arredondarValorMonetario(valor: number): number {
     return Math.round((valor + Number.EPSILON) * 100) / 100;
 }
 
+export function validarDataEncomenda(data: string): void {
+    const correspondencia = data.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (!correspondencia) {
+        throw new Error("Informe uma data de encomenda válida.");
+    }
+    const ano = Number(correspondencia[1]);
+    const mes = Number(correspondencia[2]);
+    const dia = Number(correspondencia[3]);
+    const dataValidada = new Date(ano, mes - 1, dia);
+    if (dataValidada.getFullYear() !== ano || dataValidada.getMonth() !== mes - 1 || dataValidada.getDate() !== dia) {
+        throw new Error("Informe uma data de encomenda válida.");
+    }
+}
+
 export function obterStatusInicialDocumento(tipo: TipoDocumentoComercial): StatusDocumentoComercial {
     return tipo === "ORCAMENTO" ? "PENDENTE" : "CONCLUIDA";
 }
@@ -65,6 +79,9 @@ export async function prepararDocumentoComercial(database: SQLite.SQLiteDatabase
     status: StatusDocumentoComercial;
     itens: ItemDocumentoPreparado[];
     valorTotal: number;
+    dataEncomenda: string;
+    finalidade: string;
+    sinalPagamento: number;
 }> {
     if (documento.tipo !== "ORCAMENTO" && documento.tipo !== "VENDA") {
         throw new Error("Tipo de documento comercial inválido.");
@@ -77,6 +94,19 @@ export async function prepararDocumentoComercial(database: SQLite.SQLiteDatabase
     }
     if (documento.tipo === "VENDA" && !documento.forma_pagamento?.trim()) {
         throw new Error("Selecione a forma de pagamento.");
+    }
+    const dataEncomenda = documento.data_encomenda?.trim() ?? "";
+    const finalidade = documento.finalidade?.trim() ?? "";
+    if (documento.tipo === "ORCAMENTO" || documento.orcamento_origem_id) {
+        if (!dataEncomenda) {
+            throw new Error("Informe a data da encomenda.");
+        }
+        if (!finalidade) {
+            throw new Error("Informe a finalidade da encomenda.");
+        }
+    }
+    if (dataEncomenda) {
+        validarDataEncomenda(dataEncomenda);
     }
     const cliente = await database.getFirstAsync<{
         id: number;
@@ -126,11 +156,21 @@ export async function prepararDocumentoComercial(database: SQLite.SQLiteDatabase
         produtosAdicionados.add(produto.id);
     }
     const valorTotal = arredondarValorMonetario(itens.reduce((total, item) => total + item.subtotal, 0));
+    const sinalPagamento = arredondarValorMonetario(documento.sinal_pagamento ?? 0);
+    if (!Number.isFinite(sinalPagamento) || sinalPagamento < 0) {
+        throw new Error("Informe um valor de sinal válido.");
+    }
+    if (sinalPagamento > valorTotal) {
+        throw new Error("O sinal não pode ser maior que o valor total da venda.");
+    }
     return {
         clienteNome: cliente.nome,
         status,
         itens,
         valorTotal,
+        dataEncomenda,
+        finalidade,
+        sinalPagamento,
     };
 }
 
@@ -413,6 +453,14 @@ export async function cancelarVenda(vendaId: number): Promise<void> {
         WHERE id = ? AND estornado_at IS NULL
         `, [item.id]);
         }
+        await database.runAsync(`
+      UPDATE contas_receber
+      SET
+        status = 'CANCELADO',
+        updated_at = datetime('now','localtime')
+      WHERE venda_id = ?
+        AND status = 'PENDENTE'
+      `, [vendaId]);
         await atualizarTotalComprasClienteInterno(database, venda.cliente_id);
     });
 }
@@ -488,6 +536,9 @@ export async function listarDocumentosComerciais(tipo: TipoDocumentoComercial | 
       dc.observacoes,
       dc.forma_pagamento,
       dc.data_validade,
+      dc.data_encomenda,
+      dc.finalidade,
+      dc.sinal_pagamento,
       dc.orcamento_origem_id,
       dc.estoque_baixado,
       dc.estoque_estornado,
@@ -546,6 +597,9 @@ export async function buscarDocumentoComercialPorId(id: number): Promise<Documen
       dc.observacoes,
       dc.forma_pagamento,
       dc.data_validade,
+      dc.data_encomenda,
+      dc.finalidade,
+      dc.sinal_pagamento,
       dc.orcamento_origem_id,
       dc.estoque_baixado,
       dc.estoque_estornado,
@@ -584,10 +638,13 @@ export async function salvarDocumentoComercialCompleto(documento: NovoDocumentoC
         observacoes,
         forma_pagamento,
         data_validade,
+        data_encomenda,
+        finalidade,
+        sinal_pagamento,
         orcamento_origem_id,
         estoque_baixado,
         estoque_estornado
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 0)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 0)
       `, [
             documento.tipo,
             documento.cliente_id,
@@ -597,6 +654,9 @@ export async function salvarDocumentoComercialCompleto(documento: NovoDocumentoC
             documento.observacoes?.trim() ?? "",
             documento.forma_pagamento?.trim() ?? "",
             documento.data_validade?.trim() ?? "",
+            preparado.dataEncomenda,
+            preparado.finalidade,
+            preparado.sinalPagamento,
             null,
         ]);
         documentoId = resultado.lastInsertRowId;
@@ -684,21 +744,52 @@ export async function converterOrcamentoEmVenda(orcamentoId: number, venda: Novo
         observacoes,
         forma_pagamento,
         data_validade,
+        data_encomenda,
+        finalidade,
+        sinal_pagamento,
         orcamento_origem_id,
         estoque_baixado,
         estoque_estornado
-      ) VALUES ('VENDA', ?, ?, 'CONCLUIDA', ?, ?, ?, '', ?, 0, 0)
+      ) VALUES ('VENDA', ?, ?, 'CONCLUIDA', ?, ?, ?, '', ?, ?, ?, ?, 0, 0)
       `, [
             documentoVenda.cliente_id,
             preparado.clienteNome,
             preparado.valorTotal,
             documentoVenda.observacoes?.trim() ?? "",
             formaPagamento,
+            preparado.dataEncomenda,
+            preparado.finalidade,
+            preparado.sinalPagamento,
             orcamentoId,
         ]);
         vendaId = resultado.lastInsertRowId;
         await inserirItensDocumentoComercial(database, vendaId, preparado.itens);
         await baixarEstoqueVendaDentroTransacao(database, vendaId);
+        const valorPendente = arredondarValorMonetario(preparado.valorTotal - preparado.sinalPagamento);
+        if (valorPendente > 0) {
+            await database.runAsync(`
+        INSERT INTO contas_receber (
+          venda_id,
+          cliente_id,
+          cliente_nome,
+          descricao,
+          valor_original,
+          valor_sinal,
+          valor_pendente,
+          data_vencimento,
+          status
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'PENDENTE')
+        `, [
+                vendaId,
+                documentoVenda.cliente_id,
+                preparado.clienteNome,
+                preparado.finalidade || "Encomenda",
+                preparado.valorTotal,
+                preparado.sinalPagamento,
+                valorPendente,
+                preparado.dataEncomenda,
+            ]);
+        }
         await atualizarTotalComprasClienteInterno(database, documentoVenda.cliente_id);
     });
     return vendaId;
@@ -758,6 +849,9 @@ export async function atualizarDocumentoComercialCompleto(id: number, documento:
         observacoes = ?,
         forma_pagamento = ?,
         data_validade = ?,
+        data_encomenda = ?,
+        finalidade = ?,
+        sinal_pagamento = ?,
         updated_at = datetime('now','localtime')
       WHERE id = ?
         AND tipo = 'ORCAMENTO'
@@ -770,6 +864,9 @@ export async function atualizarDocumentoComercialCompleto(id: number, documento:
             documento.observacoes?.trim() ?? "",
             documento.forma_pagamento?.trim() ?? "",
             documento.data_validade?.trim() ?? "",
+            preparado.dataEncomenda,
+            preparado.finalidade,
+            preparado.sinalPagamento,
             id,
         ]);
         if (atualizacao.changes !== 1) {
@@ -906,7 +1003,17 @@ export function converterQuantidadeNecessidade(quantidade: number, unidadeOrigem
     return (quantidade * configuracaoOrigem.fator) / configuracaoDestino.fator;
 }
 
-export async function calcularNecessidadesDocumentoComercialInterno(database: SQLite.SQLiteDatabase, documentoId: number): Promise<NecessidadeOrcamento[]> {
+export async function calcularNecessidadesDocumentosComerciaisInterno(
+    database: SQLite.SQLiteDatabase,
+    documentoIds: number[],
+): Promise<NecessidadeOrcamento[]> {
+    const idsValidos = Array.from(new Set(
+        documentoIds.filter((id) => Number.isInteger(id) && id > 0),
+    ));
+    if (!idsValidos.length) {
+        return [];
+    }
+    const marcadores = idsValidos.map(() => "?").join(", ");
     type LinhaNecessidadeDireta = {
         produto_id: number;
         produto_nome: string;
@@ -941,8 +1048,8 @@ export async function calcularNecessidadesDocumentoComercialInterno(database: SQ
       ON pvi.produto_venda_id = dci.produto_venda_id
     INNER JOIN produtos p
       ON p.id = pvi.produto_estoque_id
-    WHERE dci.documento_id = ?
-    `, [documentoId]);
+    WHERE dci.documento_id IN (${marcadores})
+    `, idsValidos);
     const ingredientesReceitas = await database.getAllAsync<LinhaNecessidadeReceita>(`
       SELECT
         p.id AS produto_id,
@@ -963,8 +1070,8 @@ export async function calcularNecessidadesDocumentoComercialInterno(database: SQ
         ON ri.receita_id = r.id
       INNER JOIN produtos p
         ON p.id = ri.produto_id
-      WHERE dci.documento_id = ?
-      `, [documentoId]);
+      WHERE dci.documento_id IN (${marcadores})
+      `, idsValidos);
     const acumulado = new Map<number, {
         produto_id: number;
         produto_nome: string;
@@ -1023,6 +1130,20 @@ export async function calcularNecessidadesDocumentoComercialInterno(database: SQ
         .sort((a, b) => a.produto_nome.localeCompare(b.produto_nome, "pt-BR", {
         sensitivity: "base",
     }));
+}
+
+export async function calcularNecessidadesDocumentoComercialInterno(
+    database: SQLite.SQLiteDatabase,
+    documentoId: number,
+): Promise<NecessidadeOrcamento[]> {
+    return calcularNecessidadesDocumentosComerciaisInterno(database, [documentoId]);
+}
+
+export async function calcularNecessidadesDocumentosComerciais(
+    documentoIds: number[],
+): Promise<NecessidadeOrcamento[]> {
+    const database = await getDatabase();
+    return calcularNecessidadesDocumentosComerciaisInterno(database, documentoIds);
 }
 
 export async function calcularNecessidadesOrcamento(orcamentoId: number): Promise<NecessidadeOrcamento[]> {
