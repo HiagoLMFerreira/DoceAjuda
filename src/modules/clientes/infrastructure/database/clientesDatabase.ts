@@ -79,7 +79,7 @@ export async function adicionarCliente(nome: string, telefone: string = "", ende
       endereco,
       total_compras,
       ativo
-    ) VALUES (?, ?, ?, 0)
+    ) VALUES (?, ?, ?, 0, 1)
     `, [nomeTratado, telefoneTratado, enderecoTratado]);
     return resultado.lastInsertRowId;
 }
@@ -105,24 +105,6 @@ export async function atualizarCliente(id: number, nome: string, telefone: strin
     `, [nomeTratado, telefoneTratado, enderecoTratado, id]);
 }
 
-export async function excluirCliente(id: number): Promise<void> {
-    const database = await getDatabase();
-    if (!id) {
-        throw new Error("Cliente inválido.");
-    }
-    const usoEmDocumento = await database.getFirstAsync<{
-        total: number;
-    }>(`
-    SELECT COUNT(*) AS total
-    FROM documentos_comerciais
-    WHERE cliente_id = ?
-    `, [id]);
-    if ((usoEmDocumento?.total ?? 0) > 0) {
-        throw new Error("Este cliente possui orçamentos ou vendas vinculados e não pode ser excluído.");
-    }
-    await database.runAsync("DELETE FROM clientes WHERE id = ?", [id]);
-}
-
 export async function buscarClientePorId(id: number): Promise<ClienteDatabase | null> {
     const database = await getDatabase();
     if (!id) {
@@ -134,7 +116,8 @@ export async function buscarClientePorId(id: number): Promise<ClienteDatabase | 
       nome,
       telefone,
       endereco,
-      total_compras
+      total_compras,
+      ativo
     FROM clientes
     WHERE id = ?
     `, [id]);

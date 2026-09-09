@@ -52,8 +52,8 @@ export class SQLiteClienteRepository implements IClienteRepository {
             nome,
             telefone,
             endereco,
-            total_compras
-            ,ativo
+            total_compras,
+            ativo
           FROM clientes
           WHERE ativo = ${situacao}
           ORDER BY ${coluna} ${direcao}
@@ -72,8 +72,8 @@ export class SQLiteClienteRepository implements IClienteRepository {
               nome,
               telefone,
               endereco,
-              total_compras
-              ,ativo
+              total_compras,
+              ativo
             FROM clientes
             WHERE ativo = ${situacao}
               AND (id = ? OR nome LIKE ?)
@@ -92,8 +92,8 @@ export class SQLiteClienteRepository implements IClienteRepository {
             nome,
             telefone,
             endereco,
-            total_compras
-            ,ativo
+            total_compras,
+            ativo
           FROM clientes
           WHERE ativo = ${situacao}
             AND nome LIKE ?
@@ -121,8 +121,8 @@ export class SQLiteClienteRepository implements IClienteRepository {
             nome,
             telefone,
             endereco,
-            total_compras
-            ,ativo
+            total_compras,
+            ativo
           FROM clientes
           WHERE id = ?
         `,

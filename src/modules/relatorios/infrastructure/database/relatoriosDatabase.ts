@@ -31,6 +31,7 @@ export type EstoqueRelatorioDatabase = {
     id: number;
     nome: string;
     quantidade: number;
+    quantidade_minima: number;
     unidade_medida: string;
     preco_medio: number;
     valor_estoque: number;
@@ -217,6 +218,7 @@ export async function gerarRelatorioEstoque(): Promise<ResultadoRelatorio> {
       p.id,
       p.nome,
       p.quantidade,
+      p.quantidade_minima,
       p.unidade_medida,
       p.preco_medio,
       p.quantidade * p.preco_medio AS valor_estoque
@@ -225,6 +227,10 @@ export async function gerarRelatorioEstoque(): Promise<ResultadoRelatorio> {
     ORDER BY p.nome COLLATE NOCASE ASC
   `);
     const semEstoque = produtos.filter((item) => Number(item.quantidade || 0) <= 0.000001);
+    const abaixoDoMinimo = produtos.filter((item) => {
+        const minimo = Number(item.quantidade_minima || 0);
+        return minimo > 0 && Number(item.quantidade || 0) <= minimo;
+    });
     const valorEstoque = produtos.reduce((total, item) => total + Number(item.valor_estoque || 0), 0);
     return {
         tipo: "ESTOQUE",
@@ -232,22 +238,37 @@ export async function gerarRelatorioEstoque(): Promise<ResultadoRelatorio> {
         periodo: "Situação atual do estoque",
         colunas: [
             { chave: "codigo", titulo: "ID", largura: 65, alinhamento: "center" },
-            { chave: "produto", titulo: "PRODUTO", largura: 190 },
-            { chave: "quantidade", titulo: "QUANTIDADE", largura: 125, alinhamento: "right" },
-            { chave: "preco_medio", titulo: "PREÇO MÉDIO", largura: 125, alinhamento: "right" },
-            { chave: "valor_estoque", titulo: "VALOR EM ESTOQUE", largura: 145, alinhamento: "right" },
+            { chave: "produto", titulo: "PRODUTO", largura: 165 },
+            { chave: "quantidade", titulo: "QUANTIDADE", largura: 110, alinhamento: "right" },
+            { chave: "quantidade_minima", titulo: "MÍNIMO", largura: 100, alinhamento: "right" },
+            { chave: "situacao", titulo: "SITUAÇÃO", largura: 105, alinhamento: "center" },
+            { chave: "preco_medio", titulo: "PREÇO MÉDIO", largura: 110, alinhamento: "right" },
+            { chave: "valor_estoque", titulo: "VALOR EM ESTOQUE", largura: 130, alinhamento: "right" },
         ],
-        linhas: produtos.map((item) => ({
-            id: item.id,
-            codigo: `#${item.id}`,
-            produto: item.nome,
-            quantidade: `${formatarNumeroRelatorio(item.quantidade)} ${item.unidade_medida}`,
-            preco_medio: formatarMoeda(item.preco_medio),
-            valor_estoque: formatarMoeda(item.valor_estoque),
-        })),
+        linhas: produtos.map((item) => {
+            const quantidade = Number(item.quantidade || 0);
+            const minimo = Number(item.quantidade_minima || 0);
+            return {
+                id: item.id,
+                codigo: `#${item.id}`,
+                produto: item.nome,
+                quantidade: `${formatarNumeroRelatorio(quantidade)} ${item.unidade_medida}`,
+                quantidade_minima: minimo > 0
+                    ? `${formatarNumeroRelatorio(minimo)} ${item.unidade_medida}`
+                    : "Não definido",
+                situacao: quantidade <= 0.000001
+                    ? "Sem estoque"
+                    : minimo > 0 && quantidade <= minimo
+                        ? "Abaixo do mínimo"
+                        : "Regular",
+                preco_medio: formatarMoeda(item.preco_medio),
+                valor_estoque: formatarMoeda(item.valor_estoque),
+            };
+        }),
         resumo: [
             { rotulo: "Itens ativos", valor: String(produtos.length) },
             { rotulo: "Sem estoque", valor: String(semEstoque.length) },
+            { rotulo: "Abaixo do mínimo", valor: String(abaixoDoMinimo.length) },
             {
                 rotulo: "Custo estimado",
                 valor: formatarMoeda(valorEstoque),
@@ -267,6 +288,7 @@ export async function gerarRelatorioClientes(): Promise<ResultadoRelatorio> {
       c.telefone,
       c.total_compras
     FROM clientes c
+    WHERE c.ativo = 1
     ORDER BY c.nome COLLATE NOCASE ASC
   `);
     const clientesComCompras = clientes.filter((item) => Number(item.total_compras || 0) > 0);

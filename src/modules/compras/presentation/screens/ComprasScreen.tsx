@@ -324,23 +324,23 @@ export default function ComprasScreen() {
         ? 'A compra será removida e sua entrada no estoque será estornada. Deseja continuar?'
         : 'A compra cancelada será removida definitivamente. Deseja continuar?',
       [
-      { text: 'Não', style: 'cancel' },
-      {
-        text: 'Excluir',
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            if (precisaEstornar) {
-              await cancelarCompra(detalhes.id);
+        { text: 'Não', style: 'cancel' },
+        {
+          text: 'Excluir',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              if (precisaEstornar) {
+                await cancelarCompra(detalhes.id);
+              }
+              await excluirCompra(detalhes.id);
+              setModalDetalhes(false);
+              setDetalhes(null);
+              await carregarCompras();
+            } catch (error) {
+              Alert.alert('Erro', error instanceof Error ? error.message : 'Não foi possível excluir a compra.');
             }
-            await excluirCompra(detalhes.id);
-            setModalDetalhes(false);
-            setDetalhes(null);
-            await carregarCompras();
-          } catch (error) {
-            Alert.alert('Erro', error instanceof Error ? error.message : 'Não foi possível excluir a compra.');
-          }
-        },
+          },
         },
       ]
     );
@@ -785,70 +785,6 @@ const styles = StyleSheet.create({
     height: 42,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-
-  resumoContainer: {
-    flexDirection: 'row',
-    gap: 8,
-    marginBottom: 12,
-  },
-
-  resumoCard: {
-    flex: 1,
-    minHeight: 78,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    backgroundColor: COLORS.surface,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 7,
-  },
-
-  resumoCardDestaque: {
-    flex: 1.35,
-    borderColor: '#FFD1DD',
-    backgroundColor: COLORS.primarySoft,
-  },
-
-  resumoIcone: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: COLORS.primarySoft,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 3,
-  },
-
-  resumoIconeSucesso: {
-    backgroundColor: COLORS.successSoft,
-  },
-
-  resumoNumero: {
-    color: COLORS.textPrimary,
-    fontSize: 15,
-    fontWeight: '900',
-  },
-
-  resumoValor: {
-    color: COLORS.primary,
-    fontSize: 13,
-    fontWeight: '900',
-  },
-
-  resumoTexto: {
-    color: COLORS.textSecondary,
-    fontSize: 9,
-    fontWeight: '700',
-    marginTop: 2,
-  },
-
-  resumoTextoDestaque: {
-    color: '#B9345A',
-    fontSize: 9,
-    fontWeight: '800',
-    marginTop: 4,
   },
 
   botaoScannerBusca: {

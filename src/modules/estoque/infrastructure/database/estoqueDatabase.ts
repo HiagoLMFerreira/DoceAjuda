@@ -173,50 +173,6 @@ export async function editarProduto(produto: EditarProdutoEstoque): Promise<void
     `, [nome, nome, codigoBarras, unidadeMedida, produto.quantidade_minima ?? 0, produto.id]);
 }
 
-export async function excluirProduto(produtoId: number): Promise<void> {
-    const database = await getDatabase();
-    if (!produtoId) {
-        throw new Error("Produto inválido.");
-    }
-    const usoEmCompra = await database.getFirstAsync<{
-        total: number;
-    }>(`
-    SELECT COUNT(*) AS total
-    FROM compra_itens
-    WHERE produto_id = ?
-    `, [produtoId]);
-    if ((usoEmCompra?.total ?? 0) > 0) {
-        throw new Error("Este item possui histórico de compras e não pode ser excluído. Você pode inativá-lo.");
-    }
-    const usoEmProdutoVenda = await database.getFirstAsync<{
-        total: number;
-    }>(`
-    SELECT COUNT(*) AS total
-    FROM produto_venda_itens
-    WHERE produto_estoque_id = ?
-    `, [produtoId]);
-    if ((usoEmProdutoVenda?.total ?? 0) > 0) {
-        throw new Error("Este item está sendo utilizado em um produto para venda e não pode ser excluído.");
-    }
-    const usoEmHistoricoVenda = await database.getFirstAsync<{
-        total: number;
-    }>(`
-    SELECT COUNT(*) AS total
-    FROM venda_estoque_itens
-    WHERE produto_id = ?
-    `, [produtoId]);
-    if ((usoEmHistoricoVenda?.total ?? 0) > 0) {
-        throw new Error("Este item possui histórico de vendas e não pode ser excluído. Você pode inativá-lo.");
-    }
-    await database.runAsync("DELETE FROM movimentacoes WHERE produto_id = ?", [
-        produtoId,
-    ]);
-    await database.runAsync("DELETE FROM receita_itens WHERE produto_id = ?", [
-        produtoId,
-    ]);
-    await database.runAsync("DELETE FROM produtos WHERE id = ?", [produtoId]);
-}
-
 export async function inativarProduto(produtoId: number): Promise<void> {
     const database = await getDatabase();
     if (!produtoId) {
