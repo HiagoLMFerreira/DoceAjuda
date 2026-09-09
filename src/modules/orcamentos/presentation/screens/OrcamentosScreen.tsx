@@ -1415,7 +1415,7 @@ const styles = StyleSheet.create({
   },
   totalDetalhesLabel: {
     color: COLORS.textSecondary,
-    fontWeight: "800",
+    fontWeight: "900",
   },
   totalDetalhesValor: {
     color: COLORS.primary,
@@ -1423,6 +1423,8 @@ const styles = StyleSheet.create({
     fontSize: 21,
   },
   detalhesAcoes: {
+    // minHeight: "27%",
+    minHeight: 185 ,
     flexShrink: 0,
     gap: 9,
     paddingHorizontal: 18,
