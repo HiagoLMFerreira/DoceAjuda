@@ -16,6 +16,12 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 
 import {
+  formatDateOnlyBR,
+  maskDateBR,
+  parseDateBR,
+} from '../core/formatters';
+
+import {
   adicionarCliente,
   atualizarDocumentoComercialCompleto,
   buscarProdutosVendaParaDocumento,
@@ -29,7 +35,7 @@ import {
   ProdutoVendaParaDocumento,
   salvarDocumentoComercialCompleto,
   TipoDocumentoComercial,
-} from '../database/database';
+} from '../modules/documentosComerciais/application/documentosComerciaisApi';
 
 type Props = {
   visible: boolean;
@@ -41,6 +47,19 @@ type Props = {
 };
 
 const FORMAS_PAGAMENTO = ['Dinheiro', 'Pix', 'Cartão', 'Outro'] as const;
+
+const COLORS = {
+  primary: '#FF3B73',
+  primarySoft: '#FFF0F4',
+  background: '#FFFDFE',
+  surface: '#FFFFFF',
+  textPrimary: '#242329',
+  textSecondary: '#737178',
+  textMuted: '#9A979E',
+  border: '#F1E7EA',
+  borderStrong: '#FFD1DD',
+  danger: '#D93C56',
+};
 
 type ItemFormulario = {
   produto_venda_id: number;
@@ -76,7 +95,10 @@ export default function DocumentoComercialFormModal({
   const [itens, setItens] = useState<ItemFormulario[]>([]);
   const [observacoes, setObservacoes] = useState('');
   const [dataValidade, setDataValidade] = useState('');
+  const [dataEncomenda, setDataEncomenda] = useState('');
+  const [finalidade, setFinalidade] = useState('');
   const [formaPagamento, setFormaPagamento] = useState('');
+  const [sinalPagamento, setSinalPagamento] = useState('');
   const [salvando, setSalvando] = useState(false);
 
   const [modalClientes, setModalClientes] = useState(false);
@@ -129,6 +151,7 @@ export default function DocumentoComercialFormModal({
         telefone: '',
         endereco: '',
         total_compras: 0,
+        ativo: 1,
       });
 
       setItens(
@@ -141,8 +164,19 @@ export default function DocumentoComercialFormModal({
       );
       setObservacoes(documentoBase.observacoes ?? '');
       setDataValidade(documentoBase.data_validade ?? '');
+      setDataEncomenda(
+        documentoBase.data_encomenda
+          ? formatDateOnlyBR(documentoBase.data_encomenda)
+          : ''
+      );
+      setFinalidade(documentoBase.finalidade ?? '');
       setFormaPagamento(
         tipo === 'VENDA' ? documentoEdicao?.forma_pagamento ?? '' : ''
+      );
+      setSinalPagamento(
+        tipo === 'VENDA' && documentoEdicao?.sinal_pagamento
+          ? numeroParaTexto(documentoEdicao.sinal_pagamento)
+          : ''
       );
       return;
     }
@@ -175,7 +209,10 @@ export default function DocumentoComercialFormModal({
     setItens([]);
     setObservacoes('');
     setDataValidade('');
+    setDataEncomenda('');
+    setFinalidade('');
     setFormaPagamento('');
+    setSinalPagamento('');
     setBuscaCliente('');
     setBuscaProduto('');
   }
@@ -231,6 +268,7 @@ export default function DocumentoComercialFormModal({
         telefone: novoClienteTelefone.trim(),
         endereco: novoClienteEndereco.trim(),
         total_compras: 0,
+        ativo: 1,
       };
 
       setClienteSelecionado(clienteCriado);
@@ -330,6 +368,33 @@ export default function DocumentoComercialFormModal({
       return;
     }
 
+    const encomendaOpcionalPreenchida = Boolean(
+      dataEncomenda.trim() || finalidade.trim()
+    );
+    const exigeDadosEncomenda =
+      tipo === 'ORCAMENTO' ||
+      Boolean(documentoOrigem) ||
+      encomendaOpcionalPreenchida;
+    const dataEncomendaNormalizada = dataEncomenda
+      ? parseDateBR(dataEncomenda)
+      : null;
+
+    if (exigeDadosEncomenda && !dataEncomendaNormalizada) {
+      Alert.alert('Atenção', 'Informe uma data de encomenda válida no formato DD/MM/AAAA.');
+      return;
+    }
+
+    if (exigeDadosEncomenda && !finalidade.trim()) {
+      Alert.alert('Atenção', 'Informe a finalidade da encomenda.');
+      return;
+    }
+
+    const sinalPagamentoNumero = textoParaNumero(sinalPagamento);
+    if (sinalPagamento.trim() && (sinalPagamentoNumero < 0 || sinalPagamentoNumero > total)) {
+      Alert.alert('Atenção', 'O sinal deve estar entre zero e o valor total da venda.');
+      return;
+    }
+
     try {
       setSalvando(true);
 
@@ -338,7 +403,11 @@ export default function DocumentoComercialFormModal({
         cliente_id: clienteSelecionado.id,
         observacoes: observacoes.trim(),
         data_validade: tipo === 'ORCAMENTO' ? dataValidade.trim() : '',
+        data_encomenda: dataEncomendaNormalizada ?? '',
+        finalidade: finalidade.trim(),
         forma_pagamento: tipo === 'VENDA' ? formaPagamento.trim() : '',
+        sinal_pagamento:
+          tipo === 'VENDA' && documentoOrigem ? sinalPagamentoNumero : 0,
         status: documentoEdicao?.status,
         orcamento_origem_id:
           documentoOrigem?.id ??
@@ -375,10 +444,11 @@ export default function DocumentoComercialFormModal({
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <View style={styles.modalPrincipal}>
+          <View style={styles.modalHandle} />
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>{titulo}</Text>
             <Pressable style={styles.botaoFechar} onPress={onClose}>
-              <Ionicons name="close" size={24} color="#111" />
+              <Ionicons name="close" size={24} color={COLORS.primary} />
             </Pressable>
           </View>
 
@@ -406,7 +476,7 @@ export default function DocumentoComercialFormModal({
                     : 'Selecionar cliente'}
                 </Text>
               </View>
-              <Ionicons name="chevron-down" size={21} color="#555" />
+              <Ionicons name="chevron-down" size={21} color={COLORS.primary} />
             </Pressable>
 
             {tipo === 'ORCAMENTO' && (
@@ -420,6 +490,42 @@ export default function DocumentoComercialFormModal({
                   onChangeText={setDataValidade}
                 />
               </>
+            )}
+
+            {(tipo === 'ORCAMENTO' || tipo === 'VENDA') && (
+              <View style={styles.encomendaCard}>
+                <View style={styles.encomendaTituloLinha}>
+                  <Ionicons name="calendar-outline" size={20} color={COLORS.primary} />
+                  <Text style={styles.encomendaTitulo}>
+                    DADOS DA ENCOMENDA{tipo === 'VENDA' && !documentoOrigem ? ' (OPCIONAL)' : ''}
+                  </Text>
+                </View>
+
+                <Text style={styles.label}>
+                  Data da encomenda{tipo === 'VENDA' && !documentoOrigem ? '' : ' *'}
+                </Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="DD/MM/AAAA"
+                  placeholderTextColor="#888"
+                  value={dataEncomenda}
+                  onChangeText={(valor) => setDataEncomenda(maskDateBR(valor))}
+                  keyboardType="number-pad"
+                  maxLength={10}
+                />
+
+                <Text style={styles.label}>
+                  Finalidade{tipo === 'VENDA' && !documentoOrigem ? '' : ' *'}
+                </Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Ex.: aniversário, casamento"
+                  placeholderTextColor="#888"
+                  value={finalidade}
+                  onChangeText={setFinalidade}
+                  maxLength={80}
+                />
+              </View>
             )}
 
             {tipo === 'VENDA' && (
@@ -452,6 +558,27 @@ export default function DocumentoComercialFormModal({
                     );
                   })}
                 </View>
+
+                {documentoOrigem && (
+                  <>
+                    <Text style={styles.label}>Sinal de pagamento (opcional)</Text>
+                    <TextInput
+                      style={styles.input}
+                      placeholder="R$ 0,00"
+                      placeholderTextColor="#888"
+                      value={sinalPagamento}
+                      onChangeText={setSinalPagamento}
+                      keyboardType="decimal-pad"
+                      selectTextOnFocus
+                    />
+                    <View style={styles.saldoPreview}>
+                      <Text style={styles.saldoPreviewLabel}>Saldo a receber</Text>
+                      <Text style={styles.saldoPreviewValor}>
+                        {formatarMoeda(Math.max(0, total - textoParaNumero(sinalPagamento)))}
+                      </Text>
+                    </View>
+                  </>
+                )}
               </>
             )}
 
@@ -468,7 +595,7 @@ export default function DocumentoComercialFormModal({
 
             {itens.length === 0 ? (
               <View style={styles.estadoVazio}>
-                <Ionicons name="basket-outline" size={38} color="#777" />
+                <Ionicons name="basket-outline" size={38} color={COLORS.primary} />
                 <Text style={styles.estadoVazioTexto}>
                   Nenhum produto adicionado.
                 </Text>
@@ -487,7 +614,7 @@ export default function DocumentoComercialFormModal({
                         style={styles.botaoRemover}
                         onPress={() => removerItem(item.produto_venda_id)}
                       >
-                        <Ionicons name="trash-outline" size={20} color="#c62828" />
+                        <Ionicons name="trash-outline" size={20} color={COLORS.danger} />
                       </Pressable>
                     </View>
 
@@ -589,18 +716,19 @@ export default function DocumentoComercialFormModal({
       >
         <View style={styles.overlaySecundario}>
           <View style={styles.modalSelecao}>
+            <View style={styles.modalHandle} />
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>SELECIONAR CLIENTE</Text>
               <Pressable
                 style={styles.botaoFechar}
                 onPress={() => setModalClientes(false)}
               >
-                <Ionicons name="close" size={24} color="#111" />
+                <Ionicons name="close" size={24} color={COLORS.primary} />
               </Pressable>
             </View>
 
             <View style={styles.buscaContainer}>
-              <Ionicons name="search" size={20} color="#666" />
+              <Ionicons name="search-outline" size={20} color={COLORS.primary} />
               <TextInput
                 style={styles.buscaInput}
                 placeholder="Buscar por nome ou ID"
@@ -619,7 +747,7 @@ export default function DocumentoComercialFormModal({
             </Pressable>
 
             {carregandoClientes ? (
-              <ActivityIndicator style={styles.loading} color="#111" />
+              <ActivityIndicator style={styles.loading} color={COLORS.primary} />
             ) : (
               <FlatList
                 data={clientes}
@@ -635,13 +763,13 @@ export default function DocumentoComercialFormModal({
                     onPress={() => selecionarCliente(item)}
                   >
                     <View style={styles.opcaoIcone}>
-                      <Ionicons name="person-outline" size={20} color="#111" />
+                      <Ionicons name="person-outline" size={20} color={COLORS.primary} />
                     </View>
                     <View style={styles.opcaoTextoContainer}>
                       <Text style={styles.opcaoTitulo}>{item.nome}</Text>
                       <Text style={styles.opcaoSubtitulo}>Cliente #{item.id}</Text>
                     </View>
-                    <Ionicons name="chevron-forward" size={20} color="#777" />
+                    <Ionicons name="chevron-forward" size={20} color={COLORS.primary} />
                   </Pressable>
                 )}
               />
@@ -661,13 +789,14 @@ export default function DocumentoComercialFormModal({
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         >
           <View style={styles.modalCadastroCliente}>
+            <View style={styles.modalHandle} />
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>NOVO CLIENTE</Text>
               <Pressable
                 style={styles.botaoFechar}
                 onPress={() => setModalNovoCliente(false)}
               >
-                <Ionicons name="close" size={24} color="#111" />
+                <Ionicons name="close" size={24} color={COLORS.primary} />
               </Pressable>
             </View>
 
@@ -717,18 +846,19 @@ export default function DocumentoComercialFormModal({
       >
         <View style={styles.overlaySecundario}>
           <View style={styles.modalSelecao}>
+            <View style={styles.modalHandle} />
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>ADICIONAR PRODUTO</Text>
               <Pressable
                 style={styles.botaoFechar}
                 onPress={() => setModalProdutos(false)}
               >
-                <Ionicons name="close" size={24} color="#111" />
+                <Ionicons name="close" size={24} color={COLORS.primary} />
               </Pressable>
             </View>
 
             <View style={styles.buscaContainer}>
-              <Ionicons name="search" size={20} color="#666" />
+              <Ionicons name="search-outline" size={20} color={COLORS.primary} />
               <TextInput
                 style={styles.buscaInput}
                 placeholder="Buscar produto por nome ou ID"
@@ -739,7 +869,7 @@ export default function DocumentoComercialFormModal({
             </View>
 
             {carregandoProdutos ? (
-              <ActivityIndicator style={styles.loading} color="#111" />
+              <ActivityIndicator style={styles.loading} color={COLORS.primary} />
             ) : (
               <FlatList
                 data={produtos}
@@ -755,7 +885,7 @@ export default function DocumentoComercialFormModal({
                     onPress={() => adicionarProduto(item)}
                   >
                     <View style={styles.opcaoIcone}>
-                      <Ionicons name="cube-outline" size={20} color="#111" />
+                      <Ionicons name="cube-outline" size={20} color={COLORS.primary} />
                     </View>
                     <View style={styles.opcaoTextoContainer}>
                       <Text style={styles.opcaoTitulo}>{item.nome}</Text>
@@ -763,7 +893,7 @@ export default function DocumentoComercialFormModal({
                         #{item.id} · {formatarMoeda(item.preco_venda)}
                       </Text>
                     </View>
-                    <Ionicons name="add-circle-outline" size={24} color="#111" />
+                    <Ionicons name="add-circle-outline" size={24} color={COLORS.primary} />
                   </Pressable>
                 )}
               />
@@ -778,106 +908,138 @@ export default function DocumentoComercialFormModal({
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.55)',
-    justifyContent: 'center',
-    padding: 16,
+    backgroundColor: 'rgba(24, 16, 20, 0.48)',
+    justifyContent: 'flex-end',
   },
   overlaySecundario: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.65)',
-    justifyContent: 'center',
-    padding: 18,
+    backgroundColor: 'rgba(24, 16, 20, 0.58)',
+    justifyContent: 'flex-end',
   },
   modalPrincipal: {
     width: '100%',
     maxHeight: '94%',
-    backgroundColor: '#ebebeb',
-    borderRadius: 22,
+    backgroundColor: COLORS.background,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
     overflow: 'hidden',
   },
   modalSelecao: {
     width: '100%',
-    maxHeight: '82%',
-    backgroundColor: '#ebebeb',
-    borderRadius: 22,
-    padding: 16,
+    height: '86%',
+    backgroundColor: COLORS.background,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    paddingHorizontal: 18,
+    paddingTop: 10,
+    paddingBottom: 18,
   },
   modalCadastroCliente: {
     width: '100%',
-    backgroundColor: '#ebebeb',
-    borderRadius: 22,
-    padding: 18,
+    backgroundColor: COLORS.background,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    paddingHorizontal: 18,
+    paddingTop: 10,
+    paddingBottom: 24,
   },
   modalHeader: {
-    minHeight: 56,
+    minHeight: 68,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 12,
+    paddingHorizontal: 18,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+  },
+  modalHandle: {
+    width: 48,
+    height: 5,
+    borderRadius: 3,
+    alignSelf: 'center',
+    backgroundColor: '#E8DDE1',
+    marginTop: 9,
   },
   modalTitle: {
     flex: 1,
-    textAlign: 'center',
-    fontSize: 17,
-    fontWeight: '800',
-    color: '#111',
-    marginLeft: 38,
+    fontSize: 20,
+    fontWeight: '900',
+    color: COLORS.textPrimary,
   },
   botaoFechar: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: '#d8d8d8',
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: COLORS.primarySoft,
     alignItems: 'center',
     justifyContent: 'center',
   },
   formContent: {
-    paddingHorizontal: 16,
+    paddingHorizontal: 18,
+    paddingTop: 8,
     paddingBottom: 20,
   },
   label: {
     fontSize: 13,
-    fontWeight: '700',
-    color: '#333',
-    marginBottom: 6,
+    fontWeight: '800',
+    color: COLORS.textPrimary,
+    marginBottom: 7,
     marginTop: 10,
   },
   input: {
-    minHeight: 49,
+    minHeight: 54,
     borderWidth: 1,
-    borderColor: '#c9c9c9',
-    borderRadius: 13,
-    backgroundColor: '#fff',
+    borderColor: COLORS.border,
+    borderRadius: 16,
+    backgroundColor: COLORS.surface,
     paddingHorizontal: 14,
-    fontSize: 15,
-    color: '#111',
-    marginBottom: 8,
+    fontSize: 14,
+    color: COLORS.textPrimary,
+    marginBottom: 10,
   },
   inputObservacoes: {
     minHeight: 90,
     paddingTop: 12,
   },
   campoSelecao: {
-    minHeight: 50,
+    minHeight: 54,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fff',
+    backgroundColor: COLORS.surface,
     borderWidth: 1,
-    borderColor: '#c9c9c9',
-    borderRadius: 13,
+    borderColor: COLORS.border,
+    borderRadius: 16,
     paddingHorizontal: 14,
   },
   campoSelecaoTextoContainer: {
     flex: 1,
   },
   campoSelecaoTexto: {
-    color: '#111',
-    fontSize: 15,
-    fontWeight: '600',
+    color: COLORS.textPrimary,
+    fontSize: 14,
+    fontWeight: '700',
   },
   placeholder: {
-    color: '#888',
-    fontSize: 15,
+    color: COLORS.textMuted,
+    fontSize: 14,
+  },
+  encomendaCard: {
+    marginTop: 14,
+    padding: 14,
+    borderRadius: 17,
+    borderWidth: 1,
+    borderColor: COLORS.borderStrong,
+    backgroundColor: '#FFF8FA',
+  },
+  encomendaTituloLinha: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 2,
+  },
+  encomendaTitulo: {
+    color: COLORS.primary,
+    fontSize: 13,
+    fontWeight: '900',
   },
   formasPagamentoContainer: {
     flexDirection: 'row',
@@ -888,23 +1050,43 @@ const styles = StyleSheet.create({
   formaPagamentoBotao: {
     width: '48%',
     minHeight: 46,
-    borderRadius: 12,
+    borderRadius: 14,
     borderWidth: 1,
-    borderColor: '#c9c9c9',
-    backgroundColor: '#fff',
+    borderColor: COLORS.border,
+    backgroundColor: COLORS.surface,
     alignItems: 'center',
     justifyContent: 'center',
   },
   formaPagamentoBotaoSelecionado: {
-    backgroundColor: '#111',
-    borderColor: '#111',
+    backgroundColor: COLORS.primary,
+    borderColor: COLORS.primary,
   },
   formaPagamentoTexto: {
-    color: '#333',
-    fontWeight: '700',
+    color: COLORS.textSecondary,
+    fontWeight: '800',
   },
   formaPagamentoTextoSelecionado: {
     color: '#fff',
+  },
+  saldoPreview: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    minHeight: 48,
+    paddingHorizontal: 14,
+    borderRadius: 14,
+    backgroundColor: COLORS.primarySoft,
+    marginBottom: 8,
+  },
+  saldoPreviewLabel: {
+    color: COLORS.textSecondary,
+    fontSize: 13,
+    fontWeight: '800',
+  },
+  saldoPreviewValor: {
+    color: COLORS.primary,
+    fontSize: 16,
+    fontWeight: '900',
   },
   tituloSecaoLinha: {
     flexDirection: 'row',
@@ -915,40 +1097,44 @@ const styles = StyleSheet.create({
   },
   tituloSecao: {
     fontSize: 15,
-    fontWeight: '800',
-    color: '#111',
+    fontWeight: '900',
+    color: COLORS.textPrimary,
   },
   botaoAdicionarProduto: {
     minHeight: 38,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
-    backgroundColor: '#111',
+    backgroundColor: COLORS.primary,
     paddingHorizontal: 13,
-    borderRadius: 11,
+    borderRadius: 12,
   },
   botaoAdicionarProdutoTexto: {
-    color: '#fff',
-    fontWeight: '700',
+    color: '#FFFFFF',
+    fontWeight: '900',
     fontSize: 13,
   },
   estadoVazio: {
     minHeight: 115,
-    backgroundColor: '#dedede',
-    borderRadius: 15,
+    backgroundColor: COLORS.primarySoft,
+    borderWidth: 1,
+    borderColor: COLORS.borderStrong,
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
     padding: 18,
   },
   estadoVazioTexto: {
     marginTop: 8,
-    color: '#666',
-    fontWeight: '600',
+    color: COLORS.textSecondary,
+    fontWeight: '700',
   },
   itemCard: {
-    backgroundColor: '#fff',
-    borderRadius: 15,
-    padding: 13,
+    backgroundColor: COLORS.surface,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: 16,
+    padding: 14,
     marginBottom: 10,
   },
   itemTopo: {
@@ -959,14 +1145,14 @@ const styles = StyleSheet.create({
   itemNome: {
     flex: 1,
     fontSize: 15,
-    fontWeight: '800',
-    color: '#111',
+    fontWeight: '900',
+    color: COLORS.textPrimary,
   },
   botaoRemover: {
     width: 35,
     height: 35,
     borderRadius: 18,
-    backgroundColor: '#fde8e8',
+    backgroundColor: '#FFF0F3',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -982,18 +1168,18 @@ const styles = StyleSheet.create({
   },
   itemLabel: {
     fontSize: 12,
-    color: '#555',
-    fontWeight: '600',
+    color: COLORS.textSecondary,
+    fontWeight: '700',
     marginBottom: 5,
   },
   itemInput: {
-    height: 44,
-    borderRadius: 11,
+    minHeight: 46,
+    borderRadius: 13,
     borderWidth: 1,
-    borderColor: '#d0d0d0',
+    borderColor: COLORS.border,
     paddingHorizontal: 11,
-    color: '#111',
-    backgroundColor: '#fafafa',
+    color: COLORS.textPrimary,
+    backgroundColor: COLORS.surface,
   },
   subtotalLinha: {
     flexDirection: 'row',
@@ -1001,20 +1187,22 @@ const styles = StyleSheet.create({
     marginTop: 11,
     paddingTop: 10,
     borderTopWidth: 1,
-    borderTopColor: '#ededed',
+    borderTopColor: '#F6EDF0',
   },
   subtotalLabel: {
-    color: '#555',
+    color: COLORS.textSecondary,
     fontWeight: '600',
   },
   subtotalValor: {
-    color: '#111',
-    fontWeight: '800',
+    color: COLORS.primary,
+    fontWeight: '900',
   },
   totalCard: {
     minHeight: 70,
-    backgroundColor: '#111',
-    borderRadius: 16,
+    backgroundColor: '#FFF7F9',
+    borderWidth: 1,
+    borderColor: COLORS.borderStrong,
+    borderRadius: 17,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -1022,12 +1210,12 @@ const styles = StyleSheet.create({
     marginTop: 12,
   },
   totalLabel: {
-    color: '#fff',
+    color: COLORS.textSecondary,
     fontWeight: '800',
     fontSize: 15,
   },
   totalValor: {
-    color: '#fff',
+    color: COLORS.primary,
     fontWeight: '900',
     fontSize: 22,
   },
@@ -1036,47 +1224,49 @@ const styles = StyleSheet.create({
     gap: 10,
     padding: 14,
     borderTopWidth: 1,
-    borderTopColor: '#d3d3d3',
-    backgroundColor: '#ebebeb',
+    borderTopColor: COLORS.border,
+    backgroundColor: COLORS.background,
   },
   botaoRodape: {
     flex: 1,
-    height: 50,
-    borderRadius: 13,
+    minHeight: 52,
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
   },
   botaoCancelar: {
-    backgroundColor: '#d6d6d6',
+    backgroundColor: COLORS.surface,
+    borderWidth: 1,
+    borderColor: '#DCCFD4',
   },
   botaoSalvar: {
-    backgroundColor: '#111',
+    backgroundColor: COLORS.primary,
   },
   botaoCancelarTexto: {
-    color: '#111',
-    fontWeight: '800',
+    color: COLORS.textPrimary,
+    fontWeight: '900',
   },
   botaoSalvarTexto: {
-    color: '#fff',
-    fontWeight: '800',
+    color: '#FFFFFF',
+    fontWeight: '900',
   },
   buscaContainer: {
-    height: 49,
+    minHeight: 54,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    backgroundColor: '#fff',
+    backgroundColor: COLORS.surface,
     borderWidth: 1,
-    borderColor: '#c9c9c9',
-    borderRadius: 13,
+    borderColor: COLORS.border,
+    borderRadius: 16,
     paddingHorizontal: 13,
     marginBottom: 10,
   },
   buscaInput: {
     flex: 1,
     height: '100%',
-    color: '#111',
-    fontSize: 15,
+    color: COLORS.textPrimary,
+    fontSize: 14,
   },
   botaoNovoCliente: {
     minHeight: 47,
@@ -1084,13 +1274,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    backgroundColor: '#111',
-    borderRadius: 13,
+    backgroundColor: COLORS.primary,
+    borderRadius: 15,
     marginBottom: 10,
   },
   botaoNovoClienteTexto: {
-    color: '#fff',
-    fontWeight: '800',
+    color: '#FFFFFF',
+    fontWeight: '900',
   },
   listaSelecao: {
     paddingBottom: 8,
@@ -1099,16 +1289,18 @@ const styles = StyleSheet.create({
     minHeight: 66,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fff',
-    borderRadius: 14,
-    padding: 11,
+    backgroundColor: COLORS.surface,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: 15,
+    padding: 12,
     marginBottom: 8,
   },
   opcaoIcone: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#e4e4e4',
+    backgroundColor: COLORS.primarySoft,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 10,
@@ -1117,27 +1309,27 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   opcaoTitulo: {
-    fontSize: 15,
-    fontWeight: '800',
-    color: '#111',
+    fontSize: 14,
+    fontWeight: '900',
+    color: COLORS.textPrimary,
   },
   opcaoSubtitulo: {
     fontSize: 12,
-    color: '#666',
+    color: COLORS.textSecondary,
     marginTop: 3,
   },
   listaVaziaTexto: {
     textAlign: 'center',
-    color: '#666',
+    color: COLORS.textSecondary,
     paddingVertical: 28,
   },
   loading: {
     marginVertical: 30,
   },
   botaoSalvarCliente: {
-    height: 50,
-    backgroundColor: '#111',
-    borderRadius: 13,
+    minHeight: 52,
+    backgroundColor: COLORS.primary,
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 5,
