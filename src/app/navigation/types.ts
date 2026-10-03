@@ -11,4 +11,5 @@ export type RootStackParamList = {
   Clientes: undefined;
   Relatorios: undefined;
   Agenda: { dataSelecionada?: string } | undefined;
+  ContasReceber: undefined;
 };

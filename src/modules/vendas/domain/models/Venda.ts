@@ -40,6 +40,7 @@ export type VendaItem = {
 };
 
 export type VendaDetalhada = Venda & {
+  saldo_receber?: number;
   cliente_telefone?: string;
   cliente_endereco?: string;
   itens: VendaItem[];

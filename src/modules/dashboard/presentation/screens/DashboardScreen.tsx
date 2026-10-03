@@ -375,7 +375,7 @@ export default function DashboardScreen({
             subtitle={`${dados.resumo.quantidadeContasReceber} conta(s) pendente(s)`}
             icon="wallet-outline"
             onPress={() =>
-              navigation.navigate('Agenda')
+              navigation.navigate('ContasReceber')
             }
           />
         </View>
@@ -403,7 +403,7 @@ export default function DashboardScreen({
           <View style={styles.cardHeader}>
             <View>
               <Text style={styles.cardTitle}>Contas a receber</Text>
-              <Text style={styles.cardSubtitle}>Saldos das encomendas confirmadas</Text>
+              <Text style={styles.cardSubtitle}>Saldos das vendas confirmadas</Text>
             </View>
             <View style={styles.receivablesTotalBadge}>
               <Text style={styles.receivablesTotalText}>
@@ -412,6 +412,9 @@ export default function DashboardScreen({
             </View>
           </View>
 
+          <TouchableOpacity onPress={() => navigation.navigate('ContasReceber')} style={{ paddingVertical: 12 }}>
+            <Text style={{ color: COLORS.primary, fontWeight: '800' }}>Gerenciar contas a receber →</Text>
+          </TouchableOpacity>
           {dados.contasReceber.length === 0 ? (
             <Text style={styles.emptyText}>Nenhuma conta pendente.</Text>
           ) : (
@@ -419,7 +422,7 @@ export default function DashboardScreen({
               <TouchableOpacity
                 key={conta.id}
                 style={styles.receivableRow}
-                onPress={() => navigation.navigate('Vendas')}
+                onPress={() => navigation.navigate('ContasReceber')}
                 activeOpacity={0.78}
               >
                 <View style={styles.rowIcon}>

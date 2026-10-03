@@ -597,6 +597,8 @@ export async function buscarDocumentoComercialPorId(id: number): Promise<Documen
       dc.cliente_nome,
       COALESCE(c.telefone, '') AS cliente_telefone,
       COALESCE(c.endereco, '') AS cliente_endereco,
+      COALESCE((SELECT cr.valor_pendente FROM contas_receber cr
+        WHERE cr.venda_id = dc.id AND cr.status = 'PENDENTE'), 0) AS saldo_receber,
       dc.status,
       dc.valor_total,
       dc.observacoes,
@@ -668,10 +670,31 @@ export async function salvarDocumentoComercialCompleto(documento: NovoDocumentoC
         await inserirItensDocumentoComercial(database, documentoId, preparado.itens);
         if (documento.tipo === "VENDA") {
             await baixarEstoqueVendaDentroTransacao(database, documentoId);
+            if (preparado.sinalPagamento > 0) {
+                await criarContaReceberDentroTransacao(database, documentoId, documento.cliente_id, preparado);
+            }
             await atualizarTotalComprasClienteInterno(database, documento.cliente_id);
         }
     });
     return documentoId;
+}
+
+async function criarContaReceberDentroTransacao(
+    database: SQLite.SQLiteDatabase,
+    vendaId: number,
+    clienteId: number,
+    preparado: { clienteNome: string; finalidade: string; valorTotal: number; sinalPagamento: number }
+): Promise<void> {
+    const saldo = arredondarValorMonetario(preparado.valorTotal - preparado.sinalPagamento);
+    if (saldo <= 0) return;
+    // O vencimento e o meio do saldo são definidos no financeiro, independentemente da entrega e do sinal.
+    await database.runAsync(`
+      INSERT INTO contas_receber (
+        venda_id, cliente_id, cliente_nome, descricao, valor_original,
+        valor_sinal, valor_pendente, data_vencimento, status
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, '', 'PENDENTE')
+    `, [vendaId, clienteId, preparado.clienteNome, preparado.finalidade || 'Venda',
+        preparado.valorTotal, preparado.sinalPagamento, saldo]);
 }
 
 export async function converterOrcamentoEmVenda(orcamentoId: number, venda: NovoDocumentoComercial): Promise<number> {
@@ -770,31 +793,7 @@ export async function converterOrcamentoEmVenda(orcamentoId: number, venda: Novo
         vendaId = resultado.lastInsertRowId;
         await inserirItensDocumentoComercial(database, vendaId, preparado.itens);
         await baixarEstoqueVendaDentroTransacao(database, vendaId);
-        const valorPendente = arredondarValorMonetario(preparado.valorTotal - preparado.sinalPagamento);
-        if (valorPendente > 0) {
-            await database.runAsync(`
-        INSERT INTO contas_receber (
-          venda_id,
-          cliente_id,
-          cliente_nome,
-          descricao,
-          valor_original,
-          valor_sinal,
-          valor_pendente,
-          data_vencimento,
-          status
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'PENDENTE')
-        `, [
-                vendaId,
-                documentoVenda.cliente_id,
-                preparado.clienteNome,
-                preparado.finalidade || "Encomenda",
-                preparado.valorTotal,
-                preparado.sinalPagamento,
-                valorPendente,
-                preparado.dataEncomenda,
-            ]);
-        }
+        await criarContaReceberDentroTransacao(database, vendaId, documentoVenda.cliente_id, preparado);
         await atualizarTotalComprasClienteInterno(database, documentoVenda.cliente_id);
     });
     return vendaId;

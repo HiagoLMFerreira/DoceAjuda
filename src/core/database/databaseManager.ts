@@ -366,6 +366,7 @@ export type DocumentoComercialItemDatabase = {
 };
 
 export type DocumentoComercialDetalhado = DocumentoComercialDatabase & {
+    saldo_receber?: number;
     cliente_telefone?: string;
     cliente_endereco?: string;
     itens: DocumentoComercialItemDatabase[];
@@ -427,6 +428,8 @@ export type ContaReceberDatabase = {
     valor_sinal: number;
     valor_pendente: number;
     data_vencimento: string;
+    forma_pagamento: string;
+    data_pagamento: string;
     status: StatusContaReceber;
     created_at: string;
     updated_at: string;
@@ -1000,4 +1003,6 @@ export async function aplicarMigracoesDocumentosComerciais(): Promise<void> {
       SELECT RAISE(ABORT, 'Este orçamento já foi transformado em venda.');
     END;
   `);
+    await adicionarColunaSeNaoExistir("contas_receber", "forma_pagamento", "TEXT NOT NULL DEFAULT ''");
+    await adicionarColunaSeNaoExistir("contas_receber", "data_pagamento", "TEXT NOT NULL DEFAULT ''");
 }

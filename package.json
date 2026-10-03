@@ -8,6 +8,7 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "typecheck": "tsc --noEmit",
+    "test:financeiro": "node --test tests/contasReceber.integration.test.cjs",
     "test": "tsx --test tests/**/*.test.ts",
     "check": "npm run typecheck && npm test"
   },

@@ -518,17 +518,11 @@ export default function VendasScreen({ navigation }: Props) {
                           </Text>
                         </View>
                       )}
-                      {!!vendaSelecionada.orcamento_origem_id && (
+                      {(!!vendaSelecionada.orcamento_origem_id || vendaSelecionada.sinal_pagamento > 0) && (
                         <View style={styles.infoLinha}>
                           <Text style={styles.infoLabel}>Saldo a receber</Text>
                           <Text style={styles.infoValor}>
-                            {formatarMoeda(
-                              Math.max(
-                                0,
-                                vendaSelecionada.valor_total -
-                                  vendaSelecionada.sinal_pagamento
-                              )
-                            )}
+                            {formatarMoeda(vendaSelecionada.saldo_receber ?? 0)}
                           </Text>
                         </View>
                       )}

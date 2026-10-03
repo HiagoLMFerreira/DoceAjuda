@@ -407,7 +407,7 @@ export default function DocumentoComercialFormModal({
         finalidade: finalidade.trim(),
         forma_pagamento: tipo === 'VENDA' ? formaPagamento.trim() : '',
         sinal_pagamento:
-          tipo === 'VENDA' && documentoOrigem ? sinalPagamentoNumero : 0,
+          tipo === 'VENDA' ? sinalPagamentoNumero : 0,
         status: documentoEdicao?.status,
         orcamento_origem_id:
           documentoOrigem?.id ??
@@ -559,9 +559,10 @@ export default function DocumentoComercialFormModal({
                   })}
                 </View>
 
-                {documentoOrigem && (
+                {!documentoEdicao && (
                   <>
                     <Text style={styles.label}>Sinal de pagamento (opcional)</Text>
+                    {!documentoOrigem && <Text style={styles.saldoPreviewLabel}>Informe o sinal para lançar o restante em contas a receber. Em branco, a venda é considerada paga integralmente.</Text>}
                     <TextInput
                       style={styles.input}
                       placeholder="R$ 0,00"
@@ -574,7 +575,7 @@ export default function DocumentoComercialFormModal({
                     <View style={styles.saldoPreview}>
                       <Text style={styles.saldoPreviewLabel}>Saldo a receber</Text>
                       <Text style={styles.saldoPreviewValor}>
-                        {formatarMoeda(Math.max(0, total - textoParaNumero(sinalPagamento)))}
+                        {formatarMoeda(!documentoOrigem && textoParaNumero(sinalPagamento) <= 0 ? 0 : Math.max(0, total - textoParaNumero(sinalPagamento)))}
                       </Text>
                     </View>
                   </>

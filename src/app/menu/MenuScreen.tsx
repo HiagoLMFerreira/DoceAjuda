@@ -42,6 +42,11 @@ const PRIMARY = '#FF3B73';
 
 const MENU_ITEMS: MenuItem[] = [
   {
+    titulo: 'Contas a receber',
+    rota: 'ContasReceber',
+    icone: 'wallet-outline',
+  },
+  {
     titulo: 'Estoque',
     rota: 'Estoque',
     icone: 'cube-outline',
