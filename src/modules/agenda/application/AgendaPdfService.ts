@@ -23,6 +23,7 @@ export class AgendaPdfService {
     await pdfService.generateAndShare({
       html,
       dialogTitle: `Necessidades da encomenda #${encomenda.id}`,
+      fileName: `Necessidades da encomenda ${encomenda.id} - ${encomenda.clienteNome}`,
     });
   }
 
@@ -42,6 +43,7 @@ export class AgendaPdfService {
     await pdfService.generateAndShare({
       html,
       dialogTitle: `Necessidades de ${dataFormatada}`,
+      fileName: `Necessidades do dia ${dataFormatada}`,
     });
   }
 

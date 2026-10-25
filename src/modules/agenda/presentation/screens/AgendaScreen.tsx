@@ -28,7 +28,9 @@ import { agendaPdfService } from '../../di/agendaContainer';
 import type {
   AgendaEncomenda,
   AgendaEncomendaDetalhada,
+  AgendaNecessidade,
 } from '../../domain/models/Agenda';
+import AgendaNecessidadesModal from '../components/AgendaNecessidadesModal';
 import { useAgenda } from '../hooks/useAgenda';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Agenda'>;
@@ -95,6 +97,11 @@ export default function AgendaScreen({ navigation, route }: Props) {
   const [loadingDetails, setLoadingDetails] = useState(false);
   const [exportingOrder, setExportingOrder] = useState(false);
   const [exportingDay, setExportingDay] = useState(false);
+  const [needsView, setNeedsView] = useState<{
+    items: AgendaNecessidade[];
+    context: { type: 'ORDER'; order: AgendaEncomendaDetalhada } | { type: 'DAY'; date: string; count: number };
+  } | null>(null);
+  const [exportingNeeds, setExportingNeeds] = useState(false);
   const {
     encomendas,
     carregando,
@@ -144,53 +151,56 @@ export default function AgendaScreen({ navigation, route }: Props) {
     }
   };
 
-  const exportOrderNeeds = async () => {
+  const openOrderNeeds = async () => {
     if (!selectedDetails || exportingOrder) return;
     try {
       setExportingOrder(true);
       const needs = await calcularNecessidadesEncomenda(selectedDetails.id);
-      if (!needs.length) {
-        Alert.alert(
-          'Nenhuma necessidade encontrada',
-          'Verifique se os produtos da encomenda possuem composição cadastrada.'
-        );
-        return;
-      }
-      await agendaPdfService.exportarEncomenda(selectedDetails, needs);
+      setNeedsView({ items: needs, context: { type: 'ORDER', order: selectedDetails } });
     } catch (error) {
       Alert.alert(
         'Erro',
-        error instanceof Error ? error.message : 'Não foi possível exportar as necessidades.'
+        error instanceof Error ? error.message : 'Não foi possível carregar as necessidades.'
       );
     } finally {
       setExportingOrder(false);
     }
   };
 
-  const exportDayNeeds = async () => {
+  const openDayNeeds = async () => {
     if (exportingDay) return;
     if (!selectedOrders.length) {
-      Alert.alert('Agenda livre', 'Não há encomendas para exportar neste dia.');
+      Alert.alert('Agenda livre', 'Não há encomendas neste dia.');
       return;
     }
     try {
       setExportingDay(true);
       const needs = await calcularNecessidadesDia(selectedDate);
-      if (!needs.length) {
-        Alert.alert(
-          'Nenhuma necessidade encontrada',
-          'Verifique se os produtos das encomendas possuem composição cadastrada.'
-        );
-        return;
-      }
-      await agendaPdfService.exportarDia(selectedDate, selectedOrders.length, needs);
+      setNeedsView({ items: needs, context: { type: 'DAY', date: selectedDate, count: selectedOrders.length } });
     } catch (error) {
       Alert.alert(
         'Erro',
-        error instanceof Error ? error.message : 'Não foi possível exportar as necessidades do dia.'
+        error instanceof Error ? error.message : 'Não foi possível carregar as necessidades do dia.'
       );
     } finally {
       setExportingDay(false);
+    }
+  };
+
+  const exportNeeds = async () => {
+    if (!needsView || exportingNeeds || !needsView.items.length) return;
+    setExportingNeeds(true);
+    try {
+      const { context, items } = needsView;
+      if (context.type === 'ORDER') {
+        await agendaPdfService.exportarEncomenda(context.order, items);
+      } else {
+        await agendaPdfService.exportarDia(context.date, context.count, items);
+      }
+    } catch (error) {
+      Alert.alert('Erro', error instanceof Error ? error.message : 'Não foi possível exportar as necessidades.');
+    } finally {
+      setExportingNeeds(false);
     }
   };
 
@@ -273,16 +283,16 @@ export default function AgendaScreen({ navigation, route }: Props) {
                   </View>
                   <Pressable
                     style={styles.exportDayButton}
-                    onPress={() => void exportDayNeeds()}
+                    onPress={() => void openDayNeeds()}
                     disabled={exportingDay}
                   >
                     {exportingDay ? (
                       <ActivityIndicator size="small" color="#FFFFFF" />
                     ) : (
-                      <Ionicons name="download-outline" size={19} color="#FFFFFF" />
+                      <Ionicons name="list-outline" size={19} color="#FFFFFF" />
                     )}
                     <Text style={styles.exportDayButtonText}>
-                      {exportingDay ? 'Preparando PDF...' : 'Exportar necessidades do dia'}
+                      {exportingDay ? 'Carregando...' : 'Necessidades do dia'}
                     </Text>
                   </Pressable>
                 </View>
@@ -316,7 +326,7 @@ export default function AgendaScreen({ navigation, route }: Props) {
       </View>
 
       <Modal
-        visible={detailsVisible}
+        visible={detailsVisible && !needsView}
         transparent
         animationType="fade"
         onRequestClose={() => setDetailsVisible(false)}
@@ -446,16 +456,16 @@ export default function AgendaScreen({ navigation, route }: Props) {
                 <View style={styles.detailsFooter}>
                   <Pressable
                     style={styles.exportOrderButton}
-                    onPress={() => void exportOrderNeeds()}
+                    onPress={() => void openOrderNeeds()}
                     disabled={exportingOrder}
                   >
                     {exportingOrder ? (
                       <ActivityIndicator size="small" color="#FFFFFF" />
                     ) : (
-                      <Ionicons name="download-outline" size={19} color="#FFFFFF" />
+                      <Ionicons name="list-outline" size={19} color="#FFFFFF" />
                     )}
                     <Text style={styles.exportOrderButtonText}>
-                      {exportingOrder ? 'Preparando...' : 'Exportar necessidades'}
+                      {exportingOrder ? 'Carregando...' : 'Necessidades'}
                     </Text>
                   </Pressable>
                 </View>
@@ -464,6 +474,16 @@ export default function AgendaScreen({ navigation, route }: Props) {
           </View>
         </View>
       </Modal>
+      <AgendaNecessidadesModal
+        visible={!!needsView}
+        subtitle={needsView?.context.type === 'ORDER'
+          ? `Encomenda #${needsView.context.order.id} · ${needsView.context.order.clienteNome}`
+          : needsView?.context.type === 'DAY' ? `Dia ${formatDateOnlyBR(needsView.context.date)} · ${needsView.context.count} encomenda(s)` : ''}
+        necessidades={needsView?.items ?? []}
+        exporting={exportingNeeds}
+        onClose={() => setNeedsView(null)}
+        onExport={() => void exportNeeds()}
+      />
     </SafeAreaView>
   );
 }

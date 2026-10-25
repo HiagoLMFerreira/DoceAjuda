@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  Image,
+  Keyboard,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -9,8 +11,10 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
+  useWindowDimensions,
   View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
@@ -42,6 +46,41 @@ export default function LoginScreen({
   navigation,
 }: Props) {
   const { login } = useAuth();
+  const { width, height } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
+  const tamanhoLogo = Math.min(240, Math.max(140, height * 0.28), width - 48);
+  const scrollRef = useRef<ScrollView>(null);
+  const emailRef = useRef<TextInput>(null);
+  const senhaRef = useRef<TextInput>(null);
+  const campoAtivo = useRef<TextInput | null>(null);
+  const tecladoVisivel = useRef(false);
+  const frameRolagem = useRef<number | null>(null);
+
+  const mostrarCampoAtivo = useCallback(() => {
+    if (!tecladoVisivel.current) return;
+    if (frameRolagem.current !== null) cancelAnimationFrame(frameRolagem.current);
+    frameRolagem.current = requestAnimationFrame(() => {
+      frameRolagem.current = null;
+      if (tecladoVisivel.current && campoAtivo.current) {
+        scrollRef.current?.scrollResponderScrollNativeHandleToKeyboard(campoAtivo.current, 24, true);
+      }
+    });
+  }, []);
+
+  useEffect(() => {
+    const mostrar = Keyboard.addListener('keyboardDidShow', () => {
+      tecladoVisivel.current = true;
+      mostrarCampoAtivo();
+    });
+    const ocultar = Keyboard.addListener('keyboardDidHide', () => {
+      tecladoVisivel.current = false;
+    });
+    return () => {
+      mostrar.remove();
+      ocultar.remove();
+      if (frameRolagem.current !== null) cancelAnimationFrame(frameRolagem.current);
+    };
+  }, [mostrarCampoAtivo]);
 
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
@@ -84,15 +123,21 @@ export default function LoginScreen({
       behavior={
         Platform.OS === 'ios'
           ? 'padding'
-          : undefined
+          : 'height'
       }
     >
       <ScrollView
+        ref={scrollRef}
+        onLayout={mostrarCampoAtivo}
         style={styles.container}
-        contentContainerStyle={
-          styles.contentContainer
-        }
+        contentContainerStyle={[
+          styles.contentContainer,
+          { paddingTop: Math.max(insets.top, 16) + 16, paddingBottom: Math.max(insets.bottom, 16) },
+        ]}
+        bounces={false}
+        overScrollMode="never"
         keyboardShouldPersistTaps="handled"
+        keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.decorationLarge} />
@@ -102,22 +147,17 @@ export default function LoginScreen({
         <View style={styles.sprinkleThree} />
 
         <View style={styles.logoContainer}>
-          <View style={styles.logoOuterCircle}>
-            <View style={styles.logoInnerCircle}>
-              <Ionicons
-                name="restaurant-outline"
-                size={42}
-                color="#FFFFFF"
-              />
-            </View>
-          </View>
+          <Image
+            source={require('../../../../../assets/doce-ajuda-logo-transparente.png')}
+            style={[styles.brandLogo, { width: tamanhoLogo, height: tamanhoLogo }]}
+            resizeMode="contain"
+            accessible
+            accessibilityRole="image"
+            accessibilityLabel="DoceAjuda: cupcake com coração, lista e gráfico"
+          />
         </View>
 
         <View style={styles.brandContainer}>
-          <Text style={styles.title}>
-            DOCE AJUDA
-          </Text>
-
           <Text style={styles.subtitle}>
             Sua confeitaria organizada,
           </Text>
@@ -138,6 +178,13 @@ export default function LoginScreen({
             </View>
 
             <TextInput
+              ref={emailRef}
+              onFocus={() => {
+                campoAtivo.current = emailRef.current;
+                mostrarCampoAtivo();
+              }}
+              onSubmitEditing={() => senhaRef.current?.focus()}
+              submitBehavior="submit"
               style={styles.input}
               placeholder="E-mail"
               placeholderTextColor={
@@ -163,6 +210,11 @@ export default function LoginScreen({
             </View>
 
             <TextInput
+              ref={senhaRef}
+              onFocus={() => {
+                campoAtivo.current = senhaRef.current;
+                mostrarCampoAtivo();
+              }}
               style={styles.input}
               placeholder="Senha"
               placeholderTextColor={
@@ -251,8 +303,6 @@ const styles = StyleSheet.create({
   contentContainer: {
     flexGrow: 1,
     paddingHorizontal: 24,
-    paddingTop: 70,
-    paddingBottom: 30,
     justifyContent: 'center',
     overflow: 'hidden',
   },
@@ -336,57 +386,22 @@ const styles = StyleSheet.create({
 
   logoContainer: {
     alignItems: 'center',
-    marginBottom: 26,
+    marginBottom: 8,
   },
 
-  logoOuterCircle: {
-    width: 112,
-    height: 112,
-    borderRadius: 56,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#FF6D94',
-    borderWidth: 3,
-    borderColor: '#FF3B73',
-    shadowColor: COLORS.shadow,
-    shadowOffset: {
-      width: 0,
-      height: 8,
-    },
-    shadowOpacity: 0.14,
-    shadowRadius: 14,
-    elevation: 6,
-  },
-
-  logoInnerCircle: {
-    width: 84,
-    height: 84,
-    borderRadius: 42,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: COLORS.primary,
-    borderWidth: 2,
-    borderColor: '#FFACC2',
+  brandLogo: {
+    flexShrink: 0,
   },
 
   brandContainer: {
     alignItems: 'center',
-    marginBottom: 48,
-  },
-
-  title: {
-    color: COLORS.primary,
-    fontSize: 38,
-    fontWeight: '900',
-    letterSpacing: 1,
-    textAlign: 'center',
-    marginBottom: 15,
+    marginBottom: 24,
   },
 
   subtitle: {
     color: COLORS.textSecondary,
-    fontSize: 18,
-    lineHeight: 27,
+    fontSize: 16,
+    lineHeight: 23,
     fontWeight: '400',
     textAlign: 'center',
   },
@@ -396,7 +411,7 @@ const styles = StyleSheet.create({
   },
 
   inputContainer: {
-    minHeight: 72,
+    minHeight: 60,
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: COLORS.surface,
@@ -404,7 +419,7 @@ const styles = StyleSheet.create({
     borderColor: COLORS.border,
     borderRadius: 18,
     paddingHorizontal: 14,
-    marginBottom: 16,
+    marginBottom: 12,
     shadowColor: COLORS.shadow,
     shadowOffset: {
       width: 0,
@@ -416,9 +431,9 @@ const styles = StyleSheet.create({
   },
 
   inputIconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: COLORS.primarySoft,
@@ -427,7 +442,7 @@ const styles = StyleSheet.create({
 
   input: {
     flex: 1,
-    minHeight: 70,
+    minHeight: 58,
     color: COLORS.textPrimary,
     fontSize: 17,
     fontWeight: '400',
@@ -441,12 +456,12 @@ const styles = StyleSheet.create({
   },
 
   loginButton: {
-    height: 60,
+    height: 54,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: COLORS.primary,
     borderRadius: 17,
-    marginTop: 12,
+    marginTop: 8,
     shadowColor: COLORS.primary,
     shadowOffset: {
       width: 0,
@@ -472,7 +487,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 42,
+    marginTop: 24,
     gap: 7,
   },
 

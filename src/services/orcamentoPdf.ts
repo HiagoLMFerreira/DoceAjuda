@@ -73,5 +73,6 @@ export async function compartilharPdfOrcamento(
   await pdfService.generateAndShare({
     html,
     dialogTitle: `Orçamento #${orcamento.id}`,
+    fileName: `Orçamento ${orcamento.id} - ${orcamento.cliente_nome}`,
   });
 }

@@ -1,5 +1,7 @@
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
+import { Directory, File } from 'expo-file-system';
+import { normalizePdfFileName } from './pdfFileName';
 import { AppError } from '../../core/errors';
 
 export type GeneratePdfOptions = {
@@ -12,6 +14,7 @@ export class PdfService {
   async generateAndShare({
     html,
     dialogTitle = 'Compartilhar PDF',
+    fileName,
   }: GeneratePdfOptions): Promise<void> {
     try {
       const result = await Print.printToFileAsync({
@@ -28,7 +31,15 @@ export class PdfService {
         );
       }
 
-      await Sharing.shareAsync(result.uri, {
+      // Cada geração usa sua própria pasta: exportações com o mesmo nome
+      // não sobrescrevem PDFs que ainda estejam sendo compartilhados.
+      const source = new File(result.uri);
+      const directory = new Directory(source.parentDirectory, source.name.replace(/\.pdf$/i, ''));
+      directory.create({ idempotent: true, intermediates: true });
+      const destination = new File(directory, normalizePdfFileName(fileName ?? dialogTitle));
+      source.move(destination);
+
+      await Sharing.shareAsync(destination.uri, {
         mimeType: 'application/pdf',
         dialogTitle,
         UTI: 'com.adobe.pdf',

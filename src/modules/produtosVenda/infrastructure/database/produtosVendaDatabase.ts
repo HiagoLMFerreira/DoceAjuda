@@ -1,4 +1,5 @@
 import * as SQLite from "expo-sqlite";
+import { precificarProdutosAtuais } from './precificacaoProdutosDatabase';
 import { NovoProdutoVenda, ProdutoVendaDatabase, ProdutoVendaDetalhado, ProdutoVendaItemDetalhado, ProdutoVendaReceitaDetalhada, getDatabase } from "../../../../core/database/databaseManager";
 
 // ===============================
@@ -53,7 +54,7 @@ export async function listarProdutosVenda(filtro: string = "", incluirInativos: 
         }
     }
     const where = condicoes.length > 0 ? `WHERE ${condicoes.join(" AND ")}` : "";
-    return database.getAllAsync<ProdutoVendaDatabase>(`
+    const produtos = await database.getAllAsync<ProdutoVendaDatabase>(`
     SELECT
       pv.id,
       pv.nome,
@@ -74,6 +75,7 @@ export async function listarProdutosVenda(filtro: string = "", incluirInativos: 
     ${where}
     ORDER BY pv.nome COLLATE NOCASE ASC
     `, parametros);
+    return precificarProdutosAtuais(produtos);
 }
 
 export async function buscarProdutoVendaPorId(id: number): Promise<ProdutoVendaDatabase | null> {
@@ -101,7 +103,7 @@ export async function buscarProdutoVendaPorId(id: number): Promise<ProdutoVendaD
     FROM produtos_venda
     WHERE id = ?
     `, [id]);
-    return produto ?? null;
+    return produto ? (await precificarProdutosAtuais([produto]))[0] : null;
 }
 
 export async function buscarProdutoVendaDetalhado(id: number): Promise<ProdutoVendaDetalhado | null> {

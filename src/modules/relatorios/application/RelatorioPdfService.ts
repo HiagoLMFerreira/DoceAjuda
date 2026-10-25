@@ -28,7 +28,8 @@ export class RelatorioPdfService {
 
     await pdfService.generateAndShare({
       html,
-      dialogTitle: `Relatório de ${resultado.titulo}`,
+      dialogTitle: resultado.titulo,
+      fileName: `${resultado.titulo} - ${resultado.periodo}`,
     });
   }
 }

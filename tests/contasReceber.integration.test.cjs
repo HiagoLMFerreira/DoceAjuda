@@ -43,6 +43,36 @@ const { SQLiteAgendaRepository } = require('../src/modules/agenda/infrastructure
 const { formatDateForDatabase } = require('../src/core/formatters/date.ts');
 const service = new ContaReceberService(new SQLiteContaReceberRepository());
 
+test('Produtos recalculam a sugestão sem alterar o preço de venda ou o histórico', async () => {
+  await manager.initializeDatabase();
+  const produtos = require('../src/modules/produtosVenda/infrastructure/database/produtosVendaDatabase.ts');
+  const precificacao = require('../src/modules/produtosVenda/infrastructure/database/precificacaoDatabase.ts');
+  // Uma transação isolada impede que estes dados afetem os testes financeiros.
+  sqlite.exec('BEGIN');
+  try {
+    const insumo = Number(sqlite.prepare("INSERT INTO produtos (nome, descricao, quantidade, unidade_medida, preco_medio, quantidade_embalagem) VALUES ('Teste preço', '', 100, 'kg', 10, 1)").run().lastInsertRowid);
+    const produto = Number(sqlite.prepare("INSERT INTO produtos_venda (nome, tempo_producao_minutos, preco_venda, preco_sugerido) VALUES ('Teste preço atual', 60, 8, 3)").run().lastInsertRowid);
+    sqlite.prepare("INSERT INTO produto_venda_itens (produto_venda_id, produto_estoque_id, quantidade_usada, unidade_medida) VALUES (?, ?, 500, 'g')").run(produto, insumo);
+    await precificacao.salvarParametrosPrecificacao(0, 100, 0);
+    let atual = await produtos.buscarProdutoVendaPorId(produto);
+    assert.equal(atual.preco_sugerido, 5);
+    sqlite.prepare('UPDATE produtos SET preco_medio = 20 WHERE id = ?').run(insumo);
+    atual = await produtos.buscarProdutoVendaPorId(produto);
+    assert.equal(atual.preco_sugerido, 10);
+    assert.ok(atual.preco_venda < atual.preco_sugerido);
+    await precificacao.salvarParametrosPrecificacao(100, 100, 50);
+    const custo = await precificacao.adicionarCustoFixo('Custo de teste', 100);
+    atual = (await produtos.listarProdutosVenda('Teste preço atual'))[0];
+    assert.equal(atual.preco_sugerido, 24);
+    assert.equal(atual.preco_venda, 8);
+    await precificacao.alterarStatusCustoFixo(custo, false);
+    assert.equal((await produtos.buscarProdutoVendaDetalhado(produto)).preco_sugerido, 22);
+    assert.equal(sqlite.prepare('SELECT preco_sugerido FROM produtos_venda WHERE id = ?').get(produto).preco_sugerido, 3);
+  } finally {
+    sqlite.exec('ROLLBACK');
+  }
+});
+
 test('Contas a receber: fluxo integrado com dados isolados', async t => {
   await manager.initializeDatabase();
   sqlite.exec(`INSERT INTO clientes (nome) VALUES ('Cliente de teste');

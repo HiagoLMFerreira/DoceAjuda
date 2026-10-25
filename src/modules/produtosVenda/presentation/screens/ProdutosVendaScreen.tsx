@@ -395,16 +395,16 @@ export default function ProdutosVendaScreen() {
         numeroParaTexto(dadosParametros.horas_trabalhadas_mes)
       );
       setMargemLucro(numeroParaTexto(dadosParametros.margem_lucro));
+      await carregarProdutos();
     } catch (error) {
       Alert.alert('Erro', 'Não foi possível carregar os parâmetros.');
     }
-  }, []);
+  }, [carregarProdutos]);
 
   useFocusEffect(
     useCallback(() => {
-      carregarProdutos();
       carregarParametros();
-    }, [carregarProdutos, carregarParametros])
+    }, [carregarParametros])
   );
 
   const limparFormulario = () => {
@@ -1053,6 +1053,12 @@ export default function ProdutosVendaScreen() {
       </View>
 
       <View style={styles.produtoPrecoArea}>
+        {Math.round(item.preco_venda * 100) < Math.round(item.preco_sugerido * 100) && (
+          <View accessible accessibilityLabel={`Atenção: venda abaixo do preço sugerido de ${formatarMoeda(item.preco_sugerido)}`}>
+            <Ionicons name="warning-outline" size={21} color="#B7791F" />
+            <Text style={styles.produtoPrecoLabel}>Sugestão: {formatarMoeda(item.preco_sugerido)}</Text>
+          </View>
+        )}
         <Text style={styles.produtoPrecoLabel}>VENDA</Text>
         <Text style={styles.produtoPreco}>
           {formatarMoeda(item.preco_venda)}
